@@ -1,5 +1,5 @@
 <![CDATA[<div align="center">
-  <img src="app/web/public/logos/repsi_horizontal.png" alt="REPSI Logo" width="400" />
+  <img src="app/web/public/logos/repsi_logo.png" alt="REPSI Logo" width="150" />
   
   <h3>The operating system for modern gyms.</h3>
   
@@ -13,6 +13,18 @@
     <a href="docs/architecture.md">Documentation</a>
   </p>
 </div>
+
+---
+
+## Key Features
+
+- 🏢 **Multi-Tenancy:** Secure data isolation across different gyms and workspaces.
+- 💳 **Billing & Payments:** Subscription management, automated billing, and invoice generation.
+- 📱 **Cross-Platform:** Beautiful, responsive web app combined with native iOS, Android, and Desktop apps.
+- 👥 **Member Management:** Track attendance, manage memberships, and view detailed member profiles.
+- 📅 **Scheduling & Classes:** Streamlined class booking and trainer scheduling system.
+- 📊 **Analytics & Reports:** Comprehensive dashboards for revenue, attendance, and growth metrics.
+- 🔒 **Role-Based Access Control:** Fine-grained permissions for owners, staff, trainers, and members.
 
 ---
 
