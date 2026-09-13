@@ -187,3 +187,4 @@ Deep dive into the technical details of the platform:
 
 **Proprietary Software** — All rights reserved. 
 Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
+
