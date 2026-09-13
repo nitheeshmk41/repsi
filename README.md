@@ -1,8 +1,18 @@
-<![CDATA[# REPSI
+<![CDATA[<div align="center">
+  <img src="app/web/public/logos/repsi_horizontal.png" alt="REPSI Logo" width="400" />
+  
+  <h3>The operating system for modern gyms.</h3>
+  
+  <p>
+    REPSI is a production-quality Gym Management SaaS platform for gym owners, trainers, staff, and members — built with a premium design system, scalable architecture, and excellent UX.
+  </p>
 
-> **The operating system for modern gyms.**
-
-REPSI is a production-quality Gym Management SaaS platform for gym owners, trainers, staff, and members — built with a premium design system, scalable architecture, and excellent UX.
+  <p>
+    <a href="https://repsi.app">Live Web App</a> •
+    <a href="#getting-started">Get Started</a> •
+    <a href="docs/architecture.md">Documentation</a>
+  </p>
+</div>
 
 ---
 
