@@ -1,8 +1,30 @@
-<![CDATA[# REPSI
+<![CDATA[<div align="center">
+  <img src="app/web/public/logos/repsi_logo.png" alt="REPSI Logo" width="150" />
+  
+  <h3>The operating system for modern gyms.</h3>
+  
+  <p>
+    REPSI is a production-quality Gym Management SaaS platform for gym owners, trainers, staff, and members — built with a premium design system, scalable architecture, and excellent UX.
+  </p>
 
-> **The operating system for modern gyms.**
+  <p>
+    <a href="https://repsi.app">Live Web App</a> •
+    <a href="#getting-started">Get Started</a> •
+    <a href="docs/architecture.md">Documentation</a>
+  </p>
+</div>
 
-REPSI is a production-quality Gym Management SaaS platform for gym owners, trainers, staff, and members — built with a premium design system, scalable architecture, and excellent UX.
+---
+
+## Key Features
+
+- 🏢 **Multi-Tenancy:** Secure data isolation across different gyms and workspaces.
+- 💳 **Billing & Payments:** Subscription management, automated billing, and invoice generation.
+- 📱 **Cross-Platform:** Beautiful, responsive web app combined with native iOS, Android, and Desktop apps.
+- 👥 **Member Management:** Track attendance, manage memberships, and view detailed member profiles.
+- 📅 **Scheduling & Classes:** Streamlined class booking and trainer scheduling system.
+- 📊 **Analytics & Reports:** Comprehensive dashboards for revenue, attendance, and growth metrics.
+- 🔒 **Role-Based Access Control:** Fine-grained permissions for owners, staff, trainers, and members.
 
 ---
 
