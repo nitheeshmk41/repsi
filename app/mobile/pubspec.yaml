@@ -1,0 +1,55 @@
+name: mobile
+description: "Repsi - Modern Gym Management SaaS Mobile Application"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Navigation & Deep Linking
+  go_router: ^14.8.1
+
+  # Networking & HTTP Client
+  dio: ^5.8.0+1
+
+  # Secure Storage & Persistence
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.5
+
+  # Design, Typography & Icons
+  google_fonts: ^6.2.1
+  lucide_icons_flutter: ^3.1.19
+  cupertino_icons: ^1.0.8
+
+  # Charts & Visualizations
+  fl_chart: ^0.70.2
+
+  # UI Components & Utils
+  intl: ^0.20.2
+  shimmer: ^3.0.0
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/logos/repsi_standalone_icon.png
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logos/

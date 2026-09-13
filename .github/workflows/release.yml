@@ -1,0 +1,134 @@
+name: Release Repsi
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_VERSION: ${{ github.ref_name }}
+  REPSI_DESKTOP_URL: https://repsi.app
+
+jobs:
+  mobile-release:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set Flutter version in pubspec.yaml
+        working-directory: app/mobile
+        run: |
+          VERSION_NUM="${RELEASE_VERSION#v}"
+          sed -i "s/^version:.*/version: ${VERSION_NUM}+${GITHUB_RUN_NUMBER}/" pubspec.yaml
+
+      - name: Install dependencies
+        working-directory: app/mobile
+        run: flutter pub get
+
+      - name: Analyze & Test
+        working-directory: app/mobile
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build Android APK
+        working-directory: app/mobile
+        run: flutter build apk --release
+
+      - name: Prepare APK for Release
+        run: |
+          mkdir -p release-assets
+          cp app/mobile/build/app/outputs/flutter-apk/app-release.apk release-assets/Repsi-${{ github.ref_name }}-android.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repsi-android-apk
+          path: release-assets/Repsi-${{ github.ref_name }}-android.apk
+
+  desktop-release:
+    name: Build Desktop (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
+      - name: Install Desktop Node dependencies
+        working-directory: app/desktop
+        run: npm ci
+
+      - name: Build Desktop Bundle
+        working-directory: app/desktop
+        run: npm run build
+
+      - name: Collect Desktop Artifacts
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find app/desktop/src-tauri/target/release/bundle -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.app.tar.gz" \) -exec cp {} release-assets/ \; || true
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: repsi-desktop-${{ matrix.platform }}
+          path: release-assets/*
+
+  create-release:
+    name: Create GitHub Release
+    needs: [mobile-release, desktop-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-assets
+
+      - name: Organize Release Files
+        run: |
+          mkdir -p final-release
+          find all-assets -type f -exec cp {} final-release/ \;
+          echo "Release binaries prepared:"
+          ls -la final-release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Repsi ${{ github.ref_name }}
+          generate_release_notes: true
+          files: final-release/*

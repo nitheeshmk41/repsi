@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  # ─── Web (Next.js) ─────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./app/web
+      dockerfile: ../../docker/Dockerfile.web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ─── API (FastAPI) ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./app/api
+      dockerfile: ../../docker/Dockerfile.api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - PYTHON_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: repsi
+      POSTGRES_USER: repsi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-repsi_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U repsi -d repsi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

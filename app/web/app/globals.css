@@ -1,0 +1,275 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Caveat:wght@600;700&display=swap");
+@import "tailwindcss";
+
+.font-handwriting {
+  font-family: "Caveat", cursive;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* REPSI Design Tokens — Light Theme (default)                        */
+/* ─────────────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --background: #f7f9f5;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --sidebar: #ffffff;
+  --sidebar-border: #e2e8df;
+
+  /* Primary (neon green) */
+  --primary: #65e729;
+  --primary-hover: #58d120;
+  --primary-dark: #1a3b0a;
+  --primary-soft: #eafbe1;
+  --primary-foreground: #000000;
+
+  /* Text */
+  --text: #172033;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border: #e2e8df;
+  --border-strong: #cbd5c5;
+
+  /* Semantic */
+  --success: #22c55e;
+  --success-soft: #f0fdf4;
+  --success-foreground: #166534;
+  --warning: #f59e0b;
+  --warning-soft: #fffbeb;
+  --warning-foreground: #92400e;
+  --error: #ef4444;
+  --error-soft: #fef2f2;
+  --error-foreground: #991b1b;
+  --info: #3b82f6;
+  --info-soft: #eff6ff;
+  --info-foreground: #1e40af;
+
+  /* Interactive */
+  --ring: #84cc16;
+  --ring-offset: #f7f9f5;
+
+  /* Sidebar nav active state */
+  --nav-active-bg: #f0fbe2;
+  --nav-active-text: #365314;
+  --nav-active-indicator: #84cc16;
+  --nav-hover-bg: #f1f5ee;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* REPSI Design Tokens — Dark Theme                                   */
+/* ─────────────────────────────────────────────────────────────────── */
+.dark {
+  /* Backgrounds */
+  --background: #0b0f0a;
+  --surface: #151c15;
+  --surface-elevated: #1b241a;
+  --sidebar: #101610;
+  --sidebar-border: #1f2a1e;
+
+  /* Primary (neon green) */
+  --primary: #65e729;
+  --primary-hover: #58d120;
+  --primary-dark: #1a3b0a;
+  --primary-soft: #112807;
+  --primary-foreground: #000000;
+
+  /* Text */
+  --text: #f1f5f0;
+  --text-secondary: #a3ada0;
+  --text-muted: #6b7668;
+  --text-inverse: #172033;
+
+  /* Borders */
+  --border: #263026;
+  --border-strong: #2e3c2d;
+
+  /* Semantic */
+  --success: #22c55e;
+  --success-soft: #0f2318;
+  --success-foreground: #86efac;
+  --warning: #f59e0b;
+  --warning-soft: #1c1506;
+  --warning-foreground: #fcd34d;
+  --error: #ef4444;
+  --error-soft: #1f0808;
+  --error-foreground: #fca5a5;
+  --info: #3b82f6;
+  --info-soft: #0c1526;
+  --info-foreground: #93c5fd;
+
+  /* Interactive */
+  --ring: #84cc16;
+  --ring-offset: #0b0f0a;
+
+  /* Sidebar nav active state */
+  --nav-active-bg: #1d2a0f;
+  --nav-active-text: #a3e635;
+  --nav-active-indicator: #84cc16;
+  --nav-hover-bg: #1a221a;
+
+  /* Shadows — use borders for elevation in dark mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+}
+
+/* Force light theme for .light scope even inside html.dark */
+.light,
+html.dark .light,
+html.dark .light * {
+  --background: #f7f9f5;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --sidebar: #ffffff;
+  --sidebar-border: #e2e8df;
+
+  --text: #172033;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  --border: #e2e8df;
+  --border-strong: #cbd5c5;
+
+  --nav-active-bg: #f0fbe2;
+  --nav-active-text: #365314;
+  --nav-hover-bg: #f1f5ee;
+  color-scheme: light;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Tailwind v4 Theme Mapping                                          */
+/* ─────────────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-sidebar: var(--sidebar);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: var(--radius-sm);
+  --radius-DEFAULT: var(--radius);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Base Styles                                                        */
+/* ─────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Focus Ring                                                         */
+/* ─────────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Scrollbar Styles                                                   */
+/* ─────────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Selection                                                          */
+/* ─────────────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Utility — prevent layout flash on theme load                       */
+/* ─────────────────────────────────────────────────────────────────── */
+.no-transition * {
+  transition: none !important;
+}

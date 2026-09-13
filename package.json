@@ -1,0 +1,19 @@
+{
+  "name": "repsi-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "REPSI Gym Management SaaS Platform",
+  "scripts": {
+    "dev:web": "npm run dev --prefix app/web",
+    "dev:api": "cd app/api && uv run uvicorn app.main:app --reload --port 8000",
+    "build:web": "npm run build --prefix app/web",
+    "seed:api": "cd app/api && uv run python -m app.core.seed",
+    "test:api": "cd app/api && uv run pytest -v"
+  },
+  "workspaces": [
+    "app/web"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "desktop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "test": "tauri info",
+    "web:dev": "npm run dev --prefix ../web",
+    "web:build": "npm run build --prefix ../web",
+    "desktop:prepare": "node scripts/prepare-desktop.mjs"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}
