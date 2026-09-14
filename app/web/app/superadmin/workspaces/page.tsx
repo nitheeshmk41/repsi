@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Building2, Plus, Search, MoreVertical } from "lucide-react";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthCookie } from "@/lib/auth";
 
 type Workspace = {
   id: string;
@@ -19,7 +19,7 @@ export default function SuperAdminWorkspaces() {
 
   useEffect(() => {
     async function fetchWorkspaces() {
-      const token = getAuthToken();
+      const token = getAuthCookie();
       if (!token) return;
 
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";

@@ -10,7 +10,7 @@ import {
   LogOut,
   ShieldCheck
 } from "lucide-react";
-import { clearSession } from "@/lib/auth";
+import { logoutSession } from "@/lib/auth";
 
 export default function SuperAdminLayout({
   children,
@@ -20,7 +20,7 @@ export default function SuperAdminLayout({
   const pathname = usePathname();
 
   const handleLogout = () => {
-    clearSession();
+    logoutSession();
     window.location.href = "/login";
   };
 

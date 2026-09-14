@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Building2, Users, Activity, TrendingUp } from "lucide-react";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthCookie } from "@/lib/auth";
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState({
@@ -12,7 +12,7 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const token = getAuthToken();
+      const token = getAuthCookie();
       if (!token) return;
 
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
