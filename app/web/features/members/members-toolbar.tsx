@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, Plus, Download } from "lucide-react";
+import { Search, SlidersHorizontal, Plus, Download, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ interface MembersToolbarProps {
   planFilter: MembershipPlanName | "all";
   onPlanFilterChange: (value: MembershipPlanName | "all") => void;
   onAddMember: () => void;
+  onInviteMember?: () => void;
   totalCount: number;
   filteredCount: number;
 }
@@ -51,6 +52,7 @@ export function MembersToolbar({
   planFilter,
   onPlanFilterChange,
   onAddMember,
+  onInviteMember,
   totalCount,
   filteredCount,
 }: MembersToolbarProps) {
@@ -152,9 +154,15 @@ export function MembersToolbar({
           <Download className="h-3.5 w-3.5" />
           Export
         </Button>
-        <Button size="sm" onClick={onAddMember}>
+        {onInviteMember && (
+          <Button size="sm" onClick={onInviteMember} className="gap-1.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]">
+            <Mail className="h-3.5 w-3.5" />
+            Invite Member
+          </Button>
+        )}
+        <Button variant="secondary" size="sm" onClick={onAddMember}>
           <Plus className="h-3.5 w-3.5" />
-          Add Member
+          Add Direct
         </Button>
       </div>
     </div>

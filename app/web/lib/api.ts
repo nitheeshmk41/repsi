@@ -304,4 +304,76 @@ export const repsiApi = {
     setStored("payments", [newPay, ...current]);
     return newPay;
   },
+
+  // Invitations
+  async sendInvitation(invitation: {
+    name: string;
+    email: string;
+    phone?: string;
+    role: "member" | "trainer";
+    specialization?: string;
+  }): Promise<{ status: string; message: string; invitation?: any }> {
+    const token = typeof window !== "undefined" ? localStorage.getItem("repsi_auth_token") : null;
+    const slug = typeof window !== "undefined" ? localStorage.getItem("repsi_workspace_slug") || "apex-fitness" : "apex-fitness";
+
+    try {
+      const res = await fetch(`${API_BASE}/invitations/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Tenant-Slug": slug,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(invitation),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return { status: "success", message: `Invitation sent to ${invitation.email}`, invitation: data };
+      } else {
+        const err = await res.json();
+        throw new Error(err.detail || "Failed to send invitation");
+      }
+    } catch (e: any) {
+      if (e.message) throw e;
+      // Dev mode fallback
+      return { status: "success", message: `[Dev Mode] Invitation queued for ${invitation.email}` };
+    }
+  },
+
+  async verifyInvitation(tokenStr: string): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    role: "member" | "trainer";
+    gym_name: string;
+    gym_slug: string;
+    invited_by_name?: string;
+    status: string;
+  }> {
+    const res = await fetch(`${API_BASE}/invitations/verify?token=${encodeURIComponent(tokenStr)}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Invalid or expired invitation link.");
+    }
+    return await res.json();
+  },
+
+  async acceptInvitation(req: { token: string; password: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/invitations/accept`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to accept invitation.");
+    }
+    return await res.json();
+  },
 };
+

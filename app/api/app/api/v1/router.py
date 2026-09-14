@@ -13,6 +13,7 @@ from app.api.v1.expenses import router as expenses_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.biometric import router as biometric_router
+from app.api.v1.invitations import router as invitations_router
 
 api_router = APIRouter()
 
@@ -30,3 +31,5 @@ api_router.include_router(expenses_router)
 api_router.include_router(reports_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(biometric_router)
+api_router.include_router(invitations_router)
+

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { MembersToolbar } from "./members-toolbar";
 import { MembersTable } from "./members-table";
 import { AddMemberDialog } from "./add-member-dialog";
+import { InviteDialog } from "@/components/invite-dialog";
 import type { Member, MemberStatus, MembershipPlanName } from "@/types";
 import { repsiApi } from "@/lib/api";
 
@@ -17,6 +18,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
   const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
   const [planFilter, setPlanFilter] = useState<MembershipPlanName | "all">("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Sync with persistent API / DB on mount
   useEffect(() => {
@@ -83,6 +85,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
         planFilter={planFilter}
         onPlanFilterChange={setPlanFilter}
         onAddMember={() => setAddDialogOpen(true)}
+        onInviteMember={() => setInviteDialogOpen(true)}
         totalCount={members.length}
         filteredCount={filtered.length}
       />
@@ -90,6 +93,12 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
       <MembersTable
         members={filtered}
         onAddMember={() => setAddDialogOpen(true)}
+      />
+
+      <InviteDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        defaultRole="member"
       />
 
       <AddMemberDialog
