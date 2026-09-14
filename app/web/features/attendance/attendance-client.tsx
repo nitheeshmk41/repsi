@@ -14,6 +14,7 @@ export function AttendanceClient() {
   const [searchMember, setSearchMember] = useState("");
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "in" | "out">("all");
 
   useEffect(() => {
@@ -65,9 +66,13 @@ export function AttendanceClient() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button size="sm" variant="outline" onClick={() => setQrModalOpen(true)} className="gap-1.5 font-semibold">
+            <QrCode className="h-4 w-4 text-[var(--primary)]" />
+            Show Gym QR Code
+          </Button>
           <Button size="sm" onClick={() => setModalOpen(true)} className="bg-[var(--accent)] text-black hover:brightness-110 font-bold">
             <Plus className="h-4 w-4 mr-1" />
-            Check In Member
+            Manual Attendance
           </Button>
         </div>
       </div>
@@ -170,6 +175,42 @@ export function AttendanceClient() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Show Gym QR Code Modal */}
+      {qrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4 shadow-2xl text-center">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-base text-[var(--text)]">
+                <QrCode className="w-5 h-5 text-[var(--primary)]" />
+                <span>Gym Entrance QR Pass</span>
+              </div>
+              <button
+                onClick={() => setQrModalOpen(false)}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[var(--border)] flex flex-col items-center justify-center space-y-3">
+              {/* QR Code Container */}
+              <div className="w-48 h-48 bg-slate-900 rounded-xl p-3 flex flex-col items-center justify-center relative group">
+                <QrCode className="w-40 h-40 text-emerald-400" />
+              </div>
+              <p className="text-xs font-bold text-slate-800 tracking-wider">APEX FITNESS • ENTRANCE</p>
+            </div>
+
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              Members can scan this QR code using their REPSI App camera to instantly self check-in.
+            </p>
+
+            <Button onClick={() => setQrModalOpen(false)} variant="outline" className="w-full text-xs font-semibold">
+              Close Display
+            </Button>
           </div>
         </div>
       )}
