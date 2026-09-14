@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState , use } from "react";
 import { Dumbbell, Search, Filter, Play, Info, Sparkles } from "lucide-react";
 
 interface ExerciseDef {
@@ -70,7 +70,8 @@ const exerciseDatabase: ExerciseDef[] = [
   },
 ];
 
-export default function ExerciseLibraryPage({ params }: { params: { workspace: string } }) {
+export default function ExerciseLibraryPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscle, setSelectedMuscle] = useState<string>("All");
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDef | null>(null);

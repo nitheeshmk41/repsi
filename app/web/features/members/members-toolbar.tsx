@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, Plus, Download, Mail } from "lucide-react";
+import { Search, SlidersHorizontal, Plus, Download, Mail, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,8 @@ interface MembersToolbarProps {
   onPlanFilterChange: (value: MembershipPlanName | "all") => void;
   onAddMember: () => void;
   onInviteMember?: () => void;
+  onImportCsv?: () => void;
+  onExportCsv?: () => void;
   totalCount: number;
   filteredCount: number;
 }
@@ -53,6 +55,8 @@ export function MembersToolbar({
   onPlanFilterChange,
   onAddMember,
   onInviteMember,
+  onImportCsv,
+  onExportCsv,
   totalCount,
   filteredCount,
 }: MembersToolbarProps) {
@@ -136,7 +140,7 @@ export function MembersToolbar({
               onStatusFilterChange("all");
               onPlanFilterChange("all");
             }}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors whitespace-nowrap"
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors whitespace-nowrap cursor-pointer"
           >
             Clear
           </button>
@@ -144,22 +148,34 @@ export function MembersToolbar({
       </div>
 
       {/* Right: Count + Actions */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-[var(--text-muted)] whitespace-nowrap mr-1">
           {hasFilters
             ? `${filteredCount} of ${totalCount}`
             : `${totalCount} members`}
         </span>
-        <Button variant="secondary" size="sm">
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </Button>
+
+        {onExportCsv && (
+          <Button variant="secondary" size="sm" onClick={onExportCsv} title="Download CSV of all members">
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </Button>
+        )}
+
+        {onImportCsv && (
+          <Button variant="secondary" size="sm" onClick={onImportCsv} className="border-dashed" title="Upload Excel/CSV member roster">
+            <Upload className="h-3.5 w-3.5" />
+            Import CSV
+          </Button>
+        )}
+
         {onInviteMember && (
           <Button size="sm" onClick={onInviteMember} className="gap-1.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)]">
             <Mail className="h-3.5 w-3.5" />
             Invite Member
           </Button>
         )}
+
         <Button variant="secondary" size="sm" onClick={onAddMember}>
           <Plus className="h-3.5 w-3.5" />
           Add Direct

@@ -3,8 +3,7 @@ import Link from "next/link";
 import { CreditCard, Plus, TrendingUp, AlertTriangle, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { members } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Memberships",
@@ -12,10 +11,10 @@ export const metadata: Metadata = {
 };
 
 const planStats = [
-  { label: "Monthly Standard", duration: "1 Month", count: 612, price: 2499, revenue: 1530000, badge: "Most Popular" },
-  { label: "Quarterly Pro", duration: "3 Months", count: 348, price: 6499, revenue: 2262000, badge: "Best Value" },
-  { label: "Annual Transformation", duration: "12 Months", count: 256, price: 18999, revenue: 4608000, badge: "High Retention" },
-  { label: "Day Pass", duration: "1 Day", count: 68, price: 300, revenue: 20400, badge: "Casual" },
+  { label: "Monthly Standard", duration: "1 Month", count: 0, price: 2499, revenue: 0, badge: "Popular" },
+  { label: "Quarterly Pro", duration: "3 Months", count: 0, price: 6499, revenue: 0, badge: "Value" },
+  { label: "Annual Transformation", duration: "12 Months", count: 0, price: 18999, revenue: 0, badge: "Retention" },
+  { label: "Day Pass", duration: "1 Day", count: 0, price: 300, revenue: 0, badge: "Casual" },
 ];
 
 export default async function WorkspaceMembershipsPage({
@@ -24,9 +23,9 @@ export default async function WorkspaceMembershipsPage({
   params: Promise<{ workspace: string }>;
 }) {
   const { workspace } = await params;
-  const expiring = members.filter((m) => m.status === "expiring").length;
-  const expired = members.filter((m) => m.status === "expired").length;
-  const active = members.filter((m) => m.status === "active").length;
+  const expiring = 0;
+  const expired = 0;
+  const active = 0;
 
   return (
     <div className="space-y-6">

@@ -19,19 +19,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { repsiApi } from "@/lib/api";
-import { members } from "@/lib/mock-data";
 import { getInitials } from "@/lib/utils";
 
 export default function ReceptionCheckInPage() {
   const params = useParams();
   const workspace = (params.workspace as string) || "apex-fitness";
 
+  const [membersList, setMembersList] = useState<any[]>([]);
   const [query, setQuery] = useState("");
-  const [selectedMember, setSelectedMember] = useState<(typeof members)[0] | null>(null);
+  const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [recentCheckIns, setRecentCheckIns] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
+    repsiApi.getMembers().then((mems) => setMembersList(mems || []));
     repsiApi.getAttendance().then((res) => {
       if (res && res.length > 0) {
         setRecentCheckIns(res.slice(0, 5));
@@ -39,14 +40,14 @@ export default function ReceptionCheckInPage() {
     });
   }, []);
 
-  const searchResults = query.trim() === "" ? [] : members.filter(
+  const searchResults = query.trim() === "" ? [] : membersList.filter(
     (m) =>
       m.name.toLowerCase().includes(query.toLowerCase()) ||
       m.phone.includes(query) ||
       m.email.toLowerCase().includes(query.toLowerCase())
   );
 
-  const handleCheckIn = async (m: (typeof members)[0]) => {
+  const handleCheckIn = async (m: any) => {
     try {
       await repsiApi.checkInMember(m.id, m.name);
       setFeedback(`Successfully checked in ${m.name}`);

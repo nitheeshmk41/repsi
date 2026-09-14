@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { QrCode, CheckCircle2, ShieldCheck, User, Scan, AlertCircle } from "lucide-react";
 import { getAuthUser } from "@/lib/auth";
 
-export default function MemberQRCheckinPage({ params }: { params: { workspace: string } }) {
+export default function MemberQRCheckinPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
   const [user, setUser] = useState<any>(null);
   const [scannedResult, setScannedResult] = useState<string | null>(null);

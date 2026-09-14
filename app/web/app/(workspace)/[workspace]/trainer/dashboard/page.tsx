@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import Link from "next/link";
 import { 
   Users, 
@@ -17,7 +17,8 @@ import {
 import { getAuthUser } from "@/lib/auth";
 import { repsiApi, ApiMember, ApiAttendance } from "@/lib/api";
 
-export default function TrainerDashboardPage({ params }: { params: { workspace: string } }) {
+export default function TrainerDashboardPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
   const [user, setUser] = useState<any>(null);
   const [members, setMembers] = useState<ApiMember[]>([]);

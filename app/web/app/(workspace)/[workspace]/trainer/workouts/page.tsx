@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { Dumbbell, Plus, Trash2, Save, CheckCircle2, User, Sparkles } from "lucide-react";
 import { repsiApi, ApiMember } from "@/lib/api";
 
@@ -11,7 +11,8 @@ interface ExerciseItem {
   rest: string;
 }
 
-export default function TrainerWorkoutsPage({ params }: { params: { workspace: string } }) {
+export default function TrainerWorkoutsPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
   const [members, setMembers] = useState<ApiMember[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");

@@ -16,30 +16,11 @@ def get_expenses(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+        raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can view expenses.")
     repo = BaseTenantRepository[Expense](Expense, db, tenant.workspace_id)
     expenses = repo.get_multi(limit=50)
-    if not expenses:
-        return [
-            ExpenseResponse(
-                id="exp-001",
-                workspace_id=tenant.workspace_id,
-                category="Facility Rent",
-                title="Monthly Commercial Floor Lease",
-                amount=120000.0,
-                expense_date=date.today(),
-                vendor="Prestige Commercials"
-            ),
-            ExpenseResponse(
-                id="exp-002",
-                workspace_id=tenant.workspace_id,
-                category="Utilities",
-                title="Electricity & HVAC Grid Bill",
-                amount=38500.0,
-                expense_date=date.today(),
-                vendor="Bescom Power"
-            ),
-        ]
-    return expenses
+    return expenses or []
 
 
 @router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
@@ -48,6 +29,8 @@ def record_expense(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+        raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can record expenses.")
     repo = BaseTenantRepository[Expense](Expense, db, tenant.workspace_id)
     return repo.create(
         category=data.category,

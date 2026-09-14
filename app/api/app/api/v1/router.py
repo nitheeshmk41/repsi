@@ -15,6 +15,9 @@ from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.biometric import router as biometric_router
 from app.api.v1.invitations import router as invitations_router
 from app.api.v1.superadmin import router as superadmin_router
+from app.api.v1.machines import router as machines_router
+from app.api.v1.crm import router as crm_router
+from app.api.v1.websites import router as websites_router
 
 api_router = APIRouter()
 
@@ -34,4 +37,7 @@ api_router.include_router(dashboard_router)
 api_router.include_router(biometric_router)
 api_router.include_router(invitations_router)
 api_router.include_router(superadmin_router)
+api_router.include_router(machines_router)
+api_router.include_router(crm_router)
+api_router.include_router(websites_router)
 

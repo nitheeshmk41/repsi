@@ -56,13 +56,19 @@ export async function logoutSession(): Promise<void> {
     console.warn("Backend logout endpoint unavailable, proceeding with client purge", err);
   }
 
-  // 2. Clear all local authentication credentials
+  // 2. Clear all local authentication credentials and cached states
   clearAuthCookie();
   if (typeof window !== "undefined") {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("repsi_") || key.includes("user") || key.includes("token")) {
+        localStorage.removeItem(key);
+      }
+    });
     localStorage.removeItem("repsi_auth_token");
     localStorage.removeItem("repsi_user");
-    // Clear session storage as well
+    localStorage.removeItem("repsi_workspace_slug");
     sessionStorage.clear();
+    window.dispatchEvent(new Event("repsi_logout_event"));
   }
 
   // 3. Hard redirect to /login to ensure all memory states and client trees flush completely

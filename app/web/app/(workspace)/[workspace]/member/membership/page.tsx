@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState , use } from "react";
 import { CreditCard, CheckCircle2, ShieldCheck, ArrowRight, RefreshCw } from "lucide-react";
 
-export default function MemberMembershipPage({ params }: { params: { workspace: string } }) {
+export default function MemberMembershipPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const [requestedRenewal, setRequestedRenewal] = useState(false);
 
   return (

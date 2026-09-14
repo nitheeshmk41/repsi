@@ -9,13 +9,30 @@ import {
   CalendarPlus,
   LogIn,
   Snowflake,
+  Activity as ActivityIcon,
 } from "lucide-react";
-import { recentActivity, type ActivityType, type Activity } from "@/lib/mock-data";
-import { formatRelativeTime, formatCurrency, getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { formatRelativeTime, formatCurrency } from "@/lib/utils";
 
-// ─── Activity Icon Map ────────────────────────────────────────────────────────
+export type ActivityType =
+  | "member_joined"
+  | "membership_renewed"
+  | "payment_received"
+  | "trainer_assigned"
+  | "membership_expired"
+  | "class_created"
+  | "check_in"
+  | "membership_frozen";
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  user: string;
+  avatar?: string;
+  timestamp: string;
+  amount?: number;
+}
 
 const activityConfig: Record<
   ActivityType,
@@ -85,22 +102,18 @@ const activityConfig: Record<
   },
 };
 
-// ─── Activity Row ─────────────────────────────────────────────────────────────
-
 function ActivityRow({ activity }: { activity: Activity }) {
-  const config = activityConfig[activity.type];
+  const config = activityConfig[activity.type] || activityConfig.check_in;
   const Icon = config.icon;
 
   return (
     <div className="flex items-start gap-3 py-3 group">
-      {/* Icon */}
       <div
         className={`flex-shrink-0 w-8 h-8 rounded-full ${config.iconBg} flex items-center justify-center mt-0.5`}
       >
         <Icon className={`h-3.5 w-3.5 ${config.iconColor}`} />
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -127,25 +140,30 @@ function ActivityRow({ activity }: { activity: Activity }) {
   );
 }
 
-// ─── Recent Activity ──────────────────────────────────────────────────────────
-
-export function RecentActivity() {
+export function RecentActivity({ activities = [] }: { activities?: Activity[] }) {
   return (
     <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
-      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-base font-semibold text-[var(--text)]">Recent Activity</h2>
-        <button className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
-          View all
-        </button>
       </div>
 
-      {/* Activity List */}
-      <div className="divide-y divide-[var(--border)]">
-        {recentActivity.map((activity) => (
-          <ActivityRow key={activity.id} activity={activity} />
-        ))}
-      </div>
+      {activities.length > 0 ? (
+        <div className="divide-y divide-[var(--border)]">
+          {activities.map((activity) => (
+            <ActivityRow key={activity.id} activity={activity} />
+          ))}
+        </div>
+      ) : (
+        <div className="py-8 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--surface-elevated)] text-[var(--text-muted)] mb-2">
+            <ActivityIcon className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-[var(--text)]">No activity recorded yet</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            Actions like member check-ins, payments, and registrations will appear here.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

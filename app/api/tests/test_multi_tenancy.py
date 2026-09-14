@@ -88,3 +88,70 @@ def test_tenant_isolation_and_workspace_scoping():
         )
         assert pay_res.status_code == 201
         assert pay_res.json()["amount"] == 2499.0
+
+
+def test_unauthenticated_requests_rejected():
+    with TestClient(app) as client:
+        res = client.get("/api/v1/members/")
+        assert res.status_code == 401
+
+        res = client.get("/api/v1/dashboard/metrics")
+        assert res.status_code == 401
+
+        res = client.get("/api/v1/payments/")
+        assert res.status_code == 401
+
+
+def test_empty_state_and_no_mock_data_fallback():
+    with TestClient(app) as client:
+        reg = {
+            "full_name": "Fresh Owner",
+            "email": "fresh@newgym.com",
+            "password": "Password123!",
+            "gym_name": "New Gym",
+            "gym_phone": "+91 95555 66666",
+            "gym_city": "Bangalore"
+        }
+        res = client.post("/api/v1/auth/register", json=reg)
+        assert res.status_code == 201
+        token = res.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Check members endpoint returns empty list, no mock members
+        members_res = client.get("/api/v1/members/", headers=headers)
+        assert members_res.status_code == 200
+        assert members_res.json()["total"] == 0
+        assert members_res.json()["items"] == []
+
+        # Check dashboard metrics returns 0, no mock 1284 baseline
+        dash_res = client.get("/api/v1/dashboard/metrics", headers=headers)
+        assert dash_res.status_code == 200
+        data = dash_res.json()
+        assert data["active_members"] == 0
+        assert data["monthly_revenue"] == 0.0
+        assert data["today_attendance"] == 0
+
+
+def test_explicit_owner_demo_seeding():
+    with TestClient(app) as client:
+        reg = {
+            "full_name": "Seed Owner",
+            "email": "seed@owner.com",
+            "password": "Password123!",
+            "gym_name": "Seed Gym",
+            "gym_phone": "+91 97777 88888",
+            "gym_city": "Hyderabad"
+        }
+        res = client.post("/api/v1/auth/register", json=reg)
+        token = res.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Explicitly request demo data seeding
+        seed_res = client.post("/api/v1/workspaces/seed-demo-data", headers=headers)
+        assert seed_res.status_code == 200
+
+        # Verify members now exist for this tenant
+        mems_res = client.get("/api/v1/members/", headers=headers)
+        assert mems_res.status_code == 200
+        assert mems_res.json()["total"] == 3
+

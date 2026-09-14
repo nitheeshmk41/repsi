@@ -1,57 +1,51 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Calendar, Plus, Clock, Users, Flame, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-export const metadata: Metadata = {
-  title: "Classes",
-  description: "Schedule and manage group fitness classes, slots, and bookings.",
-};
-
-const classesList = [
-  {
-    id: "cls_1",
-    name: "Morning MetCon HIIT",
-    time: "06:30 AM – 07:30 AM",
-    trainer: "Ananya Deshmukh",
-    enrolled: 18,
-    capacity: 20,
-    room: "Studio A",
-    intensity: "High",
-  },
-  {
-    id: "cls_2",
-    name: "Vinyasa Flow Yoga",
-    time: "08:00 AM – 09:00 AM",
-    trainer: "Sneha Reddy",
-    enrolled: 14,
-    capacity: 15,
-    room: "Zen Studio",
-    intensity: "Moderate",
-  },
-  {
-    id: "cls_3",
-    name: "Powerlifting Fundamentals",
-    time: "05:00 PM – 06:15 PM",
-    trainer: "Vikram Sethi",
-    enrolled: 10,
-    capacity: 12,
-    room: "Iron Dungeon",
-    intensity: "High",
-  },
-  {
-    id: "cls_4",
-    name: "Evening Kettlebell Blitz",
-    time: "07:00 PM – 08:00 PM",
-    trainer: "Karan Johar",
-    enrolled: 16,
-    capacity: 18,
-    room: "Studio B",
-    intensity: "High",
-  },
-];
+import { repsiApi } from "@/lib/api";
 
 export default function WorkspaceClassesPage() {
+  const [classesList, setClassesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  const [name, setName] = useState("");
+  const [schedule, setSchedule] = useState("Mon/Wed/Fri 07:00 AM");
+  const [category, setCategory] = useState("CrossFit");
+  const [room, setRoom] = useState("Studio A");
+  const [capacity, setCapacity] = useState("20");
+
+  const loadClasses = async () => {
+    setLoading(true);
+    const data = await repsiApi.getClasses();
+    setClassesList(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name) return;
+    try {
+      await repsiApi.createClass({
+        name,
+        schedule,
+        category,
+        room,
+        capacity: parseInt(capacity) || 20,
+      });
+      setShowModal(false);
+      setName("");
+      loadClasses();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -61,7 +55,7 @@ export default function WorkspaceClassesPage() {
             Weekly timetable, class capacity, waitlists, and coach allocations.
           </p>
         </div>
-        <Button size="sm" className="gap-1.5">
+        <Button size="sm" onClick={() => setShowModal(true)} className="gap-1.5 cursor-pointer">
           <Plus className="h-3.5 w-3.5" />
           Schedule Class
         </Button>
@@ -69,31 +63,27 @@ export default function WorkspaceClassesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {classesList.map((c) => (
-          <div key={c.id} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
+          <div key={c.id} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between space-y-3">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--primary-soft)] text-[var(--primary-dark)] dark:text-[var(--primary-hover)]">
-                  {c.room}
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)]">
+                  {c.room || "Main Studio"}
                 </span>
                 <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                   <Flame className="h-3 w-3 text-amber-500" />
-                  {c.intensity} Intensity
+                  {c.category || "General"}
                 </span>
               </div>
               <h3 className="font-bold text-base text-[var(--text)] mt-2">{c.name}</h3>
               <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5" />
-                {c.time}
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Coach: <strong>{c.trainer}</strong>
+                {c.schedule}
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between">
-              <div className="text-xs">
-                <span className="font-bold text-[var(--text)]">{c.enrolled}</span>
-                <span className="text-[var(--text-muted)]">/{c.capacity} Booked</span>
+            <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between">
+              <div className="text-xs text-[var(--text-muted)]">
+                Capacity: <span className="font-bold text-[var(--text)]">{c.capacity} Slots</span>
               </div>
               <Button variant="outline" size="sm" className="text-xs h-7">
                 Manage Roster
@@ -102,6 +92,93 @@ export default function WorkspaceClassesPage() {
           </div>
         ))}
       </div>
+
+      {classesList.length === 0 && !loading && (
+        <div className="rounded-[16px] border border-dashed border-[var(--border)] p-12 text-center space-y-3 bg-[var(--surface)]/50">
+          <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mx-auto flex items-center justify-center">
+            <Calendar className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-bold text-[var(--text)]">No classes scheduled yet</h3>
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
+            Schedule group workout sessions, yoga flows, spin cycling, or HIIT training for your gym.
+          </p>
+          <Button size="sm" onClick={() => setShowModal(true)} className="gap-1.5 mt-2 cursor-pointer">
+            <Plus className="h-3.5 w-3.5" />
+            Schedule First Class
+          </Button>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[16px] p-6 max-w-md w-full space-y-4 shadow-xl">
+            <h2 className="text-lg font-bold text-[var(--text)]">Schedule Group Class</h2>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">Class Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Morning HIIT & Burn"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text)] mb-1">Schedule / Timings</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Mon / Wed / Fri - 07:00 AM"
+                  value={schedule}
+                  onChange={(e) => setSchedule(e.target.value)}
+                  className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Studio / Room</label>
+                  <input
+                    type="text"
+                    value={room}
+                    onChange={(e) => setRoom(e.target.value)}
+                    className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--text)] mb-1">Max Capacity</label>
+                  <input
+                    type="number"
+                    value={capacity}
+                    onChange={(e) => setCapacity(e.target.value)}
+                    className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-[8px] border border-[var(--border)] text-xs font-medium text-[var(--text-muted)] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold cursor-pointer"
+                >
+                  Save Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

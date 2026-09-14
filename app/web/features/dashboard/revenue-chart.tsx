@@ -9,10 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { revenueData } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
 
-// Custom tooltip
 function CustomTooltip({
   active,
   payload,
@@ -45,7 +43,16 @@ function CustomTooltip({
   );
 }
 
-export function RevenueChart() {
+export function RevenueChart({ data }: { data?: Array<{ label: string; value: number }> }) {
+  const chartData = data || [
+    { label: "Oct", value: 0 },
+    { label: "Nov", value: 0 },
+    { label: "Dec", value: 0 },
+    { label: "Jan", value: 0 },
+    { label: "Feb", value: 0 },
+    { label: "Mar", value: 0 },
+  ];
+
   return (
     <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
       {/* Header */}
@@ -53,7 +60,7 @@ export function RevenueChart() {
         <div>
           <h2 className="text-base font-semibold text-[var(--text)]">Revenue Overview</h2>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">
-            Last 12 months · Revenue vs Expenses
+            Last 6 months · Authenticated Gym Revenue
           </p>
         </div>
         <div className="flex items-center gap-4 text-xs">
@@ -61,24 +68,16 @@ export function RevenueChart() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16]" />
             <span className="text-[var(--text-secondary)]">Revenue</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#475569]" />
-            <span className="text-[var(--text-secondary)]">Expenses</span>
-          </div>
         </div>
       </div>
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={revenueData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#84CC16" stopOpacity={0.15} />
               <stop offset="95%" stopColor="#84CC16" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="expGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#475569" stopOpacity={0.1} />
-              <stop offset="95%" stopColor="#475569" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -87,7 +86,7 @@ export function RevenueChart() {
             vertical={false}
           />
           <XAxis
-            dataKey="month"
+            dataKey="label"
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             axisLine={false}
             tickLine={false}
@@ -103,21 +102,12 @@ export function RevenueChart() {
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border)", strokeWidth: 1 }} />
           <Area
             type="monotone"
-            dataKey="revenue"
+            dataKey="value"
             stroke="#84CC16"
             strokeWidth={2}
             fill="url(#revGradient)"
             dot={false}
             activeDot={{ r: 4, fill: "#84CC16", strokeWidth: 2, stroke: "var(--surface)" }}
-          />
-          <Area
-            type="monotone"
-            dataKey="expenses"
-            stroke="#475569"
-            strokeWidth={1.5}
-            fill="url(#expGradient)"
-            dot={false}
-            activeDot={{ r: 3, fill: "#475569", strokeWidth: 2, stroke: "var(--surface)" }}
           />
         </AreaChart>
       </ResponsiveContainer>

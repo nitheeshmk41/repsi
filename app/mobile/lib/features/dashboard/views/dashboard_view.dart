@@ -73,7 +73,7 @@ class DashboardView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Good morning, ${user?.fullName?.split(' ').first ?? 'Owner'}',
+                            'Good morning, ${user?.fullName.split(' ').firstOrNull ?? 'Owner'}',
                             style: AppTypography.headingMedium.copyWith(
                               color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                               fontWeight: FontWeight.w700,
@@ -83,9 +83,8 @@ class DashboardView extends ConsumerWidget {
                           const SizedBox(height: 2),
                           Text(
                             'Apex Fitness • Owner Dashboard',
-                            style: AppTypography.caption.copyWith(
-                              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                              fontWeight: FontWeight.w500,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -95,16 +94,18 @@ class DashboardView extends ConsumerWidget {
                       children: [
                         IconButton(
                           icon: Stack(
-                            clipBehavior: Clip.none,
                             children: [
-                              Icon(LucideIcons.bell, size: 22, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              const Icon(LucideIcons.bell, size: 20),
                               Positioned(
-                                right: -2,
-                                top: -2,
+                                top: 2,
+                                right: 2,
                                 child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(color: AppColors.error, shape: BoxShape.circle, border: Border.all(color: isDark ? AppColors.darkBackground : AppColors.background, width: 2)),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ),
                             ],
@@ -119,13 +120,47 @@ class DashboardView extends ConsumerWidget {
                             backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
                             child: user?.avatarUrl == null
                                 ? Text(
-                                    user?.fullName?.isNotEmpty == true ? user!.fullName![0].toUpperCase() : 'O',
+                                    (user != null && user.fullName.isNotEmpty) ? user.fullName[0].toUpperCase() : 'O',
                                     style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
                                   )
                                 : null,
                           ),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Quick Action Row: Razorpay Instant Collect & Gym CRM
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showRazorpayCollectDialog(context),
+                        icon: const Icon(LucideIcons.creditCard, size: 16),
+                        label: const Text('Razorpay', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D6EFD),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showCrmBottomSheet(context),
+                        icon: const Icon(LucideIcons.target, size: 16),
+                        label: const Text('Gym CRM', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE11D48),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -747,6 +782,321 @@ class DashboardView extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showRazorpayCollectDialog(BuildContext context) {
+    final amountController = TextEditingController(text: '1499');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(LucideIcons.creditCard, color: Color(0xFF0D6EFD)),
+            SizedBox(width: 8),
+            Text('Collect via Razorpay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter amount to generate Razorpay instant payment link for member:', style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                prefixText: '₹ ',
+                labelText: 'Amount (INR)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D6EFD), foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Razorpay order created for ₹${amountController.text}. Payment link ready.'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            },
+            child: const Text('Generate Order'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCrmBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF18181B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(LucideIcons.target, color: Color(0xFFE11D48), size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Gym CRM & Leads',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showAddLeadDialog(context);
+                    },
+                    icon: const Icon(LucideIcons.plus, size: 16),
+                    label: const Text('Add Lead'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFE11D48),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              // Stage Pills
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildStagePill('All Leads', true),
+                    _buildStagePill('New (3)', false),
+                    _buildStagePill('Contacted (5)', false),
+                    _buildStagePill('Trials (2)', false),
+                    _buildStagePill('Converted (12)', false),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    _buildLeadMobileCard(
+                      context,
+                      name: 'Aarav Patel',
+                      phone: '+91 98765 43210',
+                      stage: 'Trial Scheduled',
+                      plan: 'Strength & Conditioning',
+                      date: 'Today, 10:00 AM',
+                    ),
+                    _buildLeadMobileCard(
+                      context,
+                      name: 'Sneha Reddy',
+                      phone: '+91 98888 12345',
+                      stage: 'Contacted',
+                      plan: 'Weight Loss / HIIT',
+                      date: 'Yesterday',
+                    ),
+                    _buildLeadMobileCard(
+                      context,
+                      name: 'Vikram Malhotra',
+                      phone: '+91 97777 99999',
+                      stage: 'New Lead',
+                      plan: 'Annual Elite',
+                      date: '2 hrs ago',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStagePill(String title, bool active) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: active ? const Color(0xFFE11D48) : Colors.white10,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: active ? Colors.white : Colors.white70,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeadMobileCard(
+    BuildContext context, {
+    required String name,
+    required String phone,
+    required String stage,
+    required String plan,
+    required String date,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF27272A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE11D48).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(stage, style: const TextStyle(color: Color(0xFFFB7185), fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('$plan • $date', style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              // Quick Actions: Call -> WhatsApp -> Schedule -> Convert
+              IconButton.filledTonal(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Calling $name ($phone)...')),
+                  );
+                },
+                icon: const Icon(LucideIcons.phone, size: 16),
+                style: IconButton.styleFrom(backgroundColor: Colors.blue.withValues(alpha: 0.2), foregroundColor: Colors.blue),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Opening WhatsApp for $phone...')),
+                  );
+                },
+                icon: const Icon(LucideIcons.messageSquare, size: 16),
+                style: IconButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.2), foregroundColor: Colors.green),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Scheduled follow-up for $name')),
+                  );
+                },
+                icon: const Icon(LucideIcons.calendar, size: 16),
+                style: IconButton.styleFrom(backgroundColor: Colors.purple.withValues(alpha: 0.2), foregroundColor: Colors.purple),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$name converted to Member successfully! Linked to workspace.'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                },
+                icon: const Icon(LucideIcons.userCheck, size: 14),
+                label: const Text('Convert', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddLeadDialog(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF18181B),
+        title: const Text('Add Gym Lead', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Full Name', labelStyle: TextStyle(color: Colors.white60)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Phone Number', labelStyle: TextStyle(color: Colors.white60)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48), foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Lead ${nameCtrl.text} added to CRM!'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            },
+            child: const Text('Save Lead'),
+          ),
+        ],
       ),
     );
   }

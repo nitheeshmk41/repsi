@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { MembersToolbar } from "./members-toolbar";
 import { MembersTable } from "./members-table";
 import { AddMemberDialog } from "./add-member-dialog";
 import { InviteDialog } from "@/components/invite-dialog";
+import { CsvImportModal } from "./csv-import-modal";
+import { RenewalAlertsCard } from "./renewal-alerts-card";
 import type { Member, MemberStatus, MembershipPlanName } from "@/types";
 import { repsiApi } from "@/lib/api";
 
@@ -19,48 +21,51 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
   const [planFilter, setPlanFilter] = useState<MembershipPlanName | "all">("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
 
   // Sync with persistent API / DB on mount
-  useEffect(() => {
+  const fetchMembers = useCallback(() => {
     repsiApi.getMembers().then((apiMems) => {
-      if (apiMems && apiMems.length > 0) {
-        const mapped: Member[] = apiMems.map((m) => ({
-          id: m.id,
-          name: m.name,
-          email: m.email,
-          phone: m.phone,
-          status: m.status as MemberStatus,
-          plan: (m.plan as MembershipPlanName) || "Monthly",
-          joined: m.joinedDate,
-          expiry: "2026-12-31",
-          lastPayment: 1000,
-        }));
-        setMembers(mapped);
-      }
+      const mapped: Member[] = (apiMems || []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        phone: m.phone,
+        status: m.status as MemberStatus,
+        plan: (m.plan as MembershipPlanName) || "Monthly",
+        joined: m.joinedDate || new Date().toISOString().split("T")[0],
+        expiry: "2026-12-31",
+        lastPayment: 1000,
+      }));
+      setMembers(mapped);
     });
-
-    const handleUpdate = () => {
-      repsiApi.getMembers().then((apiMems) => {
-        if (apiMems && apiMems.length > 0) {
-          const mapped: Member[] = apiMems.map((m) => ({
-            id: m.id,
-            name: m.name,
-            email: m.email,
-            phone: m.phone,
-            status: m.status as MemberStatus,
-            plan: (m.plan as MembershipPlanName) || "Monthly",
-            joined: m.joinedDate,
-            expiry: "2026-12-31",
-            lastPayment: 1000,
-          }));
-          setMembers(mapped);
-        }
-      });
-    };
-
-    window.addEventListener("repsi_storage_update", handleUpdate);
-    return () => window.removeEventListener("repsi_storage_update", handleUpdate);
   }, []);
+
+  useEffect(() => {
+    fetchMembers();
+    window.addEventListener("repsi_storage_update", fetchMembers);
+    return () => window.removeEventListener("repsi_storage_update", fetchMembers);
+  }, [fetchMembers]);
+
+  const handleExportCsv = async () => {
+    try {
+      const token = localStorage.getItem("repsi_auth_token");
+      const res = await fetch(repsiApi.getExportMembersCsvUrl(), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Failed to export members");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `repsi_members_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.warn("Export CSV error", err);
+    }
+  };
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
@@ -76,7 +81,11 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
   }, [members, search, statusFilter, planFilter]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* 1. Automated Renewal Alerts Engine */}
+      <RenewalAlertsCard />
+
+      {/* 2. Toolbar with Search, Filters, CSV Import/Export */}
       <MembersToolbar
         search={search}
         onSearchChange={setSearch}
@@ -86,6 +95,8 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
         onPlanFilterChange={setPlanFilter}
         onAddMember={() => setAddDialogOpen(true)}
         onInviteMember={() => setInviteDialogOpen(true)}
+        onImportCsv={() => setCsvModalOpen(true)}
+        onExportCsv={handleExportCsv}
         totalCount={members.length}
         filteredCount={filtered.length}
       />
@@ -140,6 +151,12 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
           };
           setMembers((prev) => [newMember, ...prev.filter((m) => m.id !== newMember.id)]);
         }}
+      />
+
+      <CsvImportModal
+        open={csvModalOpen}
+        onOpenChange={setCsvModalOpen}
+        onSuccess={fetchMembers}
       />
     </div>
   );

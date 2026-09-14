@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
 import { CalendarCheck, CheckCircle2, Clock, Calendar as CalendarIcon } from "lucide-react";
+import { repsiApi } from "@/lib/api";
 
-export default function MemberAttendancePage({ params }: { params: { workspace: string } }) {
-  const attendanceLogs = [
-    { date: "14 Sep 2026", checkIn: "07:15 AM", checkOut: "08:30 AM", method: "QR Code" },
-    { date: "12 Sep 2026", checkIn: "06:45 AM", checkOut: "08:00 AM", method: "QR Code" },
-    { date: "11 Sep 2026", checkIn: "07:00 AM", checkOut: "08:15 AM", method: "Biometric" },
-    { date: "09 Sep 2026", checkIn: "07:10 AM", checkOut: "08:25 AM", method: "QR Code" },
-    { date: "07 Sep 2026", checkIn: "06:50 AM", checkOut: "08:05 AM", method: "QR Code" },
-  ];
+export default function MemberAttendancePage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
+  const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const data = await repsiApi.getAttendance();
+      setAttendanceLogs(data);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -24,16 +31,16 @@ export default function MemberAttendancePage({ params }: { params: { workspace: 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">This Month</span>
-          <p className="text-2xl font-extrabold text-[var(--text)] mt-1">18 Days</p>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Check-ins Recorded</span>
+          <p className="text-2xl font-extrabold text-[var(--text)] mt-1">{attendanceLogs.length} Days</p>
         </div>
         <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Consistency Score</span>
-          <p className="text-2xl font-extrabold text-emerald-600 mt-1">82%</p>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Active Status</span>
+          <p className="text-2xl font-extrabold text-emerald-600 mt-1">Verified</p>
         </div>
         <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Avg Session</span>
-          <p className="text-2xl font-extrabold text-[var(--text)] mt-1">75 Mins</p>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Session Method</span>
+          <p className="text-2xl font-extrabold text-[var(--text)] mt-1">QR / Biometric</p>
         </div>
       </div>
 
@@ -44,26 +51,36 @@ export default function MemberAttendancePage({ params }: { params: { workspace: 
           <span>Recent Check-ins</span>
         </h2>
 
-        <div className="divide-y divide-[var(--border)]">
-          {attendanceLogs.map((log, idx) => (
-            <div key={idx} className="py-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
-                  <CheckCircle2 className="h-4 w-4" />
+        {attendanceLogs.length > 0 ? (
+          <div className="divide-y divide-[var(--border)]">
+            {attendanceLogs.map((log, idx) => (
+              <div key={log.id || idx} className="py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--text)]">{log.name || "Check-in Session"}</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">Method: {(log.method || "QR").toUpperCase()}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text)]">{log.date}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">{log.method}</p>
-                </div>
-              </div>
 
-              <div className="text-right">
-                <p className="text-xs font-medium text-[var(--text)]">{log.checkIn} - {log.checkOut}</p>
-                <span className="text-[10px] text-emerald-600 font-semibold">Completed</span>
+                <div className="text-right">
+                  <p className="text-xs font-medium text-[var(--text)]">{log.checkInTime} {log.checkOutTime ? `- ${log.checkOutTime}` : ""}</p>
+                  <span className="text-[10px] text-emerald-600 font-semibold">{log.status === "out" ? "Checked Out" : "Active Check-in"}</span>
+                </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          !loading && (
+            <div className="p-8 text-center space-y-2">
+              <CalendarCheck className="h-6 w-6 text-[var(--text-muted)] mx-auto" />
+              <p className="text-xs font-semibold text-[var(--text)]">No attendance logs found</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Scan your QR code at the gym desk to log your daily check-in.</p>
             </div>
-          ))}
-        </div>
+          )
+        )}
       </div>
     </div>
   );

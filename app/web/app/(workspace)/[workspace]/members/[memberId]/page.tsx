@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { members } from "@/lib/mock-data";
 import { formatDate, formatCurrency, getInitials } from "@/lib/utils";
 import type { MemberStatus } from "@/types";
 
@@ -43,19 +42,8 @@ const statusLabel: Record<MemberStatus, string> = {
   cancelled: "Cancelled",
 };
 
-const attendanceHistory = [
-  { date: "2026-09-13", checkIn: "06:42 AM", checkOut: "08:15 AM" },
-  { date: "2026-09-11", checkIn: "07:05 AM", checkOut: "08:50 AM" },
-  { date: "2026-09-09", checkIn: "06:55 AM", checkOut: "08:30 AM" },
-  { date: "2026-09-07", checkIn: "07:12 AM", checkOut: "09:00 AM" },
-  { date: "2026-09-05", checkIn: "06:48 AM", checkOut: "08:20 AM" },
-];
-
-const paymentHistory = [
-  { id: "pay-001", date: "2026-09-01", amount: 2500, method: "UPI", status: "paid", description: "Monthly renewal" },
-  { id: "pay-002", date: "2026-08-01", amount: 2500, method: "UPI", status: "paid", description: "Monthly renewal" },
-  { id: "pay-003", date: "2026-07-01", amount: 2500, method: "Cash", status: "paid", description: "Monthly renewal" },
-];
+const attendanceHistory: any[] = [];
+const paymentHistory: any[] = [];
 
 export async function generateMetadata({
   params,
@@ -63,9 +51,8 @@ export async function generateMetadata({
   params: Promise<{ workspace: string; memberId: string }>;
 }): Promise<Metadata> {
   const { memberId } = await params;
-  const member = members.find((m) => m.id === memberId) || members[0];
   return {
-    title: member ? `${member.name} — Profile` : "Member Profile",
+    title: `Member Profile — ${memberId}`,
   };
 }
 
@@ -79,16 +66,16 @@ export default async function WorkspaceMemberProfilePage({
   const { workspace, memberId } = await params;
   const { tab = "overview" } = await searchParams;
 
-  const member = members.find((m) => m.id === memberId) || {
+  const member = {
     id: memberId,
-    name: "Arun Kumar",
-    email: "arun.kumar@gmail.com",
-    phone: "+91 98450 12345",
+    name: "Gym Member",
+    email: "member@gym.com",
+    phone: "+91 90000 00000",
     status: "active" as MemberStatus,
-    plan: "Quarterly" as const,
-    joined: "2026-01-15",
-    expiry: "2026-10-15",
-    lastPayment: 6500,
+    plan: "Standard" as const,
+    joined: "2026-01-01",
+    expiry: "2026-12-31",
+    lastPayment: 0,
   };
 
   const tabs = [

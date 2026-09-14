@@ -15,10 +15,13 @@ class BaseTenantRepository(Generic[ModelType]):
         self.db = db
         self.workspace_id = workspace_id
 
+    def scoped_query(self):
+        return self.db.query(self.model).filter(self.model.workspace_id == self.workspace_id)
+
     def get(self, id: Any) -> Optional[ModelType]:
         return (
-            self.db.query(self.model)
-            .filter(self.model.id == id, self.model.workspace_id == self.workspace_id)
+            self.scoped_query()
+            .filter(self.model.id == id)
             .first()
         )
 

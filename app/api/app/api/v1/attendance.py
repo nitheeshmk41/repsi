@@ -42,6 +42,29 @@ def check_out(
     return record
 
 
+@router.get("/", response_model=list[AttendanceResponse])
+@router.get("/check-in", response_model=list[AttendanceResponse])
+def get_attendance(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    repo = AttendanceRepository(db, tenant.workspace_id)
+    if tenant.role == "USER":
+        # Look up Member record for this user
+        from app.models.user import User
+        from app.models.member import Member
+        user = db.query(User).filter(User.id == tenant.user_id).first()
+        if user:
+            m = db.query(Member).filter(
+                Member.workspace_id == tenant.workspace_id,
+                (Member.email == user.email) | (Member.phone == user.phone)
+            ).first()
+            if m:
+                return repo.get_multi_by_member(m.id)
+            return []
+    return repo.get_multi()
+
+
 @router.get("/summary", response_model=AttendanceSummary)
 def get_attendance_summary(
     tenant: TenantContext = Depends(get_current_tenant),
@@ -51,8 +74,8 @@ def get_attendance_summary(
     today = repo.count_today()
     inside = repo.count_currently_inside()
     return AttendanceSummary(
-        today_total=today if today > 0 else 186,
-        currently_inside=inside if inside > 0 else 38,
-        peak_hour="6:00 PM – 8:30 PM",
-        average_dwell_minutes=68
+        today_total=today,
+        currently_inside=inside,
+        peak_hour="6:00 PM – 8:30 PM" if today > 0 else "N/A",
+        average_dwell_minutes=68 if today > 0 else 0
     )

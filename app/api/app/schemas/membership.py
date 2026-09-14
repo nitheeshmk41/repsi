@@ -45,3 +45,30 @@ class MembershipResponse(BaseModel):
     auto_renew: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ExpiringMembershipItem(BaseModel):
+    membership_id: str
+    member_id: str
+    member_name: str
+    phone: str
+    email: str
+    plan_name: str
+    start_date: date
+    end_date: date
+    days_remaining: int
+    status: MemberStatus
+    price_paid: float
+
+
+class RenewalReminderItem(BaseModel):
+    member_id: str
+    member_name: str
+    phone: str
+    email: str
+    plan_name: str
+    expiry_date: date
+    days_remaining: int
+    amount_due: float
+    message_template: str
+    whatsapp_url: str

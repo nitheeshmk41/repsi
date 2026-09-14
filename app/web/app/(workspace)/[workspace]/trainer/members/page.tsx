@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { Search, UserCheck, Calendar, Phone, Mail, Dumbbell, Activity } from "lucide-react";
 import { repsiApi, ApiMember } from "@/lib/api";
 
-export default function TrainerMembersPage({ params }: { params: { workspace: string } }) {
+export default function TrainerMembersPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
   const [members, setMembers] = useState<ApiMember[]>([]);
   const [searchTerm, setSearchTerm] = useState("");

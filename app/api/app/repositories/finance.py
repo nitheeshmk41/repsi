@@ -21,7 +21,7 @@ class FinanceRepository:
             )
             .scalar()
         )
-        return float(res) if res else 482500.0  # Fallback to realistic baseline
+        return float(res) if res is not None else 0.0
 
     def get_monthly_expenses(self) -> float:
         first_day_this_month = date.today().replace(day=1)
@@ -33,4 +33,4 @@ class FinanceRepository:
             )
             .scalar()
         )
-        return float(res) if res else 174200.0
+        return float(res) if res is not None else 0.0

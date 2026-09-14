@@ -1008,70 +1008,102 @@ export default function HomePage() {
 
       {/* ── 11. Pricing Overview CTA ────────────────────────────────────────── */}
       <section className="py-24 max-w-7xl mx-auto px-6 sm:px-10 lg:px-12">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--primary-dark)] dark:text-[var(--primary-hover)]">
-            Simple Transparent Pricing
+            Region-Based Pricing
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text)] tracking-tight mt-2">
-            Plans built to scale with your facility.
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text)] tracking-tight">
+            Simple gym management. One platform. Every device.
           </h2>
-          <p className="text-base text-[var(--text-secondary)] mt-3">
-            Every plan includes member management, attendance scanner, and full analytics.
+          <p className="text-base text-[var(--text-secondary)]">
+            Transparent plans for gyms in India ($ / ₹) and worldwide.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
+        {/* Founding 5 Gyms Banner */}
+        <div className="max-w-4xl mx-auto mb-10 p-6 rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-[var(--surface)] to-emerald-950/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 text-[10px] font-extrabold uppercase tracking-wider">Founding 5 Worldwide</span>
+            <h3 className="text-lg font-bold text-[var(--text)] mt-1">First 5 Gyms — 3 Months Completely Free</h3>
+            <p className="text-xs text-[var(--text-muted)]">Full Growth plan • No setup fee • No credit card required • $20/mo or ₹1,049/mo lifetime price afterward.</p>
+          </div>
+          <Link href="/pricing" className="px-5 py-2.5 rounded-xl bg-emerald-500 text-black font-extrabold text-xs tracking-wider uppercase whitespace-nowrap hover:bg-emerald-400 transition-colors">
+            Claim Offer
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
+          {/* Starter */}
+          <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
             <div>
-              <h3 className="font-bold text-lg text-[var(--text)]">Starter</h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1">For boutique studios and single gym owners</p>
-              <p className="text-3xl font-extrabold text-[var(--text)] mt-4">₹2,499<span className="text-xs font-normal text-[var(--text-muted)]">/month</span></p>
-              <ul className="mt-6 space-y-2.5 text-xs text-[var(--text-secondary)]">
+              <span className="text-[10px] font-bold uppercase text-[var(--text-muted)]">For small gyms</span>
+              <h3 className="font-bold text-base text-[var(--text)]">Starter</h3>
+              <p className="text-2xl font-extrabold text-[var(--text)] mt-3">$15 <span className="text-xs font-normal text-[var(--text-muted)]">/mo (₹999)</span></p>
+              <ul className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
                 <li>• Up to 250 active members</li>
-                <li>• Front-desk QR check-in</li>
-                <li>• WhatsApp renewal reminders</li>
-                <li>• Basic revenue reports</li>
+                <li>• QR attendance check-in</li>
+                <li>• WhatsApp renewal alerts</li>
+                <li>• Standard email support</li>
               </ul>
             </div>
-            <Link href="/signup" className="mt-8 block text-center py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-sm font-semibold hover:bg-[var(--surface-hover)] transition-colors">
-              Get Started
+            <Link href="/pricing" className="mt-6 block text-center py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors">
+              View Plan
             </Link>
           </div>
 
-          <div className="p-6 rounded-2xl border-2 border-[var(--primary)] bg-[var(--surface)] shadow-lg flex flex-col justify-between relative">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[10px] font-bold uppercase tracking-wider">
+          {/* Growth */}
+          <div className="p-5 rounded-2xl border-2 border-[var(--primary)] bg-[var(--surface)] shadow-lg flex flex-col justify-between relative">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-[9px] font-bold uppercase tracking-wider">
               Most Popular
             </span>
             <div>
-              <h3 className="font-bold text-lg text-[var(--text)]">Growth Pro</h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1">For expanding fitness clubs and gyms</p>
-              <p className="text-3xl font-extrabold text-[var(--text)] mt-4">₹4,999<span className="text-xs font-normal text-[var(--text-muted)]">/month</span></p>
-              <ul className="mt-6 space-y-2.5 text-xs text-[var(--text-secondary)]">
+              <span className="text-[10px] font-bold uppercase text-[var(--primary)]">For growing gyms</span>
+              <h3 className="font-bold text-base text-[var(--text)]">Growth</h3>
+              <p className="text-2xl font-extrabold text-[var(--text)] mt-3">$29 <span className="text-xs font-normal text-[var(--text-muted)]">/mo (₹2,499)</span></p>
+              <ul className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
                 <li>• Up to 1,500 active members</li>
-                <li>• Multi-turnstile attendance hardware</li>
-                <li>• Trainer & class management</li>
-                <li>• Advanced churn prediction radar</li>
-                <li>• Automated GST invoicing</li>
+                <li>• Automated renewal engine</li>
+                <li>• Class & trainer scheduling</li>
+                <li>• GST invoicing & receipts</li>
               </ul>
             </div>
-            <Link href="/signup" className="mt-8 block text-center py-2.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-semibold hover:bg-[var(--primary-hover)] transition-colors">
-              Start 14-Day Free Trial
+            <Link href="/pricing" className="mt-6 block text-center py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors">
+              Claim 3 Months Free
             </Link>
           </div>
 
-          <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
+          {/* Pro */}
+          <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
             <div>
-              <h3 className="font-bold text-lg text-[var(--text)]">Enterprise</h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1">For multi-location gym chains & franchises</p>
-              <p className="text-3xl font-extrabold text-[var(--text)] mt-4">₹9,999<span className="text-xs font-normal text-[var(--text-muted)]">/month</span></p>
-              <ul className="mt-6 space-y-2.5 text-xs text-[var(--text-secondary)]">
-                <li>• Unlimited members & locations</li>
-                <li>• Multi-branch franchise dashboard</li>
-                <li>• Custom branded member mobile app</li>
-                <li>• Dedicated account engineer</li>
+              <span className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Serious businesses</span>
+              <h3 className="font-bold text-base text-[var(--text)]">Pro</h3>
+              <p className="text-2xl font-extrabold text-[var(--text)] mt-3">$49 <span className="text-xs font-normal text-[var(--text-muted)]">/mo (₹4,999)</span></p>
+              <ul className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
+                <li>• Unlimited active members</li>
+                <li>• Churn prediction radar</li>
+                <li>• Trainer commission system</li>
+                <li>• Dedicated onboarding</li>
               </ul>
             </div>
-            <Link href="/contact" className="mt-8 block text-center py-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-sm font-semibold hover:bg-[var(--surface-hover)] transition-colors">
+            <Link href="/pricing" className="mt-6 block text-center py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors">
+              View Plan
+            </Link>
+          </div>
+
+          {/* Business */}
+          <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex flex-col justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase text-[var(--text-muted)]">Multi-location</span>
+              <h3 className="font-bold text-base text-[var(--text)]">Business</h3>
+              <p className="text-2xl font-extrabold text-[var(--text)] mt-3">$99+ <span className="text-xs font-normal text-[var(--text-muted)]">/mo (₹9,999+)</span></p>
+              <ul className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
+                <li>• Multi-gym franchise view</li>
+                <li>• White-label member app</li>
+                <li>• Cross-branch attendance</li>
+                <li>• Custom 99.99% SLA</li>
+              </ul>
+            </div>
+            <Link href="/contact" className="mt-6 block text-center py-2 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs font-semibold hover:bg-[var(--surface-hover)] transition-colors">
               Contact Sales
             </Link>
           </div>
@@ -1183,7 +1215,7 @@ export default function HomePage() {
             {/* Responsive 16:9 Video Player */}
             <div className="relative aspect-video w-full bg-black">
               <iframe
-                src="https://www.youtube-nocookie.com/embed/5qap5aO4i9A?autoplay=1&rel=0&modestbranding=1"
+                src="https://www.youtube-nocookie.com/embed/0zgAjPJAfmE?autoplay=1&rel=0&modestbranding=1"
                 title="REPSI Platform Overview Video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen

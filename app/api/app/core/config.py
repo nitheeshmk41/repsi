@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # Database (PostgreSQL Neon from root .env with SQLite fallback for local test/dev)
     DATABASE_URL: str = "sqlite:///./repsi.db"
 
+    # Razorpay Payment Gateway
+    RAZORPAY_API_KEY: str = "rzp_live_Tbxiw0fP2o8Wg2"
+    RAZORPAY_SECRET: str = "6uEtjHVY25qBsZxnWlXUHeME"
+
     # CORS
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

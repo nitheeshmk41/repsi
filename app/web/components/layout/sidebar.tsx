@@ -29,6 +29,8 @@ import {
   MessageSquare,
   RefreshCw,
   BookOpen,
+  Target,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -51,35 +53,44 @@ interface NavGroupDef {
 
 const ownerNavGroups: NavGroupDef[] = [
   {
-    title: "Overview",
+    title: "OVERVIEW",
     items: [
       { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
-    title: "Management",
+    title: "GROWTH & MARKETING",
+    items: [
+      { label: "CRM & Leads", path: "/crm", icon: Target },
+      { label: "Website Builder", path: "/website", icon: Globe },
+    ],
+  },
+  {
+    title: "GYM MANAGEMENT",
     items: [
       { label: "Members", path: "/members", icon: Users },
       { label: "Memberships", path: "/memberships", icon: CreditCard },
-      { label: "Equipment & Machines", path: "/machines", icon: Wrench },
       { label: "Attendance", path: "/attendance", icon: CalendarCheck },
       { label: "Trainers", path: "/trainers", icon: Dumbbell },
       { label: "Classes", path: "/classes", icon: Calendar },
       { label: "Workouts", path: "/workouts", icon: Dumbbell },
+      { label: "Equipment", path: "/machines", icon: Wrench },
     ],
   },
   {
-    title: "Finance",
-    items: [
-      { label: "Payments", path: "/payments", icon: Banknote },
-      { label: "Expenses", path: "/expenses", icon: Receipt },
-    ],
-  },
-  {
-    title: "Insights",
+    title: "BUSINESS",
     items: [
       { label: "Reports", path: "/reports", icon: BarChart3 },
-      { label: "Analytics", path: "/analytics", icon: TrendingUp },
+      { label: "Notifications", path: "/notifications", icon: Bell },
+      { label: "Activity", path: "/activity", icon: Activity },
+    ],
+  },
+  {
+    title: "SETTINGS",
+    items: [
+      { label: "Gym Settings", path: "/settings", icon: Settings },
+      { label: "Subscription & Billing", path: "/settings/billing", icon: CreditCard },
+      { label: "Team & Roles", path: "/settings/team", icon: Users },
     ],
   },
 ];
@@ -295,6 +306,8 @@ export function Sidebar() {
         { label: "Notifications", path: "/notifications", icon: Bell },
         { label: "My Profile", path: "/member/profile", icon: Settings },
       ]
+    : role === "OWNER"
+    ? []
     : [
         { label: "Notifications", path: "/notifications", icon: Bell },
         { label: "Activity", path: "/activity", icon: Activity },
@@ -350,25 +363,27 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Separator */}
-        <div className="mx-3 my-1 h-px bg-[var(--border)]" />
-
         {/* Secondary Navigation */}
-        <div className="py-2 px-3 space-y-0.5">
-          {secondaryNav.map((item) => {
-            const href = item.path.startsWith("/superadmin") ? item.path : `/${workspace}${item.path}`;
-            const isActive = pathname.startsWith(href);
-            return (
-              <NavLink
-                key={item.path}
-                item={item}
-                collapsed={collapsed}
-                isActive={isActive}
-                href={href}
-              />
-            );
-          })}
-        </div>
+        {secondaryNav.length > 0 && (
+          <>
+            <div className="mx-3 my-1 h-px bg-[var(--border)]" />
+            <div className="py-2 px-3 space-y-0.5">
+              {secondaryNav.map((item) => {
+                const href = item.path.startsWith("/superadmin") ? item.path : `/${workspace}${item.path}`;
+                const isActive = pathname.startsWith(href);
+                return (
+                  <NavLink
+                    key={item.path}
+                    item={item}
+                    collapsed={collapsed}
+                    isActive={isActive}
+                    href={href}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Collapse Toggle */}
         <button

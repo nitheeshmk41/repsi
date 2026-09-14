@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MembersClient } from "@/features/members/members-client";
-import { members } from "@/lib/mock-data";
 import { slugToGymName } from "@/lib/workspace";
 
 export const metadata: Metadata = {
@@ -27,7 +26,7 @@ export default async function WorkspaceMembersPage({
       </div>
 
       {/* Members Table + Controls */}
-      <MembersClient initialMembers={members} />
+      <MembersClient initialMembers={[]} />
     </div>
   );
 }

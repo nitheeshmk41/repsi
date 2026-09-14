@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState , use } from "react";
 import { RefreshCw, CheckCircle2, ShieldCheck, Activity, Smartphone } from "lucide-react";
 
-export default function FitnessIntegrationsPage({ params }: { params: { workspace: string } }) {
+export default function FitnessIntegrationsPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const [stravaConnected, setStravaConnected] = useState(true);
   const [googleFitConnected, setGoogleFitConnected] = useState(true);
   const [syncing, setSyncing] = useState(false);

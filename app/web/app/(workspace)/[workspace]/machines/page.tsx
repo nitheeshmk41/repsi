@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use, useEffect } from "react";
+import { repsiApi } from "@/lib/api";
 import { 
   Dumbbell, 
   Plus, 
@@ -28,67 +29,11 @@ export interface GymMachine {
   lastServiced: string;
 }
 
-const initialMachines: GymMachine[] = [
-  {
-    id: "mac-001",
-    name: "Olympic Flat Bench Press",
-    category: "Free Weights",
-    brand: "Jerai Fitness",
-    model: "Club Line 2025",
-    muscleGroup: "Chest, Triceps, Anterior Deltoids",
-    status: "Available",
-    instructions: "Lie flat, unrack barbell with shoulder-width grip, lower to mid-chest, press upwards explosively.",
-    lastServiced: "10 Aug 2026",
-  },
-  {
-    id: "mac-002",
-    name: "Commercial Treadmill X9",
-    category: "Cardio",
-    brand: "Life Fitness",
-    model: "Elevation Series",
-    muscleGroup: "Cardiovascular, Quads, Calves",
-    status: "In Use",
-    instructions: "Attach safety stop key, select quick start or workout interval, adjust incline up to 15%.",
-    lastServiced: "01 Sep 2026",
-  },
-  {
-    id: "mac-003",
-    name: "Dual Stack Cable Crossover",
-    category: "Cables",
-    brand: "Hammer Strength",
-    model: "Select Series",
-    muscleGroup: "Chest, Back, Arms, Core",
-    status: "Available",
-    instructions: "Adjust pin height, attach desired handle grip, maintain steady core alignment through movement.",
-    lastServiced: "15 Jul 2026",
-  },
-  {
-    id: "mac-004",
-    name: "Leg Press 45-Degree Plate Loaded",
-    category: "Strength",
-    brand: "Jerai Fitness",
-    model: "Monster Series",
-    muscleGroup: "Quadriceps, Glutes, Hamstrings",
-    status: "Maintenance",
-    instructions: "Place feet hip-width on footplate, disengage safety latch, control weight eccentrically.",
-    lastServiced: "12 Sep 2026",
-  },
-  {
-    id: "mac-005",
-    name: "Assault AirBike Pro",
-    category: "Cardio",
-    brand: "Assault Fitness",
-    model: "Elite Pro 2026",
-    muscleGroup: "Full Body HITT",
-    status: "Out of Service",
-    instructions: "Pedal and push/pull handles simultaneously. Resistance scales automatically with output.",
-    lastServiced: "05 Jun 2026",
-  },
-];
-
-export default function MachinesManagementPage({ params }: { params: { workspace: string } }) {
+export default function MachinesManagementPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
-  const [machines, setMachines] = useState<GymMachine[]>(initialMachines);
+  const [machines, setMachines] = useState<GymMachine[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -102,41 +47,71 @@ export default function MachinesManagementPage({ params }: { params: { workspace
   const [newMuscle, setNewMuscle] = useState("Chest, Shoulders");
   const [newInstructions, setNewInstructions] = useState("Keep form strict, control eccentric phase.");
 
-  const handleAddMachine = (e: React.FormEvent) => {
+  const fetchMachines = async () => {
+    setLoading(true);
+    const data = await repsiApi.getMachines();
+    const mapped: GymMachine[] = data.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      category: m.category || "Strength",
+      brand: m.brand || "Generic",
+      model: m.model || "Standard",
+      muscleGroup: m.muscle_group || "Full Body",
+      status: m.status || "Available",
+      instructions: m.instructions || "",
+      lastServiced: m.last_serviced || "N/A",
+    }));
+    setMachines(mapped);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMachines();
+  }, []);
+
+  const handleAddMachine = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName) return;
-    const newMac: GymMachine = {
-      id: `mac-${Date.now()}`,
-      name: newName,
-      category: newCategory,
-      brand: newBrand,
-      model: newModel,
-      muscleGroup: newMuscle,
-      status: "Available",
-      instructions: newInstructions,
-      lastServiced: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-    };
-    setMachines([newMac, ...machines]);
-    setShowAddModal(false);
-    setNewName("");
+    try {
+      await repsiApi.createMachine({
+        name: newName,
+        category: newCategory,
+        brand: newBrand,
+        model: newModel,
+        muscle_group: newMuscle,
+        status: "Available",
+        instructions: newInstructions,
+      });
+      setShowAddModal(false);
+      setNewName("");
+      fetchMachines();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const toggleStatus = (id: string) => {
+  const toggleStatus = async (id: string) => {
+    const target = machines.find(m => m.id === id);
+    if (!target) return;
     const statuses: GymMachine["status"][] = ["Available", "In Use", "Maintenance", "Out of Service"];
-    setMachines(
-      machines.map((m) => {
-        if (m.id === id) {
-          const nextIdx = (statuses.indexOf(m.status) + 1) % statuses.length;
-          return { ...m, status: statuses[nextIdx] };
-        }
-        return m;
-      })
-    );
+    const nextIdx = (statuses.indexOf(target.status) + 1) % statuses.length;
+    const nextStatus = statuses[nextIdx];
+    try {
+      await repsiApi.updateMachine(id, { status: nextStatus });
+      setMachines(machines.map(m => m.id === id ? { ...m, status: nextStatus } : m));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteMachine = (id: string) => {
-    setMachines(machines.filter((m) => m.id !== id));
-    if (selectedMachine?.id === id) setSelectedMachine(null);
+  const deleteMachine = async (id: string) => {
+    try {
+      await repsiApi.deleteMachine(id);
+      setMachines(machines.filter((m) => m.id !== id));
+      if (selectedMachine?.id === id) setSelectedMachine(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const filtered = machines.filter((m) => {
@@ -297,6 +272,25 @@ export default function MachinesManagementPage({ params }: { params: { workspace
           </div>
         ))}
       </div>
+
+      {filtered.length === 0 && !loading && (
+        <div className="rounded-[16px] border border-dashed border-[var(--border)] p-12 text-center space-y-3 bg-[var(--surface)]/50">
+          <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mx-auto flex items-center justify-center">
+            <Dumbbell className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-bold text-[var(--text)]">No equipment logged yet</h3>
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
+            Get started by adding gym machines, dumbbells, and cardio equipment to track maintenance logs and instructions for your workspace.
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:bg-[var(--primary-hover)] transition-all shadow-sm cursor-pointer mt-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add First Machine</span>
+          </button>
+        </div>
+      )}
 
       {/* Add Machine Modal */}
       {showAddModal && (

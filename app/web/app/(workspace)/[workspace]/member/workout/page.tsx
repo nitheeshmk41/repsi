@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { 
   Dumbbell, 
   Play, 
@@ -30,7 +30,8 @@ interface ExerciseTracker {
   sets: SetItem[];
 }
 
-export default function MemberWorkoutSessionPage({ params }: { params: { workspace: string } }) {
+export default function MemberWorkoutSessionPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
 
   // Workout Session State

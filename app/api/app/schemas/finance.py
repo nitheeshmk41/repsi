@@ -54,3 +54,18 @@ class FinancialMetrics(BaseModel):
     monthly_expenses: float
     net_profit: float
     pending_dues: float
+
+
+class InvoiceResponse(BaseModel):
+    id: str
+    workspace_id: str
+    invoice_number: str
+    member_id: str
+    subtotal: float
+    tax_amount: float
+    total_amount: float
+    status: str
+    due_date: date
+    notes: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

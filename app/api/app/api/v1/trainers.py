@@ -38,30 +38,7 @@ def get_trainers(
 ):
     repo = BaseTenantRepository[Trainer](Trainer, db, tenant.workspace_id)
     trainers = repo.get_multi()
-    if not trainers:
-        return [
-            TrainerResponse(
-                id="tr-001",
-                workspace_id=tenant.workspace_id,
-                name="Vikram Rathore",
-                phone="+91 98451 22334",
-                email="vikram@apexfitness.in",
-                specialization="Strength & Hypertrophy",
-                hourly_rate=1200.0,
-                is_active=True
-            ),
-            TrainerResponse(
-                id="tr-002",
-                workspace_id=tenant.workspace_id,
-                name="Ananya Sen",
-                phone="+91 98452 33445",
-                email="ananya@apexfitness.in",
-                specialization="CrossFit & HIIT",
-                hourly_rate=1000.0,
-                is_active=True
-            ),
-        ]
-    return trainers
+    return trainers or []
 
 
 @router.post("/", response_model=TrainerResponse, status_code=status.HTTP_201_CREATED)

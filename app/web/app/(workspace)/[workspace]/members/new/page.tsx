@@ -27,10 +27,12 @@ export default function NewMemberPage() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       await repsiApi.createMember({
         name: form.name,
@@ -42,8 +44,9 @@ export default function NewMemberPage() {
       setTimeout(() => {
         router.push(`/${workspace}/members`);
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || "Failed to create member");
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,26 @@ export default function NewMemberPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-rose-300">{error}</p>
+                {error.toLowerCase().includes("token") || error.toLowerCase().includes("auth") || error.toLowerCase().includes("expired") ? (
+                  <p className="text-xs text-rose-300/80 mt-1">
+                    Your session has expired or authentication token is invalid. Please sign in again.
+                  </p>
+                ) : null}
+              </div>
+              {error.toLowerCase().includes("token") || error.toLowerCase().includes("auth") || error.toLowerCase().includes("expired") ? (
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium whitespace-nowrap transition"
+                >
+                  Sign in again
+                </Link>
+              ) : null}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5 sm:col-span-2">

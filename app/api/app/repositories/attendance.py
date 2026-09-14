@@ -31,3 +31,14 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
             )
             .count()
         )
+
+    def get_multi_by_member(self, member_id: str) -> list[Attendance]:
+        return (
+            self.db.query(Attendance)
+            .filter(
+                Attendance.workspace_id == self.workspace_id,
+                Attendance.member_id == member_id
+            )
+            .order_by(Attendance.check_in_time.desc())
+            .all()
+        )

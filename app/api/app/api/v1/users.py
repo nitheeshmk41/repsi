@@ -16,28 +16,24 @@ def get_workspace_users(
 ):
     members = (
         db.query(WorkspaceMember)
-        .filter(WorkspaceMember.workspace_id == tenant.workspace_id)
+        .filter(WorkspaceMember.workspace_id == tenant.workspace_id, WorkspaceMember.is_active == True)
         .all()
     )
-    user_ids = [m.user_id for m in members]
-    users = db.query(User).filter(User.id.in_(user_ids)).all()
-    if not users:
-        return [
-            UserResponse(
-                id="usr-001",
-                email="owner@apexfitness.in",
-                full_name="Rajesh Kumar",
-                phone="+91 98450 11223",
-                is_superadmin=False,
-                is_active=True
-            ),
-            UserResponse(
-                id="usr-002",
-                email="trainer@apexfitness.in",
-                full_name="Vikram Rathore",
-                phone="+91 98451 22334",
-                is_superadmin=False,
-                is_active=True
-            ),
-        ]
-    return users
+    if not members:
+        return []
+
+    member_role_map = {m.user_id: m.role.value for m in members}
+    users = db.query(User).filter(User.id.in_(list(member_role_map.keys()))).all()
+    return [
+        UserResponse(
+            id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            phone=u.phone,
+            is_superadmin=u.is_superadmin,
+            is_active=u.is_active,
+            role="SUPER_ADMIN" if u.is_superadmin else member_role_map.get(u.id, "STAFF"),
+            workspace_id=tenant.workspace_id,
+        )
+        for u in users
+    ]

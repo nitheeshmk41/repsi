@@ -40,30 +40,7 @@ def get_classes(
 ):
     repo = BaseTenantRepository[GymClass](GymClass, db, tenant.workspace_id)
     classes = repo.get_multi()
-    if not classes:
-        return [
-            ClassResponse(
-                id="cls-001",
-                workspace_id=tenant.workspace_id,
-                name="Morning Power Yoga",
-                schedule="Mon/Wed/Fri 06:30 AM",
-                category="Mobility & Core",
-                capacity=25,
-                room="Studio 1",
-                is_active=True
-            ),
-            ClassResponse(
-                id="cls-002",
-                workspace_id=tenant.workspace_id,
-                name="CrossFit WOD & Metabolic Conditioning",
-                schedule="Tue/Thu/Sat 07:00 PM",
-                category="HIIT & Strength",
-                capacity=18,
-                room="CrossFit Zone",
-                is_active=True
-            ),
-        ]
-    return classes
+    return classes or []
 
 
 @router.post("/", response_model=ClassResponse, status_code=status.HTTP_201_CREATED)

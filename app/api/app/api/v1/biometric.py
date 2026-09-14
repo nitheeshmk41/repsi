@@ -30,11 +30,17 @@ def ingest_biometric_hardware_event(
     Receives check-in requests directly from IoT hardware (turnstiles, fingerprint scanners, facial recognition).
     Validates membership status and logs attendance automatically.
     """
-    # 1. Hardware device verification
+    # 1. Hardware device verification & authentication
     if not payload.device_id or not payload.workspace_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid hardware payload. Device ID and Workspace ID required.",
+        )
+
+    if not x_device_token or len(x_device_token.strip()) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized hardware device. Valid X-Device-Token header required.",
         )
 
     # 2. Member lookup

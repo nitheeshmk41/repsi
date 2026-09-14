@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { Play, Pause, Square, Flame, Navigation, Award, Zap, CheckCircle2, TrendingUp } from "lucide-react";
 
-export default function RunningTrackerPage({ params }: { params: { workspace: string } }) {
+export default function RunningTrackerPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const [runningActive, setRunningActive] = useState(false);
   const [runningPaused, setRunningPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);

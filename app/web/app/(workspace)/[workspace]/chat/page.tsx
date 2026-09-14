@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , use } from "react";
 import { Send, Dumbbell, User, CheckCheck, Paperclip, MessageSquare } from "lucide-react";
 import { getAuthUser } from "@/lib/auth";
 
@@ -13,7 +13,8 @@ interface ChatMessage {
   isWorkoutShare?: boolean;
 }
 
-export default function MemberTrainerChatPage({ params }: { params: { workspace: string } }) {
+export default function MemberTrainerChatPage(props: { params: Promise<{ workspace: string }> }) {
+  const params = use(props.params);
   const workspace = params.workspace || "apex-fitness";
   const [user, setUser] = useState<any>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([

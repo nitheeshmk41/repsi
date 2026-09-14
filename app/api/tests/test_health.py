@@ -20,7 +20,20 @@ def test_health():
 
 def test_dashboard_metrics():
     with TestClient(app) as client:
-        response = client.get("/api/v1/dashboard/metrics")
+        # Register a gym to get a valid token
+        reg_payload = {
+            "full_name": "Metrics Owner",
+            "email": "metrics_owner@repsi.app",
+            "password": "SecretPassword123!",
+            "gym_name": "Metrics Gym",
+            "gym_phone": "+91 99999 11111",
+            "gym_city": "Chennai"
+        }
+        resp = client.post("/api/v1/auth/register", json=reg_payload)
+        token = resp.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = client.get("/api/v1/dashboard/metrics", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert "active_members" in data

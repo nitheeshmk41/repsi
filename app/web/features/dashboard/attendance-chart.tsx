@@ -10,7 +10,6 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { attendanceData } from "@/lib/mock-data";
 
 function CustomTooltip({
   active,
@@ -36,7 +35,19 @@ function CustomTooltip({
   );
 }
 
-export function AttendanceChart() {
+export function AttendanceChart({ data }: { data?: Array<{ label: string; value: number }> }) {
+  const chartData = data || [
+    { label: "Mon", value: 0 },
+    { label: "Tue", value: 0 },
+    { label: "Wed", value: 0 },
+    { label: "Thu", value: 0 },
+    { label: "Fri", value: 0 },
+    { label: "Sat", value: 0 },
+    { label: "Sun", value: 0 },
+  ];
+
+  const totalThisWeek = chartData.reduce((acc, curr) => acc + curr.value, 0);
+
   return (
     <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
       {/* Header */}
@@ -49,7 +60,7 @@ export function AttendanceChart() {
         </div>
         <div className="text-right">
           <div className="text-xl font-bold text-[var(--text)] tabular-nums">
-            1,243
+            {totalThisWeek}
           </div>
           <div className="text-xs text-[var(--text-muted)]">Total this week</div>
         </div>
@@ -58,7 +69,7 @@ export function AttendanceChart() {
       {/* Chart */}
       <ResponsiveContainer width="100%" height={180}>
         <BarChart
-          data={attendanceData}
+          data={chartData}
           margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
           barSize={28}
         >
@@ -68,7 +79,7 @@ export function AttendanceChart() {
             vertical={false}
           />
           <XAxis
-            dataKey="day"
+            dataKey="label"
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             axisLine={false}
             tickLine={false}
@@ -81,11 +92,11 @@ export function AttendanceChart() {
             width={32}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--border)", radius: 4 }} />
-          <Bar dataKey="checkins" radius={[4, 4, 0, 0]}>
-            {attendanceData.map((entry, index) => (
+          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={index === 6 ? "#84CC16" : "var(--border-strong)"}
+                fill={index === chartData.length - 1 ? "#84CC16" : "var(--border-strong)"}
               />
             ))}
           </Bar>

@@ -35,26 +35,7 @@ def get_workouts(
 ):
     repo = BaseTenantRepository[Workout](Workout, db, tenant.workspace_id)
     items = repo.get_multi()
-    if not items:
-        return [
-            WorkoutResponse(
-                id="wko-001",
-                workspace_id=tenant.workspace_id,
-                title="Push Day (Hypertrophy)",
-                difficulty="Intermediate",
-                target_muscle_groups="Chest, Deltoids, Triceps",
-                description="Bench press, overhead dumbbell press, cable flyes, dips."
-            ),
-            WorkoutResponse(
-                id="wko-002",
-                workspace_id=tenant.workspace_id,
-                title="Pull Day (Strength Focus)",
-                difficulty="Advanced",
-                target_muscle_groups="Lats, Rhomboids, Biceps",
-                description="Deadlifts, pull-ups, barbell rows, face pulls."
-            ),
-        ]
-    return items
+    return items or []
 
 
 @router.post("/", response_model=WorkoutResponse, status_code=status.HTTP_201_CREATED)
