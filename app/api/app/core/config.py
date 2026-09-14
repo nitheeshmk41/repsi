@@ -40,6 +40,7 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         "https://repsi.app",
         "https://www.repsi.app",
+        "https://repsi.vercel.app",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")

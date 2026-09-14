@@ -83,17 +83,10 @@ def get_current_user_profile(
     tenant: TenantContext = Depends(get_current_tenant), db: Session = Depends(get_db)
 ):
     if not tenant.user_id:
-        # Provide demo user fallback in dev
-        user = db.query(User).first()
-        if not user:
-            return UserResponse(
-                id="usr-demo-001",
-                email="owner@apexfitness.in",
-                full_name="Rajesh Kumar",
-                is_superadmin=False,
-                is_active=True,
-            )
-        return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
 
     user = db.query(User).filter(User.id == tenant.user_id).first()
     if not user:
