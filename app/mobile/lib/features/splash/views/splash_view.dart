@@ -15,26 +15,63 @@ class SplashView extends ConsumerStatefulWidget {
 
 class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
-  late Animation<double> _fadeAnim;
-  late Animation<double> _scaleAnim;
+  late Animation<double> _logoScaleAnim;
+  late Animation<double> _logoGlowAnim;
+  late Animation<Offset> _titleSlideAnim;
+  late Animation<double> _titleFadeAnim;
+  late Animation<double> _taglineFadeAnim;
+  late Animation<double> _loadingFadeAnim;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 850),
     );
 
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeIn,
-    );
-
-    _scaleAnim = Tween<double>(begin: 0.85, end: 1.0).animate(
+    _logoScaleAnim = Tween<double>(begin: 0.92, end: 1.0).animate(
       CurvedAnimation(
         parent: _animController,
-        curve: Curves.easeOutBack,
+        curve: const Interval(0.0, 0.65, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _logoGlowAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _titleSlideAnim = Tween<Offset>(
+      begin: const Offset(0.0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _titleFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.2, 0.75, curve: Curves.easeOut),
+      ),
+    );
+
+    _taglineFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    _loadingFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: const Interval(0.65, 1.0, curve: Curves.easeIn),
       ),
     );
 
@@ -43,7 +80,7 @@ class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProvid
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(milliseconds: 1600));
+    await Future.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
 
     final authState = ref.read(authProvider);
@@ -66,59 +103,49 @@ class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProvid
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: ScaleTransition(
-            scale: _scaleAnim,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'R',
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -1,
-                    ),
-                  ),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              Image.asset(
+                'assets/logos/repsi_logo.png',
+                width: 88,
+                height: 88,
+              ),
+              const SizedBox(height: 24),
+              // App Title
+              Text(
+                'REPSI',
+                style: AppTypography.headingLarge.copyWith(
+                  fontSize: 28,
+                  letterSpacing: 3.0,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'REPSI',
-                  style: AppTypography.headingLarge.copyWith(
-                    letterSpacing: 3.0,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your gym. Your progress.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                  fontSize: 14,
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Gym Management OS',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                    letterSpacing: 1.2,
-                  ),
+              ),
+              const SizedBox(height: 48),
+              // Simple circular loading indicator
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

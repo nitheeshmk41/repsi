@@ -133,14 +133,14 @@ class RepsiButton extends StatelessWidget {
       width: isFullWidth ? double.infinity : null,
       child: Material(
         color: isDisabled ? (variant == RepsiButtonVariant.outline || variant == RepsiButtonVariant.ghost ? Colors.transparent : (isDark ? AppColors.darkSurface : AppColors.borderLight)) : bgColor,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
         child: InkWell(
           onTap: isDisabled ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
               border: borderSide != BorderSide.none ? Border.fromBorderSide(borderSide) : null,
             ),
             alignment: Alignment.center,

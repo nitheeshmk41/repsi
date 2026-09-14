@@ -3,6 +3,7 @@ from app.middleware.tenant import TenantContext, get_current_tenant
 from app.models.user import User, WorkspaceMember
 from app.schemas.auth import (
     LoginRequest,
+    GoogleLoginRequest,
     MemberRegisterRequest,
     PasswordResetRequest,
     RegisterOtpRequest,
@@ -52,6 +53,28 @@ def verify_registration_otp(
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     auth_service = AuthService(db)
     user, workspace, token = auth_service.authenticate(req)
+    membership_query = db.query(WorkspaceMember).filter(
+        WorkspaceMember.user_id == user.id,
+        WorkspaceMember.is_active == True,
+    )
+    if workspace:
+        membership_query = membership_query.filter(
+            WorkspaceMember.workspace_id == workspace.id
+        )
+    membership = membership_query.first()
+    return Token(
+        access_token=token,
+        workspace_id=workspace.id if workspace else None,
+        role=membership.role.value
+        if membership
+        else ("SUPER_ADMIN" if user.is_superadmin else "STAFF"),
+    )
+
+
+@router.post("/google", response_model=Token)
+def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
+    auth_service = AuthService(db)
+    user, workspace, token = auth_service.google_authenticate(req)
     membership_query = db.query(WorkspaceMember).filter(
         WorkspaceMember.user_id == user.id,
         WorkspaceMember.is_active == True,

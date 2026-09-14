@@ -26,7 +26,7 @@ class ApiError implements Exception {
 
     if (error.type == DioExceptionType.connectionError) {
       return ApiError(
-        message: 'Unable to connect to server. Please verify your connection.',
+        message: 'Unable to connect to REPSI. Check your internet connection or server status.',
         statusCode: 0,
         code: 'CONNECTION_ERROR',
       );
@@ -59,22 +59,26 @@ class ApiError implements Exception {
 
     switch (response?.statusCode) {
       case 400:
-        return ApiError(message: 'Invalid request data.', statusCode: 400);
+        return ApiError(message: 'Invalid request parameters.', statusCode: 400);
       case 401:
-        return ApiError(message: 'Session expired. Please log in again.', statusCode: 401);
+        return ApiError(message: 'Invalid email or password.', statusCode: 401);
       case 403:
-        return ApiError(message: 'You do not have permission for this action.', statusCode: 403);
+        return ApiError(message: "You don't have permission to access this gym.", statusCode: 403);
       case 404:
-        return ApiError(message: 'Requested resource not found.', statusCode: 404);
+        return ApiError(message: 'Account or gym not found.', statusCode: 404);
+      case 408:
+        return ApiError(message: 'Request timed out. Please try again.', statusCode: 408);
       case 409:
-        return ApiError(message: 'Conflict with existing data.', statusCode: 409);
+        return ApiError(message: 'Account with these details already exists.', statusCode: 409);
       case 422:
-        return ApiError(message: 'Validation failed. Please verify input fields.', statusCode: 422);
+        return ApiError(message: 'Please check your inputs and try again.', statusCode: 422);
+      case 429:
+        return ApiError(message: 'Too many attempts. Please try again later.', statusCode: 429);
       case 500:
-        return ApiError(message: 'Internal server error. Please try again later.', statusCode: 500);
+        return ApiError(message: 'REPSI is temporarily unavailable.', statusCode: 500);
       default:
         return ApiError(
-          message: 'An unexpected error occurred. Please try again.',
+          message: 'Unable to process request. Please try again.',
           statusCode: response?.statusCode,
         );
     }

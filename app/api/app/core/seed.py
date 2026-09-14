@@ -81,6 +81,90 @@ def seed_database(db: Session = None):
                 is_active=True,
             ))
 
+        # Seed test owner
+        user_owner = db.query(User).filter(User.email == "owner@repsi.app").first()
+        if not user_owner:
+            user_owner = User(
+                id="usr_owner_001",
+                email="owner@repsi.app",
+                full_name="Test Owner",
+                hashed_password=get_password_hash("12345678"),
+                phone="+91 99999 77777",
+                is_superadmin=False,
+                is_active=True,
+            )
+            db.add(user_owner)
+            db.flush()
+            db.add(WorkspaceMember(
+                workspace_id=workspace.id,
+                user_id=user_owner.id,
+                role=UserRole.OWNER,
+                is_active=True,
+            ))
+
+        # Seed test trainer
+        user_trainer = db.query(User).filter(User.email == "trainer@repsi.app").first()
+        if not user_trainer:
+            user_trainer = User(
+                id="usr_trainer_001",
+                email="trainer@repsi.app",
+                full_name="Test Trainer",
+                hashed_password=get_password_hash("12345678"),
+                phone="+91 99999 66666",
+                is_superadmin=False,
+                is_active=True,
+            )
+            db.add(user_trainer)
+            db.flush()
+            db.add(WorkspaceMember(
+                workspace_id=workspace.id,
+                user_id=user_trainer.id,
+                role=UserRole.TRAINER,
+                is_active=True,
+            ))
+
+        # Seed test user
+        user_user = db.query(User).filter(User.email == "user@repsi.app").first()
+        if not user_user:
+            user_user = User(
+                id="usr_user_001",
+                email="user@repsi.app",
+                full_name="Test User",
+                hashed_password=get_password_hash("12345678"),
+                phone="+91 99999 55555",
+                is_superadmin=False,
+                is_active=True,
+            )
+            db.add(user_user)
+            db.flush()
+            db.add(WorkspaceMember(
+                workspace_id=workspace.id,
+                user_id=user_user.id,
+                role=UserRole.STAFF,
+                is_active=True,
+            ))
+
+        # Seed original test user (test@repsi.app)
+        user_test = db.query(User).filter(User.email == "test@repsi.app").first()
+        if not user_test:
+            user_test = User(
+                id="usr_test_001",
+                email="test@repsi.app",
+                full_name="Test Account",
+                hashed_password=get_password_hash("12345678"),
+                phone="+91 99999 44444",
+                is_superadmin=False,
+                is_active=True,
+            )
+            db.add(user_test)
+            db.flush()
+            db.add(WorkspaceMember(
+                workspace_id=workspace.id,
+                user_id=user_test.id,
+                role=UserRole.OWNER,
+                is_active=True,
+            ))
+
         # Seed Membership Plans
         plans_data = [
             {"id": "plan_monthly", "name": "Monthly", "duration": 1, "price": 1000.0},

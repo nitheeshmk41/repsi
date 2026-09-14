@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/attendance/views/attendance_view.dart';
@@ -8,8 +9,10 @@ import '../../features/auth/views/signup_view.dart';
 import '../../features/dashboard/views/dashboard_view.dart';
 import '../../features/members/views/members_list_view.dart';
 import '../../features/more/views/more_view.dart';
+import '../../features/member/presentation/views/member_shell_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/role/views/role_dashboard_view.dart';
+import '../../features/shell/views/app_shell_view.dart';
 import '../../features/splash/views/splash_view.dart';
 import 'route_names.dart';
 import '../../shared/models/user_model.dart';
@@ -50,14 +53,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.forgotPassword, builder: (_, __) => const ForgotPasswordView()),
       GoRoute(path: RouteNames.onboarding, builder: (_, __) => const OnboardingView()),
       GoRoute(path: RouteNames.trainerDashboard, builder: (_, __) => const RoleDashboardView(role: UserRole.trainer)),
-      GoRoute(path: RouteNames.userDashboard, builder: (_, __) => const RoleDashboardView(role: UserRole.user)),
-      ShellRoute(
-        builder: (_, __, child) => child,
-        routes: [
-          GoRoute(path: RouteNames.dashboard, builder: (_, __) => const DashboardView()),
-          GoRoute(path: RouteNames.members, builder: (_, __) => const MembersListView()),
-          GoRoute(path: RouteNames.attendance, builder: (_, __) => const AttendanceView()),
-          GoRoute(path: RouteNames.more, builder: (_, __) => const MoreView()),
+      GoRoute(path: RouteNames.userDashboard, builder: (_, __) => const MemberShellView()),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => AppShellView(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [GoRoute(path: RouteNames.dashboard, builder: (_, __) => const DashboardView())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: RouteNames.members, builder: (_, __) => const MembersListView())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: RouteNames.attendance, builder: (_, __) => const AttendanceView())],
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: RouteNames.payments, builder: (_, __) => const Scaffold(body: Center(child: Text('Payments'))))], // Temporary placeholder
+          ),
+          StatefulShellBranch(
+            routes: [GoRoute(path: RouteNames.more, builder: (_, __) => const MoreView())],
+          ),
         ],
       ),
     ],

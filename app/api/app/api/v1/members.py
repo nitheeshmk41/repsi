@@ -2,8 +2,11 @@ from typing import Optional
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.core.database import get_db
+from app.core.security import get_password_hash
 from app.models.member import Member, MemberStatus
+from app.models.user import User, WorkspaceMember, UserRole
 from app.schemas.member import MemberCreate, MemberUpdate, MemberResponse, MemberListResponse
 from app.repositories.member import MemberRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
@@ -61,6 +64,32 @@ def create_member(
         trainer_id=data.trainer_id,
         notes=data.notes
     )
+
+    # Check if a User already exists with this email or phone
+    clean_email = data.email.strip().lower()
+    clean_phone = data.phone.strip()
+    existing_user = db.query(User).filter(
+        (func.lower(User.email) == clean_email) | (User.phone == clean_phone)
+    ).first()
+
+    if not existing_user:
+        user = User(
+            email=clean_email,
+            full_name=f"{data.first_name} {data.last_name}".strip(),
+            hashed_password=get_password_hash(clean_phone or "Password123!"),
+            phone=clean_phone,
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+        db.add(WorkspaceMember(
+            workspace_id=tenant.workspace_id,
+            user_id=user.id,
+            role=UserRole.USER,
+            is_active=True
+        ))
+        db.commit()
+
     return member
 
 

@@ -13,9 +13,9 @@ class AppColors {
   static const Color lightBackground = Color(0xFFF7F9F5);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceElevated = Color(0xFFFFFFFF);
-  static const Color lightText = Color(0xFF172033);
-  static const Color lightTextSecondary = Color(0xFF475569);
-  static const Color lightTextMuted = Color(0xFF64748B);
+  static const Color lightText = Color(0xFF111827);
+  static const Color lightTextSecondary = Color(0xFF64748B);
+  static const Color lightTextMuted = Color(0xFF94A3B8);
   static const Color lightBorder = Color(0xFFE2E8DF);
   static const Color lightBorderStrong = Color(0xFFCBD5C5);
 

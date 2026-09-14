@@ -23,10 +23,18 @@ import {
   ChevronRight,
   Building2,
   ChevronDown,
+  Wrench,
+  QrCode,
+  Navigation,
+  MessageSquare,
+  RefreshCw,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getWorkspaceFromPath, slugToGymName } from "@/lib/workspace";
+import { getAuthUser, AuthUser } from "@/lib/auth";
+import { useEffect } from "react";
 
 // ─── Navigation Structure ─────────────────────────────────────────────────────
 
@@ -41,7 +49,7 @@ interface NavGroupDef {
   items: NavItemDef[];
 }
 
-const navGroups: NavGroupDef[] = [
+const ownerNavGroups: NavGroupDef[] = [
   {
     title: "Overview",
     items: [
@@ -53,6 +61,7 @@ const navGroups: NavGroupDef[] = [
     items: [
       { label: "Members", path: "/members", icon: Users },
       { label: "Memberships", path: "/memberships", icon: CreditCard },
+      { label: "Equipment & Machines", path: "/machines", icon: Wrench },
       { label: "Attendance", path: "/attendance", icon: CalendarCheck },
       { label: "Trainers", path: "/trainers", icon: Dumbbell },
       { label: "Classes", path: "/classes", icon: Calendar },
@@ -75,10 +84,54 @@ const navGroups: NavGroupDef[] = [
   },
 ];
 
-const secondaryNav: NavItemDef[] = [
-  { label: "Notifications", path: "/notifications", icon: Bell },
-  { label: "Activity", path: "/activity", icon: Activity },
-  { label: "Settings", path: "/settings", icon: Settings },
+const trainerNavGroups: NavGroupDef[] = [
+  {
+    title: "Trainer Portal",
+    items: [
+      { label: "Dashboard", path: "/trainer/dashboard", icon: LayoutDashboard },
+      { label: "My Members", path: "/trainer/members", icon: Users },
+      { label: "Trainer Chat", path: "/chat", icon: MessageSquare },
+      { label: "Attendance", path: "/attendance", icon: CalendarCheck },
+      { label: "Workout Plans", path: "/trainer/workouts", icon: Dumbbell },
+      { label: "Equipment Status", path: "/machines", icon: Wrench },
+    ],
+  },
+];
+
+const memberNavGroups: NavGroupDef[] = [
+  {
+    title: "Fitness App",
+    items: [
+      { label: "My Dashboard", path: "/member/dashboard", icon: LayoutDashboard },
+      { label: "Active Workout Session", path: "/member/workout", icon: Dumbbell },
+      { label: "Exercise Library", path: "/member/exercises", icon: BookOpen },
+      { label: "Digital QR Pass", path: "/member/qr", icon: QrCode },
+      { label: "GPS Running Tracker", path: "/member/running", icon: Navigation },
+      { label: "Trainer Chat", path: "/chat", icon: MessageSquare },
+      { label: "Fitness Sync", path: "/member/integrations", icon: RefreshCw },
+    ],
+  },
+  {
+    title: "Membership & Dues",
+    items: [
+      { label: "My Membership", path: "/member/membership", icon: CreditCard },
+      { label: "My Attendance", path: "/member/attendance", icon: CalendarCheck },
+      { label: "My Payments", path: "/member/payments", icon: Banknote },
+    ],
+  },
+];
+
+const superAdminNavGroups: NavGroupDef[] = [
+  {
+    title: "Super Admin",
+    items: [
+      { label: "Platform Overview", path: "/superadmin/dashboard", icon: LayoutDashboard },
+      { label: "Gym Management", path: "/superadmin/gyms", icon: Building2 },
+      { label: "User Management", path: "/superadmin/users", icon: Users },
+      { label: "Subscriptions", path: "/superadmin/subscriptions", icon: CreditCard },
+      { label: "Audit Logs", path: "/superadmin/audit-logs", icon: Activity },
+    ],
+  },
 ];
 
 // ─── REPSI Logo ───────────────────────────────────────────────────────────────
@@ -210,7 +263,42 @@ function NavLink({
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const workspace = getWorkspaceFromPath(pathname);
+
+  useEffect(() => {
+    setUser(getAuthUser());
+  }, []);
+
+  const role = user?.role || "OWNER";
+  let activeNavGroups = ownerNavGroups;
+  if (role === "SUPER_ADMIN") {
+    activeNavGroups = superAdminNavGroups;
+  } else if (role === "TRAINER") {
+    activeNavGroups = trainerNavGroups;
+  } else if (role === "USER" || role === "STAFF") {
+    activeNavGroups = memberNavGroups;
+  }
+
+  const secondaryNav: NavItemDef[] = role === "SUPER_ADMIN"
+    ? [
+        { label: "Settings", path: "/superadmin/settings", icon: Settings },
+      ]
+    : role === "TRAINER"
+    ? [
+        { label: "Notifications", path: "/notifications", icon: Bell },
+        { label: "My Profile", path: "/trainer/profile", icon: Settings },
+      ]
+    : role === "USER" || role === "STAFF"
+    ? [
+        { label: "Notifications", path: "/notifications", icon: Bell },
+        { label: "My Profile", path: "/member/profile", icon: Settings },
+      ]
+    : [
+        { label: "Notifications", path: "/notifications", icon: Bell },
+        { label: "Activity", path: "/activity", icon: Activity },
+        { label: "Settings", path: "/settings", icon: Settings },
+      ];
 
   return (
     <TooltipProvider>
@@ -231,7 +319,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-0.5">
-          {navGroups.map((group) => (
+          {activeNavGroups.map((group) => (
             <div key={group.title} className="mb-4">
               {!collapsed && (
                 <div className="px-3 mb-1">
@@ -241,7 +329,7 @@ export function Sidebar() {
                 </div>
               )}
               {group.items.map((item) => {
-                const href = `/${workspace}${item.path}`;
+                const href = item.path.startsWith("/superadmin") ? item.path : `/${workspace}${item.path}`;
                 const isActive =
                   item.path === "/dashboard"
                     ? pathname === href || pathname === `/${workspace}`
@@ -267,7 +355,7 @@ export function Sidebar() {
         {/* Secondary Navigation */}
         <div className="py-2 px-3 space-y-0.5">
           {secondaryNav.map((item) => {
-            const href = `/${workspace}${item.path}`;
+            const href = item.path.startsWith("/superadmin") ? item.path : `/${workspace}${item.path}`;
             const isActive = pathname.startsWith(href);
             return (
               <NavLink

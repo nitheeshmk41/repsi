@@ -9,6 +9,7 @@ import '../../../app/theme/app_typography.dart';
 import '../../../shared/widgets/repsi_avatar.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/views/sign_out_dialog.dart';
 
 class MoreView extends ConsumerWidget {
   const MoreView({super.key});
@@ -21,182 +22,194 @@ class MoreView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
-            // User Header Card
-            RepsiCard(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              onTap: () => context.push(RouteNames.settings),
-              child: Row(
-                children: [
-                  RepsiAvatar(
-                    name: user?.fullName ?? 'Admin User',
-                    imageUrl: user?.avatarUrl,
-                    size: 50,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.fullName ?? 'Gym Administrator',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          user?.email ?? 'admin@gym.com',
-                          style: AppTypography.caption.copyWith(
-                            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                          ),
-                        ),
-                      ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            children: [
+              // User Header Card
+              RepsiCard(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                onTap: () => context.push(RouteNames.settings),
+                child: Row(
+                  children: [
+                    RepsiAvatar(
+                      name: user?.fullName ?? 'Admin User',
+                      imageUrl: user?.avatarUrl,
+                      size: 50,
                     ),
-                  ),
-                  Icon(
-                    LucideIcons.chevronRight,
-                    size: 18,
-                    color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                  ),
-                ],
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.fullName ?? 'Gym Administrator',
+                            style: AppTypography.labelLarge.copyWith(
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            user?.email ?? 'admin@gym.com',
+                            style: AppTypography.caption.copyWith(
+                              color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      LucideIcons.chevronRight,
+                      size: 18,
+                      color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Operations Group
-            _buildSectionHeader(context, 'OPERATIONS', isDark),
-            const SizedBox(height: AppSpacing.xs),
-            RepsiCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.badgePercent,
-                    label: 'Membership Plans',
-                    subtitle: 'Tiers, pricing, and duration rules',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.memberships),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.creditCard,
-                    label: 'Payments & Invoices',
-                    subtitle: 'Transactions and fee collection',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.payments),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.receipt,
-                    label: 'Expenses',
-                    subtitle: 'Rent, equipment, maintenance',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.expenses),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+  
+              // Gym Management Group
+              _buildSectionHeader(context, 'GYM MANAGEMENT', isDark),
+              const SizedBox(height: AppSpacing.xs),
+              RepsiCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.userCheck,
+                      label: 'Trainers',
+                      subtitle: 'Manage gym trainers',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.trainers),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.dumbbell,
+                      label: 'Machines & Equipment',
+                      subtitle: 'Inventory and maintenance',
+                      isDark: isDark,
+                      onTap: () {}, // To be implemented
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.calendar,
+                      label: 'Classes',
+                      subtitle: 'Group sessions scheduling',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.classes),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.list,
+                      label: 'Workouts',
+                      subtitle: 'Manage workout templates',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.workouts),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Coaching Group
-            _buildSectionHeader(context, 'COACHING & SESSIONS', isDark),
-            const SizedBox(height: AppSpacing.xs),
-            RepsiCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.userCheck,
-                    label: 'Trainers',
-                    subtitle: 'Roster, specializations, ratings',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.trainers),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.calendar,
-                    label: 'Classes & Bookings',
-                    subtitle: 'Group sessions, Yoga, HIIT, Zumba',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.classes),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.dumbbell,
-                    label: 'Workout Routines',
-                    subtitle: 'Workout templates and plans',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.workouts),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+  
+              // Business Group
+              _buildSectionHeader(context, 'BUSINESS', isDark),
+              const SizedBox(height: AppSpacing.xs),
+              RepsiCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.badgePercent,
+                      label: 'Membership Plans',
+                      subtitle: 'Tiers, pricing, and rules',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.memberships),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.barChart3,
+                      label: 'Reports',
+                      subtitle: 'Financial and attendance data',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.reports),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.bellRing,
+                      label: 'Notifications',
+                      subtitle: 'Push and email alerts',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.notifications),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Analytics & Settings
-            _buildSectionHeader(context, 'SYSTEM & ANALYTICS', isDark),
-            const SizedBox(height: AppSpacing.xs),
-            RepsiCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.barChart3,
-                    label: 'Reports',
-                    subtitle: 'Financial summaries and CSV exports',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.reports),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.trendingUp,
-                    label: 'Analytics',
-                    subtitle: 'Retention and attendance patterns',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.analytics),
-                  ),
-                  _buildDivider(isDark),
-                  _buildMenuItem(
-                    context: context,
-                    icon: LucideIcons.settings,
-                    label: 'Settings',
-                    subtitle: 'Theme, gym info, security',
-                    isDark: isDark,
-                    onTap: () => context.push(RouteNames.settings),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.lg),
+  
+              // Settings Group
+              _buildSectionHeader(context, 'SETTINGS', isDark),
+              const SizedBox(height: AppSpacing.xs),
+              RepsiCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.settings,
+                      label: 'Gym Settings',
+                      subtitle: 'Name, address, branding',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.settings),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.shield,
+                      label: 'Account Settings',
+                      subtitle: 'Security and billing',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.settings),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context: context,
+                      icon: LucideIcons.user,
+                      label: 'Profile',
+                      subtitle: 'Personal information',
+                      isDark: isDark,
+                      onTap: () => context.push(RouteNames.settings),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // Logout Button
-            ListTile(
-              leading: const Icon(LucideIcons.logOut, color: AppColors.error, size: 20),
-              title: const Text(
-                'Log Out',
-                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+              const SizedBox(height: AppSpacing.xl),
+  
+              // Logout Button
+              RepsiCard(
+                padding: EdgeInsets.zero,
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: const Icon(LucideIcons.logOut, color: AppColors.error, size: 20),
+                    title: const Text(
+                      'Sign Out',
+                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                    ),
+                    onTap: () => SignOutDialog.show(context),
+                  ),
+                ),
               ),
-              onTap: () async {
-                await ref.read(authProvider.notifier).logout();
-                if (context.mounted) {
-                  context.go(RouteNames.login);
-                }
-              },
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-          ],
+              const SizedBox(height: AppSpacing.xxl),
+            ],
+          ),
         ),
       ),
     );
@@ -224,34 +237,37 @@ class MoreView extends ConsumerWidget {
     required bool isDark,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle,
-          borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.primary),
         ),
-        child: Icon(icon, size: 18, color: AppColors.primary),
-      ),
-      title: Text(
-        label,
-        style: AppTypography.labelLarge.copyWith(
-          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
+        title: Text(
+          label,
+          style: AppTypography.labelLarge.copyWith(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTypography.caption.copyWith(
+        subtitle: Text(
+          subtitle,
+          style: AppTypography.caption.copyWith(
+            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+          ),
+        ),
+        trailing: Icon(
+          LucideIcons.chevronRight,
+          size: 16,
           color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
         ),
+        onTap: onTap,
       ),
-      trailing: Icon(
-        LucideIcons.chevronRight,
-        size: 16,
-        color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-      ),
-      onTap: onTap,
     );
   }
 

@@ -20,6 +20,11 @@ class LoginRequest(BaseModel):
     workspace_slug: str | None = None
 
 
+class GoogleLoginRequest(BaseModel):
+    token: str
+    workspace_slug: str | None = None
+
+
 class RegisterRequest(BaseModel):
     full_name: str
     email: EmailStr

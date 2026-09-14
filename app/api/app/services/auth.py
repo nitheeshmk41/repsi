@@ -7,9 +7,11 @@ from app.core.config import settings
 from app.core.email import send_registration_otp
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.auth import PendingRegistration
+from app.models.member import Member
 from app.models.user import User, UserRole, Workspace, WorkspaceMember
 from app.schemas.auth import (
     LoginRequest,
+    GoogleLoginRequest,
     MemberRegisterRequest,
     RegisterRequest,
     VerifyRegisterOtpRequest,
@@ -285,12 +287,60 @@ class AuthService:
         return user, workspace, token
 
     def authenticate(self, req: LoginRequest) -> tuple[User, Workspace | None, str]:
-        user = self.db.query(User).filter(User.email == req.email).first()
-        if not user or not verify_password(req.password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password.",
-            )
+        identifier = str(req.email).strip()
+        lower_id = identifier.lower()
+
+        # 1. Search User table by email (case-insensitive) or phone
+        user = self.db.query(User).filter(
+            (func.lower(User.email) == lower_id) | (User.phone == identifier)
+        ).first()
+
+        if user:
+            pw_valid = verify_password(req.password, user.hashed_password)
+            if not pw_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect email, phone or password.",
+                )
+        else:
+            # 2. Check Member table if owner added member/trainer by email or phone
+            member = self.db.query(Member).filter(
+                (func.lower(Member.email) == lower_id) | (Member.phone == identifier)
+            ).first()
+
+            if member:
+                is_phone_pass = member.phone and (req.password == member.phone or req.password == member.phone.replace(" ", "").replace("+91", ""))
+                if not is_phone_pass:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Incorrect email, phone or password.",
+                    )
+
+                # Provision User account for this Member
+                user = User(
+                    email=member.email.lower(),
+                    full_name=f"{member.first_name} {member.last_name}".strip(),
+                    hashed_password=get_password_hash(req.password),
+                    phone=member.phone,
+                    is_active=True,
+                )
+                self.db.add(user)
+                self.db.flush()
+
+                ws_member = WorkspaceMember(
+                    workspace_id=member.workspace_id,
+                    user_id=user.id,
+                    role=UserRole.USER,
+                    is_active=True,
+                )
+                self.db.add(ws_member)
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect email, phone or password.",
+                )
 
         if not user.is_active:
             raise HTTPException(
@@ -317,3 +367,82 @@ class AuthService:
             subject=user.id, workspace_id=workspace.id if workspace else None, role=role
         )
         return user, workspace, token
+
+    def google_authenticate(self, req: GoogleLoginRequest) -> tuple[User, Workspace | None, str]:
+        try:
+            # We assume req.token is an access_token from the frontend Google OAuth flow
+            import httpx
+            user_info_resp = httpx.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {req.token}"}
+            )
+            if user_info_resp.status_code != 200:
+                raise ValueError("Invalid Google access token")
+            
+            idinfo = user_info_resp.json()
+            email = idinfo.get("email")
+            full_name = idinfo.get("name")
+            if not email:
+                raise ValueError("No email found in Google profile")
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Google token: {str(e)}",
+            )
+
+        normalized_email = email.lower().strip()
+        user = self.db.query(User).filter(func.lower(User.email) == normalized_email).first()
+
+        if not user:
+            # Check if there is an invited member
+            member = self.db.query(Member).filter(func.lower(Member.email) == normalized_email).first()
+            if member:
+                user = User(
+                    email=member.email.lower(),
+                    full_name=full_name or f"{member.first_name} {member.last_name}".strip(),
+                    hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+                    phone=member.phone,
+                    is_active=True,
+                )
+                self.db.add(user)
+                self.db.flush()
+
+                ws_member = WorkspaceMember(
+                    workspace_id=member.workspace_id,
+                    user_id=user.id,
+                    role=UserRole.USER,
+                    is_active=True,
+                )
+                self.db.add(ws_member)
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Google Sign-In requires an active gym invitation. Please register first.",
+                )
+        else:
+            if not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User account is deactivated.",
+                )
+
+        # Find user's primary workspace
+        ws_member = (
+            self.db.query(WorkspaceMember)
+            .filter(WorkspaceMember.user_id == user.id, WorkspaceMember.is_active == True)
+            .first()
+        )
+        workspace = ws_member.workspace if ws_member else None
+        role = (
+            ws_member.role.value
+            if ws_member
+            else ("SUPER_ADMIN" if user.is_superadmin else "STAFF")
+        )
+
+        token = create_access_token(
+            subject=user.id, workspace_id=workspace.id if workspace else None, role=role
+        )
+        return user, workspace, token
+

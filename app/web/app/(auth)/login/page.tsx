@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ArrowRight, ShieldAlert, Building2 } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import { loginSession } from "@/lib/auth";
+import { useGoogleLogin } from "@react-oauth/google";
 
 // ─── Login Form ───────────────────────────────────────────────────────────────
 
@@ -24,49 +26,67 @@ export default function LoginPage() {
     setError("");
 
     if (!email || !password) {
-      setError("Please enter your email and password.");
+      setError("Please enter your email/phone and password.");
       return;
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 400));
 
-    // Super Admin check
-    if (
-      email.toLowerCase().includes("superadmin") ||
-      email.toLowerCase().includes("platform") ||
-      email.toLowerCase() === "nitheesh@repsi.app"
-    ) {
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+      const res = await fetch(`${apiBase}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setError(errorData.detail || "Invalid email, phone number, or password.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      const token = data.access_token;
+      let userRole = data.role || "OWNER";
+      let targetWorkspace = data.workspace_id || "apex-fitness";
+
+      try {
+        const profileRes = await fetch(`${apiBase}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (profile.role) userRole = profile.role;
+          if (profile.workspace_id) targetWorkspace = profile.workspace_id;
+        }
+      } catch {
+        // Continue with login token data
+      }
+
       loginSession(
-        "jwt_superadmin_token_demo",
+        token,
         {
-          id: "usr_superadmin",
-          name: "Nitheesh Kumar",
-          email: "nitheesh@repsi.app",
-          role: "SUPER_ADMIN",
-        },
-        "apex-fitness"
-      );
-      setLoading(false);
-      router.push("/superadmin/dashboard");
-    } else {
-      // Gym Workspace resolution
-      const savedSlug = typeof window !== "undefined" ? localStorage.getItem("repsi_workspace_slug") : null;
-      const workspace = savedSlug || "apex-fitness";
-      loginSession(
-        "jwt_owner_token_demo",
-        {
-          id: "usr_owner_demo",
-          name: "Rajesh Kumar",
+          id: "usr_active",
+          name: email.split("@")[0] || "User",
           email: email,
-          role: "OWNER",
-          workspaceSlug: workspace,
+          role: userRole as any,
+          workspaceSlug: targetWorkspace,
           gymName: "Apex Fitness",
         },
-        workspace
+        targetWorkspace
       );
+
       setLoading(false);
-      router.push(`/${workspace}/dashboard`);
+      if (userRole === "SUPER_ADMIN") {
+        router.push("/superadmin/dashboard");
+      } else {
+        router.push(`/${targetWorkspace}/dashboard`);
+      }
+    } catch {
+      setError("Unable to connect to backend server. Please verify your connection.");
+      setLoading(false);
     }
   }
 
@@ -80,42 +100,100 @@ export default function LoginPage() {
     setPassword("PlatformGodMode2026!");
   };
 
-  async function handleGoogleLogin() {
-    setLoading(true);
-    setError("");
-    await new Promise((r) => setTimeout(r, 600));
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      setError("");
 
-    // Check if user has an existing account in localStorage or system
-    const existingUser = typeof window !== "undefined" ? localStorage.getItem("repsi_user_registered") : null;
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+        const res = await fetch(`${apiBase}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: tokenResponse.access_token }),
+        });
 
-    if (!existingUser) {
-      setError("No REPSI account found for this Google email. Please create your account first to get started.");
-      setLoading(false);
-      return;
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          setError(errorData.detail || "Google Sign-In failed.");
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        const token = data.access_token;
+        let userRole = data.role || "OWNER";
+        let targetWorkspace = data.workspace_id || "apex-fitness";
+
+        try {
+          const profileRes = await fetch(`${apiBase}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            if (profile.role) userRole = profile.role;
+            if (profile.workspace_id) targetWorkspace = profile.workspace_id;
+
+            loginSession(
+              token,
+              {
+                id: profile.id || "usr_google",
+                name: profile.full_name || "Google User",
+                email: profile.email || "user@gmail.com",
+                role: userRole as any,
+                workspaceSlug: targetWorkspace,
+                gymName: "Apex Fitness", // Ideally we'd get this from profile or workspace endpoint
+              },
+              targetWorkspace
+            );
+          } else {
+            throw new Error("Profile fetch failed");
+          }
+        } catch {
+          // Fallback if profile fetch fails
+          loginSession(
+            token,
+            {
+              id: "usr_google",
+              name: "Google User",
+              email: "user@gmail.com",
+              role: userRole as any,
+              workspaceSlug: targetWorkspace,
+              gymName: "Apex Fitness",
+            },
+            targetWorkspace
+          );
+        }
+
+        setLoading(false);
+        if (userRole === "SUPER_ADMIN") {
+          router.push("/superadmin/dashboard");
+        } else {
+          router.push(`/${targetWorkspace}/dashboard`);
+        }
+      } catch {
+        setError("Failed to authenticate with Google. Please try again.");
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError("Google Login was cancelled or failed.");
     }
-
-    const savedSlug = typeof window !== "undefined" ? localStorage.getItem("repsi_workspace_slug") : null;
-    const workspace = savedSlug || "apex-fitness";
-    loginSession(
-      "jwt_google_user_token",
-      {
-        id: "usr_google_user",
-        name: "Google Account User",
-        email: "user@gmail.com",
-        role: "OWNER",
-        workspaceSlug: workspace,
-        gymName: "Apex Fitness",
-      },
-      workspace
-    );
-    setLoading(false);
-    router.push(`/${workspace}/dashboard`);
-  }
+  });
 
   return (
     <div className="w-full max-w-[400px]">
       {/* Header */}
       <div className="text-center mb-6">
+        <div className="md:hidden flex justify-center mb-4">
+          <Image
+            src="/logos/repsi_logo.png"
+            alt="REPSI Logo"
+            width={64}
+            height={64}
+            className="object-contain"
+          />
+        </div>
         <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">Welcome back</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1.5">
           Sign in to your REPSI gym workspace or platform
@@ -127,9 +205,9 @@ export default function LoginPage() {
         {/* Google Sign-in */}
         <button
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={() => handleGoogleLogin()}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 h-10 px-4 rounded-[8px] border border-[var(--border)] bg-[var(--background)] text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] transition-all shadow-2xs active:scale-[0.98] disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-3 h-10 px-4 rounded-[8px] border border-[var(--border)] bg-[var(--background)] text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] transition-all shadow-2xs active:scale-[0.98] disabled:opacity-60 cursor-pointer"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -169,9 +247,9 @@ export default function LoginPage() {
             </label>
             <input
               id="email"
-              type="email"
+              type="text"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder="you@example.com or phone"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="flex h-10 w-full rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-[var(--ring)] transition-colors"
@@ -230,7 +308,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-semibold hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-semibold hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? (
               <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -239,44 +317,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Demo Logins */}
-        <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--border)]" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-[var(--surface)] px-2 text-[var(--text-muted)]">
-              Quick 1-Click Demo Accounts
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={fillOwnerDemo}
-            className="p-2 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] text-left transition-all"
-          >
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text)]">
-              <Building2 className="h-3.5 w-3.5 text-[var(--primary-dark)] dark:text-[var(--primary-hover)]" />
-              <span>Gym Owner</span>
-            </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">/apex-fitness</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={fillSuperAdminDemo}
-            className="p-2 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-left transition-all"
-          >
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text)]">
-              <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
-              <span>Super Admin</span>
-            </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">/superadmin</p>
-          </button>
-        </div>
       </div>
 
       {/* Sign up link */}

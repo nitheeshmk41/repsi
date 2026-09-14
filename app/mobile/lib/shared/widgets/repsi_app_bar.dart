@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../models/workspace_model.dart';
 import 'repsi_avatar.dart';
 
@@ -166,7 +167,9 @@ class RepsiAppBar extends ConsumerWidget implements PreferredSizeWidget {
             if (onNotificationTap != null)
               IconButton(
                 onPressed: onNotificationTap,
+                tooltip: 'Notifications',
                 icon: Stack(
+                  clipBehavior: Clip.none,
                   children: [
                     Icon(
                       LucideIcons.bell,
@@ -174,30 +177,75 @@ class RepsiAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                     Positioned(
-                      right: 0,
-                      top: 0,
+                      right: -4,
+                      top: -4,
                       child: Container(
-                        width: 7,
-                        height: 7,
+                        padding: const EdgeInsets.all(3),
                         decoration: const BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.error,
                           shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: const Text(
+                          '3',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: AppSpacing.xs / 2),
             if (onProfileTap != null)
               GestureDetector(
                 onTap: onProfileTap,
                 child: RepsiAvatar(
                   name: userFullName ?? 'User',
                   imageUrl: userAvatarUrl,
-                  size: 32,
+                  size: 30,
                 ),
               ),
+            const SizedBox(width: AppSpacing.xs / 2),
+            // Explicit Logout Button
+            IconButton(
+              tooltip: 'Logout',
+              icon: const Icon(
+                LucideIcons.logOut,
+                size: 19,
+                color: AppColors.error,
+              ),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to log out of REPSI?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await ref.read(authProvider.notifier).logout();
+                }
+              },
+            ),
           ],
         ],
       ),

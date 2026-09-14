@@ -11,15 +11,15 @@ class AppSpacing {
   static const double xxxl = 32.0;
 
   // Corner Radii
-  static const double radiusSm = 6.0;
-  static const double radiusButton = 8.0;
-  static const double radiusInput = 8.0;
-  static const double radiusCard = 12.0;
-  static const double radiusDialog = 16.0;
-  static const double radiusSheet = 20.0;
+  static const double radiusSm = 8.0;
+  static const double radiusButton = 16.0;
+  static const double radiusInput = 16.0;
+  static const double radiusCard = 20.0;
+  static const double radiusDialog = 24.0;
+  static const double radiusSheet = 24.0;
   static const double radiusPill = 999.0;
-  static const double radiusMd = radiusCard;
-  static const double radiusLg = radiusDialog;
+  static const double radiusMd = radiusInput;
+  static const double radiusLg = radiusCard;
   static const double radiusXl = radiusSheet;
   static const double radiusFull = radiusPill;
 

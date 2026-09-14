@@ -45,19 +45,6 @@ class _AppShellViewState extends ConsumerState<AppShellView> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      appBar: RepsiAppBar(
-        showWorkspaceSelector: true,
-        currentWorkspace: workspaceState.activeWorkspace,
-        workspaces: workspaceState.workspaces,
-        userFullName: authState.user?.fullName ?? 'Admin',
-        userAvatarUrl: authState.user?.avatarUrl,
-        onWorkspaceSelected: (ws) {
-          ref.read(workspaceProvider.notifier).selectWorkspace(ws);
-          ref.read(authProvider.notifier).updateActiveWorkspace(ws.id, ws.slug);
-        },
-        onNotificationTap: () => context.push(RouteNames.notifications),
-        onProfileTap: () => context.push(RouteNames.settings),
-      ),
       body: widget.navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -78,7 +65,7 @@ class _AppShellViewState extends ConsumerState<AppShellView> {
             NavigationDestination(
               icon: Icon(LucideIcons.layoutDashboard),
               selectedIcon: Icon(LucideIcons.layoutDashboard, color: AppColors.primary),
-              label: 'Dashboard',
+              label: 'Home',
             ),
             NavigationDestination(
               icon: Icon(LucideIcons.users),
@@ -91,8 +78,13 @@ class _AppShellViewState extends ConsumerState<AppShellView> {
               label: 'Attendance',
             ),
             NavigationDestination(
-              icon: Icon(LucideIcons.grid),
-              selectedIcon: Icon(LucideIcons.grid, color: AppColors.primary),
+              icon: Icon(LucideIcons.indianRupee),
+              selectedIcon: Icon(LucideIcons.indianRupee, color: AppColors.primary),
+              label: 'Payments',
+            ),
+            NavigationDestination(
+              icon: Icon(LucideIcons.moreHorizontal),
+              selectedIcon: Icon(LucideIcons.moreHorizontal, color: AppColors.primary),
               label: 'More',
             ),
           ],

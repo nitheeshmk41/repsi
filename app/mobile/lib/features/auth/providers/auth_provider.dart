@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/storage_provider.dart';
@@ -96,12 +97,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
           state = state.copyWith(user: me);
         } catch (_) {}
       } else {
-        state = state.copyWith(status: AuthStatus.unauthenticated);
+        state = state.copyWith(status: AuthStatus.unauthenticated, clearError: true);
       }
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        errorMessage: e.toString(),
+        clearError: true,
       );
     }
   }
@@ -111,6 +112,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
     String? workspaceSlug,
   }) async {
+    if (state.status == AuthStatus.loading) return false;
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
     try {
       final response = await _authService.login(
@@ -157,6 +159,60 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: 'Failed to sign in. Please check your credentials.',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> loginWithGoogle() async {
+    if (state.status == AuthStatus.loading) return false;
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+    try {
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        state = state.copyWith(status: AuthStatus.unauthenticated, errorMessage: 'Google Sign-In cancelled.');
+        return false;
+      }
+      
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      if (accessToken == null) {
+        throw Exception("Failed to get Google Access Token");
+      }
+
+      final response = await _authService.loginWithGoogle(token: accessToken);
+
+      await _storage.saveToken(response.accessToken);
+      if (response.workspaceId != null) {
+        await _storage.saveActiveWorkspaceId(response.workspaceId!);
+      }
+      
+      UserModel? user = response.user;
+      if (user == null) {
+        try {
+          user = await _authService.getMe();
+          await _storage.saveUser(user);
+        } catch (_) {}
+      }
+
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        token: response.accessToken,
+        user: user,
+        activeWorkspaceId: response.workspaceId,
+      );
+      return true;
+    } on ApiError catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Google Sign-In failed. Please try again.',
       );
       return false;
     }

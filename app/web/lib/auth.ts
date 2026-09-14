@@ -11,7 +11,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: "OWNER" | "ADMIN" | "MANAGER" | "TRAINER" | "STAFF" | "SUPER_ADMIN";
+  role: "OWNER" | "ADMIN" | "MANAGER" | "TRAINER" | "STAFF" | "SUPER_ADMIN" | "USER" | "MEMBER";
   workspaceSlug?: string;
   gymName?: string;
 }

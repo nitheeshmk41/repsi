@@ -59,6 +59,18 @@ class AuthService {
     }
   }
 
+  Future<AuthResponse> loginWithGoogle({required String token}) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.googleLogin,
+        data: {'token': token},
+      );
+      return AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiError.fromDioException(e);
+    }
+  }
+
   Future<AuthResponse> register({
     required String fullName,
     required String email,
