@@ -100,19 +100,20 @@ const trainerNavGroups: NavGroupDef[] = [
 
 const memberNavGroups: NavGroupDef[] = [
   {
-    title: "Fitness App",
+    title: "FITNESS",
     items: [
-      { label: "My Dashboard", path: "/member/dashboard", icon: LayoutDashboard },
-      { label: "Active Workout Session", path: "/member/workout", icon: Dumbbell },
+      { label: "Dashboard", path: "/member/dashboard", icon: LayoutDashboard },
+      { label: "Workout", path: "/member/workout", icon: Dumbbell },
       { label: "Exercise Library", path: "/member/exercises", icon: BookOpen },
-      { label: "Digital QR Pass", path: "/member/qr", icon: QrCode },
-      { label: "GPS Running Tracker", path: "/member/running", icon: Navigation },
+      { label: "Progress", path: "/member/dashboard#progress", icon: TrendingUp },
+      { label: "Activity / Running", path: "/member/running", icon: Navigation },
+      { label: "Trainer", path: "/member/trainer", icon: Users },
       { label: "Trainer Chat", path: "/chat", icon: MessageSquare },
-      { label: "Fitness Sync", path: "/member/integrations", icon: RefreshCw },
+      { label: "Digital QR Pass", path: "/member/qr", icon: QrCode },
     ],
   },
   {
-    title: "Membership & Dues",
+    title: "MEMBERSHIP",
     items: [
       { label: "My Membership", path: "/member/membership", icon: CreditCard },
       { label: "My Attendance", path: "/member/attendance", icon: CalendarCheck },

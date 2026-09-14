@@ -15,6 +15,7 @@ class MemberHomeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final todayWorkoutAsync = ref.watch(todayWorkoutProvider);
 
     return Scaffold(
@@ -40,7 +41,7 @@ class MemberHomeView extends ConsumerWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'Apex Fitness · Member',
+                  'Monday, 14 September',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -52,7 +53,7 @@ class MemberHomeView extends ConsumerWidget {
             icon: const Icon(Icons.notifications_none_rounded),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new unread notifications.')),
+                const SnackBar(content: Text('Your workout plan was updated by trainer.')),
               );
             },
           ),
@@ -63,12 +64,47 @@ class MemberHomeView extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // STREAK BANNER
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 24),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '12 DAY STREAK',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: Colors.orange,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        'You are on fire! 4 workouts completed this week.',
+                        style: TextStyle(fontSize: 11, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             // TODAY'S WORKOUT HERO CARD
             todayWorkoutAsync.when(
               data: (workout) => Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 color: theme.primaryColor,
                 child: Padding(
@@ -93,13 +129,13 @@ class MemberHomeView extends ConsumerWidget {
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
                           const Text(
-                            '~52 min',
-                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                            '6 exercises · ~52 min',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                         ],
                       ),
@@ -108,50 +144,26 @@ class MemberHomeView extends ConsumerWidget {
                         workout.title,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '${workout.exercises.length} Exercises · Target: Chest, Shoulders, Arms',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                      const SizedBox(height: 16),
-                      const Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.all(Radius.circular(4)),
-                              child: LinearProgressIndicator(
-                                value: 0.5,
-                                backgroundColor: Colors.white24,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.amberAccent),
-                                minHeight: 6,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            '50%',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Chest • Shoulders • Triceps',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: theme.primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: () {
                             Navigator.push(
@@ -161,9 +173,10 @@ class MemberHomeView extends ConsumerWidget {
                               ),
                             );
                           },
-                          child: const Text(
-                            'CONTINUE WORKOUT',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                          label: const Text(
+                            'START WORKOUT',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                           ),
                         ),
                       ),
@@ -173,6 +186,130 @@ class MemberHomeView extends ConsumerWidget {
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const SizedBox(),
+            ),
+
+            const SizedBox(height: 16),
+
+            // STATS ROW (WORKOUTS & TIME)
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '4',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Workouts this week',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '3h 42m',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Workout Time',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // QUICK ACTIONS GRID
+            const Text(
+              'QUICK ACTIONS',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 10),
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                _buildQuickAction(
+                  context,
+                  Icons.qr_code_scanner_rounded,
+                  'QR Check-in',
+                  Colors.blue,
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrAttendanceView()),
+                  ),
+                ),
+                _buildQuickAction(
+                  context,
+                  Icons.fitness_center_rounded,
+                  'Workout',
+                  theme.primaryColor,
+                  () {
+                    if (todayWorkoutAsync.value != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ActiveWorkoutView(workout: todayWorkoutAsync.value!),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildQuickAction(
+                  context,
+                  Icons.directions_run_rounded,
+                  'Start Run',
+                  Colors.green,
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RunningTrackerView()),
+                  ),
+                ),
+                _buildQuickAction(
+                  context,
+                  Icons.chat_bubble_outline_rounded,
+                  'My Trainer',
+                  Colors.orange,
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TrainerChatView()),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 20),
@@ -187,62 +324,51 @@ class MemberHomeView extends ConsumerWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withOpacity(0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.card_membership_rounded,
                         color: Colors.green,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
+                    const SizedBox(width: 14),
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Text(
+                              Text(
                                 'Premium Membership',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                                  fontSize: 14,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'ACTIVE',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              SizedBox(width: 6),
+                              Text(
+                                '• ACTIVE',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            '24 days remaining · Expires 25 Oct 2026',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          SizedBox(height: 2),
+                          Text(
+                            '23 days remaining · Expires 07 Oct 2026',
+                            style: TextStyle(color: Colors.grey, fontSize: 11),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -251,118 +377,14 @@ class MemberHomeView extends ConsumerWidget {
                           ),
                         );
                       },
+                      child: const Text('View', style: TextStyle(fontSize: 12)),
                     ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            // ATTENDANCE & STREAK
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.local_fire_department, color: Colors.orange),
-                            SizedBox(width: 6),
-                            Text(
-                              '12 DAY STREAK',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Keep going! You check in 4x / week on average.',
-                          style: TextStyle(fontSize: 12, color: Colors.black87),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // QUICK ACTIONS GRID
-            const Text(
-              'QUICK ACTIONS',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                _buildQuickAction(
-                  context,
-                  Icons.qr_code_scanner_rounded,
-                  'Scan QR',
-                  Colors.blue,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QrAttendanceView()),
-                  ),
-                ),
-                _buildQuickAction(
-                  context,
-                  Icons.directions_run_rounded,
-                  'Start Run',
-                  Colors.green,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RunningTrackerView()),
-                  ),
-                ),
-                _buildQuickAction(
-                  context,
-                  Icons.precision_manufacturing_rounded,
-                  'Machines',
-                  Colors.purple,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const GymMachinesView()),
-                  ),
-                ),
-                _buildQuickAction(
-                  context,
-                  Icons.chat_bubble_outline_rounded,
-                  'Trainer Chat',
-                  Colors.orange,
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TrainerChatView()),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // ASSIGNED TRAINER CARD
             Card(
@@ -374,9 +396,9 @@ class MemberHomeView extends ConsumerWidget {
                 child: Row(
                   children: [
                     const CircleAvatar(
-                      radius: 26,
+                      radius: 24,
                       backgroundColor: Colors.blueAccent,
-                      child: Icon(Icons.person, color: Colors.white, size: 30),
+                      child: Text('VR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 14),
                     const Expanded(
@@ -384,15 +406,15 @@ class MemberHomeView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Marcus Vance',
+                            'Vikram Rathore',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 15,
                             ),
                           ),
                           Text(
-                            'Head Strength Trainer · Apex Gym',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            'Strength & Conditioning Coach',
+                            style: TextStyle(color: Colors.grey, fontSize: 11),
                           ),
                         ],
                       ),
@@ -404,15 +426,50 @@ class MemberHomeView extends ConsumerWidget {
                           MaterialPageRoute(builder: (_) => const TrainerChatView()),
                         );
                       },
-                      icon: const Icon(Icons.chat, size: 16),
-                      label: const Text('Chat'),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+                      label: const Text('Message', style: TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // RECENT ACTIVITY FEED
+            const Text(
+              'RECENT ACTIVITY',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildActivityItem(
+              icon: Icons.check_circle_rounded,
+              color: Colors.green,
+              title: 'Push Day Workout Completed',
+              subtitle: '6 exercises · 54 minutes · 420 kcal',
+              time: 'Yesterday',
+            ),
+            _buildActivityItem(
+              icon: Icons.workspace_premium_rounded,
+              color: Colors.amber,
+              title: 'Hit a New Personal Record!',
+              subtitle: 'Bench Press: 85kg × 5 reps',
+              time: '2 days ago',
+            ),
+            _buildActivityItem(
+              icon: Icons.qr_code_rounded,
+              color: Colors.blue,
+              title: 'Checked in at Apex Fitness',
+              subtitle: '06:42 AM Check-in',
+              time: '3 days ago',
             ),
           ],
         ),
@@ -434,18 +491,62 @@ class MemberHomeView extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 6),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityItem({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required String time,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
         ],
       ),

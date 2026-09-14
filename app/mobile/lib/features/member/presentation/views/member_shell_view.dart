@@ -61,8 +61,9 @@ class _MemberShellViewState extends State<MemberShellView> {
             children: [
               _buildNavItem(0, Icons.home_rounded, 'Home'),
               _buildNavItem(1, Icons.fitness_center_rounded, 'Workout'),
-              const SizedBox(width: 40), // Spacer for Floating QR button
               _buildNavItem(2, Icons.insights_rounded, 'Progress'),
+              const SizedBox(width: 32), // Spacer for Floating QR button
+              _buildNavItem(3, Icons.directions_run_rounded, 'Activity'),
               _buildNavItem(4, Icons.person_rounded, 'Profile'),
             ],
           ),
