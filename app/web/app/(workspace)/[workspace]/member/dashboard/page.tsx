@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import {
   Flame,
@@ -24,8 +24,9 @@ import {
 } from "lucide-react";
 import { getAuthUser } from "@/lib/auth";
 
-export default function MemberDashboardPage({ params }: { params: { workspace: string } }) {
-  const workspace = params.workspace || "apex-fitness";
+export default function MemberDashboardPage({ params }: { params: Promise<{ workspace: string }> }) {
+  const resolvedParams = use(params);
+  const workspace = resolvedParams.workspace || "apex-fitness";
   const [user, setUser] = useState<any>(null);
   const [checkedIn, setCheckedIn] = useState(false);
 

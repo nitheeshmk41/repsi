@@ -15,6 +15,19 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/onboarding",
+  "/how-it-works",
+  "/integrations",
+  "/tour",
+  "/changelog",
+  "/solutions",
+  "/use-cases",
+  "/blog",
+  "/guides",
+  "/help",
+  "/docs",
+  "/downloads",
+  "/careers",
+  "/partners",
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

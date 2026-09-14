@@ -60,51 +60,51 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] font-sans antialiased overflow-x-hidden relative">
-      {/* ── 1. Navbar (Transparent in Hero Section) ────────────────────────── */}
+      {/* ── 1. Navbar (Transparent in Hero Section) ───────────────── */}
       <MarketingNav />
 
-      {/* ── 2. Hero Section (Explicit Light Theme & Screen Height Fit) ── */}
-      <section className="relative min-h-[calc(100vh-4rem)] lg:max-h-[920px] flex flex-col justify-center py-6 lg:py-8 overflow-hidden bg-gradient-to-b from-[#eaf8ee] via-[#f4fcf7] to-white text-zinc-900">
+      {/* ── 2. Hero Section (Explicit Light Theme & Balanced Gradient Backdrop) ── */}
+      <section className="relative min-h-[calc(100vh-4rem)] lg:max-h-[920px] flex flex-col justify-center py-6 lg:py-8 overflow-hidden bg-gradient-to-b from-[#f4fbf6] via-[#fafdfb] to-white text-zinc-900">
         {/* Organic Green Curve & Ambient Wave Backdrop */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
-          {/* Organic light green background glow shape with reduced bottom border radius */}
-          <div className="absolute -top-10 right-0 w-[60vw] h-[800px] bg-gradient-to-br from-emerald-200/60 via-emerald-100/40 to-transparent rounded-bl-[40px] blur-3xl opacity-90" />
+          {/* Organic light green background glow shape with soft radial blur */}
+          <div className="absolute -top-10 right-0 w-[55vw] h-[750px] bg-gradient-to-br from-emerald-100/40 via-emerald-50/20 to-transparent rounded-bl-[40px] blur-3xl opacity-60" />
           
           {/* Wave SVG Overlay */}
-          <svg className="absolute bottom-0 right-0 w-full h-[500px] text-emerald-100/70" viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute bottom-0 right-0 w-full h-[500px] text-emerald-50/40" viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-100 320 C 300 150, 700 450, 1500 200 L 1500 600 L -100 600 Z" fill="currentColor" />
           </svg>
 
-          {/* ReactBits Gradient Waves Canvas — High Contrast & Extremely Visible */}
-          <div className="absolute inset-0 opacity-100 pointer-events-none z-0">
+          {/* ReactBits Gradient Waves Canvas — Soft ambient backdrop */}
+          <div className="absolute inset-0 opacity-70 pointer-events-none z-0">
             <GradientWaves
               horizonColor="#16A34A"
               waveColor="#22C55E"
               crestColor="#84CC16"
               speed={0.5}
-              amplitude={3.0}
-              waveScale={0.8}
+              amplitude={2.5}
+              waveScale={1.0}
               waveRatio={0.9}
-              swell={38}
+              swell={25}
               turbulence={20}
               tilt={1.11}
               zoom={1}
               height={5.8}
-              fogDepth={12}
+              fogDepth={14}
               detail="high"
-              brightness={1.35}
-              opacity={1.0}
+              brightness={1.2}
+              opacity={0.85}
               mouseInteraction
-              parallaxStrength={0.5}
+              parallaxStrength={0.4}
               grain
-              grainIntensity={0.04}
+              grainIntensity={0.03}
               className="w-full h-full"
             />
           </div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-4 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
             
             {/* Left Column: Text & CTAs & Feature Icons */}
             <div className="lg:col-span-5 flex flex-col justify-center text-left pt-2">
@@ -125,24 +125,24 @@ export default function HomePage() {
                 </p>
               </FadeIn>
 
-              {/* CTAs */}
+              {/* CTAs — Distinct Hierarchy (Primary Pill vs Secondary Text-Link) */}
               <FadeIn delay={0.4}>
-                <div className="mt-6 flex flex-wrap items-center gap-3.5">
+                <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-5">
                   <Link
                     href="/signup"
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-sm shadow-lg shadow-[#16A34A]/25 transition-all active:scale-[0.98]"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-sm shadow-lg shadow-[#16A34A]/25 hover:shadow-xl hover:shadow-[#16A34A]/30 transition-all active:scale-[0.98]"
                   >
                     <span>Get Started Free</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <button
                     onClick={() => setVideoOpen(true)}
-                    className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full border border-zinc-300 bg-white/90 backdrop-blur-sm text-zinc-900 font-semibold text-sm hover:bg-white transition-all shadow-sm group active:scale-[0.98]"
+                    className="inline-flex items-center gap-2.5 py-2 px-1 text-zinc-700 hover:text-zinc-950 font-semibold text-sm group transition-colors"
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[10px] pl-0.5 font-bold group-hover:scale-110 transition-transform">
-                      ▶
+                    <div className="w-8 h-8 rounded-full bg-emerald-100/90 text-[#16A34A] flex items-center justify-center group-hover:bg-[#16A34A] group-hover:text-white transition-all shadow-xs group-hover:scale-110">
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                     </div>
-                    <span>See how it works</span>
+                    <span className="underline-offset-4 group-hover:underline">See how it works</span>
                   </button>
                 </div>
               </FadeIn>
@@ -199,99 +199,103 @@ export default function HomePage() {
                 </div>
               </FadeIn>
 
-              {/* Handwriting Script text bottom left */}
+              {/* Social Proof Rating Badge (Bottom Left - Replaces Orphaned Elements) */}
               <FadeIn delay={0.7}>
-                <div className="mt-6 font-handwriting text-3xl text-zinc-400 -rotate-3 select-none flex flex-col items-start leading-none">
-                  <span>Fitness Management</span>
-                  <span className="relative">
-                    Made Simple
-                    <svg className="absolute -bottom-1 left-0 w-full h-2.5 text-[#16A34A]/50" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="4">
-                      <path d="M5,15 Q50,2 95,15" />
-                    </svg>
-                  </span>
+                <div className="mt-8 flex items-center gap-3 p-2.5 pr-4 rounded-2xl bg-white/90 border border-emerald-200/90 shadow-sm backdrop-blur-sm max-w-max">
+                  <div className="flex -space-x-2 overflow-hidden">
+                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">A</div>
+                    <div className="w-7 h-7 rounded-full bg-zinc-800 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">V</div>
+                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">R</div>
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-amber-500 text-xs font-bold">★★★★★</span>
+                      <span className="text-xs font-extrabold text-zinc-900">4.9/5</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 font-medium">Loved by 250+ fitness studios</p>
+                  </div>
                 </div>
               </FadeIn>
             </div>
 
-            {/* Right Column: Light Dashboard Mockup + Bright Athlete Image */}
-            <div className="lg:col-span-7 relative flex items-center justify-center">
+            {/* Right Column: Light Dashboard Mockup + Bright Athlete Image (Framed UI with Clear Margins) */}
+            <div className="lg:col-span-7 relative flex items-center justify-center pr-0 lg:pr-12 xl:pr-16 pb-8 xl:pb-12">
               <FadeIn delay={0.4} direction="up" className="w-full relative">
                 {/* Backdrop Glow */}
-                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-200/60 via-emerald-100/40 to-emerald-200/50 rounded-[32px] blur-2xl opacity-70 -z-10 pointer-events-none" />
+                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-200/50 via-emerald-100/30 to-emerald-200/40 rounded-[32px] blur-2xl opacity-60 -z-10 pointer-events-none" />
 
-                {/* Main Dashboard Window Container (Pure White Light Mode) */}
-                <div id="dashboard-preview" className="rounded-2xl border border-zinc-200/90 bg-white shadow-2xl shadow-emerald-950/10 overflow-hidden">
+                {/* Main Dashboard Window Container — Sleek Framed Card UI (No Fake Browser Chrome) */}
+                <div id="dashboard-preview" className="rounded-2xl border border-zinc-200/90 bg-white shadow-2xl shadow-emerald-950/12 overflow-hidden ring-1 ring-zinc-950/5">
                   
-                  {/* Browser Mac OS Window Bar (Clean Mobile Responsive, No TENANT badge) */}
-                  <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-zinc-200/80 bg-zinc-100/90 text-xs gap-2">
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#ff5f56]" />
-                      <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#ffbd2e]" />
-                      <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#27c93f]" />
-                    </div>
-
-                    {/* URL Bar */}
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] text-zinc-600 bg-white px-3 py-1 rounded-md border border-zinc-200 shadow-2xs max-w-[240px] sm:max-w-md w-full justify-center">
-                      <Search className="w-3 h-3 text-zinc-400 shrink-0" />
-                      <span className="truncate">repsi.app/apex-fitness/dashboard</span>
-                    </div>
-
-                    {/* Live Indicator Dot */}
-                    <div className="flex items-center gap-1.5 shrink-0 text-[10px] font-semibold text-emerald-600">
-                      <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-                      <span className="hidden sm:inline">LIVE</span>
-                    </div>
-                  </div>
-
                   {/* Dashboard Layout inside Mockup (Pure Crisp Light Palette) */}
                   <div className="flex h-auto bg-[#f8fafc]">
                     
-                    {/* Mini Sidebar */}
+                    {/* Mini Sidebar with Divider Line & Section Grouping */}
                     <div className="hidden sm:flex w-44 border-r border-zinc-200/80 bg-white p-3 flex-col justify-between shrink-0 text-xs">
-                      <div className="space-y-3.5">
-                        {/* Logo */}
-                        <div className="flex items-center gap-2 px-2 py-0.5">
-                          <Image src="/logos/repsi_logo_black.png" alt="REPSI" width={28} height={28} className="object-contain" />
-                          <span className="font-extrabold text-sm text-zinc-900 tracking-tight">Repsi</span>
+                      <div className="space-y-3">
+                        {/* Logo & Workspace Info with Separator Line */}
+                        <div className="flex items-center gap-2.5 px-2 py-1.5 mb-2.5 border-b border-zinc-200/90 pb-3">
+                          <Image src="/logos/repsi_logo_black.png" alt="REPSI" width={26} height={26} className="object-contain" />
+                          <div className="flex flex-col">
+                            <span className="font-extrabold text-xs text-zinc-900 tracking-tight leading-none">Repsi</span>
+                            <span className="text-[9px] font-semibold text-emerald-600 leading-none mt-1">Apex Fitness</span>
+                          </div>
                         </div>
 
-                        {/* Nav Items */}
-                        <nav className="space-y-1">
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#e6f7ec] text-[#16A34A] font-bold">
-                            <LayoutDashboard className="w-4 h-4" />
-                            <span>Dashboard</span>
+                        {/* Nav Items Grouped with Distinct Hierarchy */}
+                        <nav className="space-y-2.5">
+                          <div>
+                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Main</p>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#16A34A] font-bold text-xs shadow-2xs border-l-2 border-[#16A34A]">
+                                <LayoutDashboard className="w-3.5 h-3.5 text-[#16A34A]" />
+                                <span>Dashboard</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <Users className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Members</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <CreditCard className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Memberships</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <UserCheck className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Attendance</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <Users className="w-4 h-4" />
-                            <span>Members</span>
+
+                          <div>
+                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Management</p>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <Dumbbell className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Trainers</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <IndianRupee className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Payments</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <BarChart3 className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Analytics</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <CreditCard className="w-4 h-4" />
-                            <span>Memberships</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <UserCheck className="w-4 h-4" />
-                            <span>Attendance</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <Dumbbell className="w-4 h-4" />
-                            <span>Trainers</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <IndianRupee className="w-4 h-4" />
-                            <span>Payments</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <BarChart3 className="w-4 h-4" />
-                            <span>Analytics</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <MessageSquare className="w-4 h-4" />
-                            <span>Messages</span>
-                          </div>
-                          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-zinc-600 font-medium hover:bg-zinc-100">
-                            <Settings className="w-4 h-4" />
-                            <span>Settings</span>
+
+                          <div>
+                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">System</p>
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Messages</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
+                                <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
+                                <span>Settings</span>
+                              </div>
+                            </div>
                           </div>
                         </nav>
                       </div>
@@ -311,10 +315,10 @@ export default function HomePage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button className="w-7 h-7 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600">
+                          <button className="w-7 h-7 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 shadow-2xs hover:bg-zinc-50">
                             <Bell className="w-3.5 h-3.5" />
                           </button>
-                          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px]">
+                          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px] shadow-2xs">
                             <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[9px] font-bold">AF</div>
                             <div className="hidden md:block text-left">
                               <p className="font-bold leading-none text-zinc-900 text-[10px]">Apex Fitness</p>
@@ -375,32 +379,77 @@ export default function HomePage() {
                       {/* Middle Row: Revenue Bar Chart & Attendance Donut */}
                       <div className="grid grid-cols-1 md:grid-cols-7 gap-2.5">
                         
-                        {/* Revenue Bar Chart */}
+                        {/* Revenue Bar Chart with Distinct Active Month (Jul) Highlight */}
                         <div className="md:col-span-4 p-3 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-zinc-900">Revenue Overview</span>
+                            <div>
+                              <span className="font-bold text-zinc-900">Revenue Overview</span>
+                              <span className="text-[10px] text-emerald-600 font-semibold ml-2">₹4.82L Total</span>
+                            </div>
                             <span className="text-[10px] text-zinc-500 border border-zinc-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                              Last 7 months <ChevronDown className="w-2.5 h-2.5" />
+                              7 Months <ChevronDown className="w-2.5 h-2.5" />
                             </span>
                           </div>
-                          <div className="h-24 flex items-end justify-between gap-2 pt-2">
-                            {[
-                              { label: 'Jan', val: 40 },
-                              { label: 'Feb', val: 55 },
-                              { label: 'Mar', val: 65 },
-                              { label: 'Apr', val: 78 },
-                              { label: 'May', val: 90 },
-                              { label: 'Jun', val: 82 },
-                              { label: 'Jul', val: 100 },
-                            ].map((bar, i) => (
-                              <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                                <div
-                                  className="w-full rounded-t bg-gradient-to-t from-emerald-400 to-[#16A34A] opacity-90 hover:opacity-100 transition-all"
-                                  style={{ height: `${bar.val}%` }}
-                                />
-                                <span className="text-[9px] font-mono text-zinc-400">{bar.label}</span>
+                          
+                          {/* Chart Area with Y-axis markers & Gridlines */}
+                          <div className="relative h-28 flex items-end pt-4">
+                            {/* Horizontal Gridlines & Left Labels */}
+                            <div className="absolute inset-x-0 top-3 bottom-5 flex flex-col justify-between pointer-events-none">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[8px] font-mono text-zinc-400">₹5L</span>
+                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
                               </div>
-                            ))}
+                              <div className="flex items-center justify-between">
+                                <span className="text-[8px] font-mono text-zinc-400">₹3.5L</span>
+                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[8px] font-mono text-zinc-400">₹2L</span>
+                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[8px] font-mono text-zinc-400">₹0</span>
+                                <div className="w-[calc(100%-28px)] border-b border-zinc-200" />
+                              </div>
+                            </div>
+
+                            {/* Bar Columns Container (Offset for Y-Axis labels) */}
+                            <div className="w-full pl-7 flex items-end justify-between gap-1.5 h-full pb-5 z-10">
+                              {[
+                                { label: 'Jan', val: 40, amt: '₹1.9L' },
+                                { label: 'Feb', val: 55, amt: '₹2.6L' },
+                                { label: 'Mar', val: 65, amt: '₹3.1L' },
+                                { label: 'Apr', val: 78, amt: '₹3.7L' },
+                                { label: 'May', val: 90, amt: '₹4.3L' },
+                                { label: 'Jun', val: 82, amt: '₹3.9L' },
+                                { label: 'Jul', val: 100, amt: '₹4.8L', current: true },
+                              ].map((bar, i) => (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group/bar relative">
+                                  {/* Active Month Badge */}
+                                  {bar.current ? (
+                                    <div className="absolute -top-4 flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 text-white text-[8px] font-mono font-bold rounded shadow-sm z-20 whitespace-nowrap">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                      <span>{bar.amt} · Jul</span>
+                                    </div>
+                                  ) : (
+                                    <span className="opacity-0 group-hover/bar:opacity-100 transition-opacity absolute -top-3.5 px-1 py-0.2 bg-zinc-800 text-white text-[8px] font-mono font-bold rounded pointer-events-none">
+                                      {bar.amt}
+                                    </span>
+                                  )}
+                                  <div
+                                    className={`w-full rounded-t transition-all ${
+                                      bar.current 
+                                        ? 'bg-gradient-to-t from-[#16A34A] to-[#15803D] shadow-md ring-2 ring-emerald-500/40' 
+                                        : 'bg-emerald-200/90 hover:bg-emerald-300/90'
+                                    }`}
+                                    style={{ height: `${bar.val}%` }}
+                                  />
+                                  <span className={`text-[8px] font-mono absolute -bottom-4 ${bar.current ? 'font-bold text-[#16A34A]' : 'text-zinc-400'}`}>
+                                    {bar.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
@@ -519,25 +568,25 @@ export default function HomePage() {
                           </div>
                         </div>
 
-                        {/* Quick Actions */}
+                        {/* Quick Actions Panel — Clean, Full Width buttons with zero overlap */}
                         <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
                           <span className="text-xs font-bold text-zinc-900">Quick Actions</span>
                           <div className="grid grid-cols-2 gap-1 text-[9px]">
                             <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span>Add Member</span>
-                              <Plus className="w-3 h-3 text-zinc-400" />
+                              <span className="truncate">Add Member</span>
+                              <Plus className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
                             </button>
                             <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span>Mark Attendance</span>
-                              <CalendarCheck className="w-3 h-3 text-zinc-400" />
+                              <span className="truncate">Attendance</span>
+                              <CalendarCheck className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
                             </button>
                             <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span>Create Membership</span>
-                              <FileText className="w-3 h-3 text-zinc-400" />
+                              <span className="truncate">Membership</span>
+                              <FileText className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
                             </button>
                             <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span>Send Message</span>
-                              <Send className="w-3 h-3 text-zinc-400" />
+                              <span className="truncate">Message</span>
+                              <Send className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
                             </button>
                           </div>
                         </div>
@@ -547,9 +596,9 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Right Edge: Bright Fitness Athlete Image Card & Overlay */}
-                <div className="hidden xl:block absolute -right-10 bottom-4 w-44 rounded-2xl overflow-hidden border-2 border-white shadow-2xl z-20 group transform rotate-2 hover:rotate-0 transition-transform duration-300">
-                  <div className="relative h-60 w-full">
+                {/* Offset Gym Photo Card — Positioned outside dashboard card area with zero text truncation */}
+                <div className="hidden 2xl:block absolute -right-16 -bottom-8 w-48 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shadow-emerald-950/25 z-30 transform rotate-3 hover:rotate-0 transition-transform duration-300 pointer-events-none">
+                  <div className="relative h-56 w-full">
                     <Image
                       src="/images/marketing/hero_athlete.jpg"
                       alt="REPSI Fitness"
@@ -559,7 +608,7 @@ export default function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />
                     
                     {/* Handwriting Text Overlay */}
-                    <div className="absolute bottom-3 left-3 right-3 text-white font-handwriting text-2xl leading-none font-bold">
+                    <div className="absolute bottom-3 left-3 right-3 text-white font-handwriting text-xl leading-none font-bold">
                       <p>Stronger Gyms</p>
                       <p className="text-emerald-400">Brighter Communities</p>
                       <svg className="w-full h-2 text-emerald-400 mt-1" viewBox="0 0 100 10" fill="none" stroke="currentColor" strokeWidth="3">

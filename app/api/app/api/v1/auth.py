@@ -65,9 +65,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
-        role=membership.role.value
-        if membership
-        else ("SUPER_ADMIN" if user.is_superadmin else "STAFF"),
+        role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
     )
 
 
@@ -87,9 +85,7 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
-        role=membership.role.value
-        if membership
-        else ("SUPER_ADMIN" if user.is_superadmin else "STAFF"),
+        role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
     )
 
 
@@ -126,9 +122,7 @@ def get_current_user_profile(
         phone=user.phone,
         is_superadmin=user.is_superadmin,
         is_active=user.is_active,
-        role=membership.role.value
-        if membership
-        else ("SUPER_ADMIN" if user.is_superadmin else "STAFF"),
+        role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
         workspace_id=membership.workspace_id if membership else None,
     )
 

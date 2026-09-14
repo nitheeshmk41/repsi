@@ -358,9 +358,8 @@ class AuthService:
         )
         workspace = ws_member.workspace if ws_member else None
         role = (
-            ws_member.role.value
-            if ws_member
-            else ("SUPER_ADMIN" if user.is_superadmin else "STAFF")
+            "SUPER_ADMIN" if user.is_superadmin
+            else (ws_member.role.value if ws_member else "STAFF")
         )
 
         token = create_access_token(
@@ -436,9 +435,8 @@ class AuthService:
         )
         workspace = ws_member.workspace if ws_member else None
         role = (
-            ws_member.role.value
-            if ws_member
-            else ("SUPER_ADMIN" if user.is_superadmin else "STAFF")
+            "SUPER_ADMIN" if user.is_superadmin
+            else (ws_member.role.value if ws_member else "STAFF")
         )
 
         token = create_access_token(

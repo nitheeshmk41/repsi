@@ -4,19 +4,58 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronDown } from "lucide-react";
 
 export function MarketingNav() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const links = [
-    { label: "Features", href: "/features" },
-    { label: "Solutions", href: "/features#solutions" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Resources", href: "/#faq" },
-    { label: "About", href: "/about" },
+  const navItems = [
+    {
+      title: "Product",
+      links: [
+        { label: "Features", href: "/features" },
+        { label: "How it Works", href: "/how-it-works" },
+        { label: "Integrations", href: "/integrations" },
+        { label: "Product Tour", href: "/tour" },
+        { label: "What's New", href: "/changelog" },
+      ]
+    },
+    {
+      title: "Solutions",
+      links: [
+        { label: "For Gyms", href: "/solutions/gyms" },
+        { label: "For Personal Trainers", href: "/solutions/personal-trainers" },
+        { label: "For Fitness Studios", href: "/solutions/studios" },
+        { label: "For Gym Owners", href: "/solutions/owners" },
+        { label: "Use Cases", href: "/use-cases" },
+      ]
+    },
+    {
+      title: "Pricing",
+      href: "/pricing" // Direct link, no dropdown
+    },
+    {
+      title: "Resources",
+      links: [
+        { label: "Blog", href: "/blog" },
+        { label: "Guides", href: "/guides" },
+        { label: "Help Center", href: "/help" },
+        { label: "Documentation", href: "/docs" },
+        { label: "FAQs", href: "/#faq" },
+        { label: "Downloads", href: "/downloads" },
+      ]
+    },
+    {
+      title: "Company",
+      links: [
+        { label: "About", href: "/about" },
+        { label: "Contact", href: "/contact" },
+        { label: "Careers", href: "/careers" },
+        { label: "Partners", href: "/partners" },
+      ]
+    }
   ];
 
   return (
@@ -39,15 +78,39 @@ export function MarketingNav() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
-            >
-              {link.label}
-            </Link>
+        <nav className="hidden md:flex items-center gap-7 lg:gap-8">
+          {navItems.map((item) => (
+            item.href ? (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors py-2"
+              >
+                {item.title}
+              </Link>
+            ) : (
+              <div key={item.title} className="relative group">
+                <button className="flex items-center gap-1 text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors py-2">
+                  {item.title}
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:rotate-180 transition-transform duration-200" />
+                </button>
+                
+                {/* Dropdown Menu */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-white rounded-xl shadow-xl border border-zinc-200/80 p-2 min-w-[200px]">
+                    {item.links?.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="block px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 rounded-lg transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
           ))}
         </nav>
 
@@ -80,18 +143,40 @@ export function MarketingNav() {
 
       {/* Mobile Drawer (Light Theme & Fully Mobile Responsive) */}
       {mobileOpen && (
-        <div className="md:hidden border-b border-zinc-200 bg-white px-6 pt-3 pb-6 space-y-3 shadow-lg">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="block py-2 text-base font-medium text-zinc-700 hover:text-zinc-900"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <div className="pt-4 border-t border-zinc-200 flex flex-col gap-3">
+        <div className="md:hidden border-b border-zinc-200 bg-white px-6 pt-3 pb-6 space-y-6 shadow-lg h-[calc(100vh-4rem)] overflow-y-auto">
+          <div className="space-y-6">
+            {navItems.map((item) => (
+              <div key={item.title} className="space-y-3">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="block text-base font-bold text-zinc-900"
+                  >
+                    {item.title}
+                  </Link>
+                ) : (
+                  <>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">{item.title}</h4>
+                    <div className="flex flex-col gap-2">
+                      {item.links?.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="block py-1 text-base font-medium text-zinc-700 hover:text-zinc-900"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          <div className="pt-6 border-t border-zinc-200 flex flex-col gap-3">
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
