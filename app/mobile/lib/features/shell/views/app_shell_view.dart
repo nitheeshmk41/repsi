@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
-import '../../../shared/widgets/repsi_app_bar.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../workspaces/providers/workspace_provider.dart';
 

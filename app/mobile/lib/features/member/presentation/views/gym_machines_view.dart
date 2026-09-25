@@ -89,22 +89,22 @@ class GymMachinesView extends ConsumerWidget {
 
     switch (status) {
       case MachineStatus.available:
-        bg = Colors.green.withOpacity(0.15);
+        bg = Colors.green.withValues(alpha: 0.15);
         text = Colors.green;
         label = 'AVAILABLE';
         break;
       case MachineStatus.inUse:
-        bg = Colors.orange.withOpacity(0.15);
+        bg = Colors.orange.withValues(alpha: 0.15);
         text = Colors.orange;
         label = 'IN USE';
         break;
       case MachineStatus.maintenance:
-        bg = Colors.red.withOpacity(0.15);
+        bg = Colors.red.withValues(alpha: 0.15);
         text = Colors.red;
         label = 'MAINTENANCE';
         break;
       case MachineStatus.unavailable:
-        bg = Colors.grey.withOpacity(0.15);
+        bg = Colors.grey.withValues(alpha: 0.15);
         text = Colors.grey;
         label = 'UNAVAILABLE';
         break;

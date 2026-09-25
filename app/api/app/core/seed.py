@@ -81,6 +81,28 @@ def seed_database(db: Session = None):
                 is_active=True,
             ))
 
+        # Seed Super Admin User (admin@repsi.app)
+        user_admin = db.query(User).filter(User.email == "admin@repsi.app").first()
+        if not user_admin:
+            user_admin = User(
+                id="usr_admin_001",
+                email="admin@repsi.app",
+                full_name="Super Admin",
+                hashed_password=get_password_hash("admin567"),
+                phone="+91 99999 00000",
+                is_superadmin=True,
+                is_active=True,
+            )
+            db.add(user_admin)
+            db.flush()
+
+            db.add(WorkspaceMember(
+                workspace_id=workspace.id,
+                user_id=user_admin.id,
+                role=UserRole.OWNER,
+                is_active=True,
+            ))
+
         # Seed test owner
         user_owner = db.query(User).filter(User.email == "owner@repsi.app").first()
         if not user_owner:

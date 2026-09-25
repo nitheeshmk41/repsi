@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'exercise_library_view.dart';
-import 'gym_machines_view.dart';
 import 'member_home_view.dart';
 import 'member_profile_view.dart';
-import 'membership_payments_view.dart';
 import 'progress_dashboard_view.dart';
 import 'qr_attendance_view.dart';
 import 'running_tracker_view.dart';
-import 'trainer_chat_view.dart';
 import 'workout_dashboard_view.dart';
 
 class MemberShellView extends StatefulWidget {

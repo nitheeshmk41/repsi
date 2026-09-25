@@ -7,9 +7,18 @@ from app.models.invitation import GymInvitation, InvitationRole, InvitationStatu
 from app.models.machine import GymMachine
 from app.models.member import Member, Membership, MembershipPlan, MemberStatus
 from app.models.system import Activity, AuditLog, Notification, Report
-from app.models.trainer import GymClass, Trainer
+from app.models.trainer import (
+    GymClass,
+    Trainer,
+    TrainerStatus,
+    TrainerClient,
+    TrainerClientStatus,
+    TrainingSession,
+    SessionStatus,
+    ClientNote,
+)
 from app.models.user import User, UserRole, Workspace, WorkspaceMember
-from app.models.workout import Workout, WorkoutPlan
+from app.models.workout import Workout, WorkoutPlan, WorkoutStatus
 from app.models.crm import Lead, LeadActivity, LeadFollowUp, LeadStatus, LeadPriority, FollowUpType, FollowUpStatus
 from app.models.website import Website
 
@@ -20,6 +29,7 @@ __all__ = [
     "AuditLog",
     "Base",
     "ClassAttendance",
+    "ClientNote",
     "Expense",
     "GymClass",
     "GymInvitation",
@@ -37,13 +47,19 @@ __all__ = [
     "PaymentStatus",
     "PendingRegistration",
     "Report",
+    "SessionStatus",
     "TenantMixin",
     "TimestampMixin",
     "Trainer",
+    "TrainerClient",
+    "TrainerClientStatus",
+    "TrainerStatus",
+    "TrainingSession",
     "User",
     "UserRole",
     "Workout",
     "WorkoutPlan",
+    "WorkoutStatus",
     "Workspace",
     "WorkspaceMember",
     "Lead",
@@ -55,3 +71,4 @@ __all__ = [
     "FollowUpStatus",
     "Website",
 ]
+

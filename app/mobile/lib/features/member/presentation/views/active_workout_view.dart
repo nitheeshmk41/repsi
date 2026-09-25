@@ -212,7 +212,7 @@ class _ActiveWorkoutViewState extends State<ActiveWorkoutView> {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             color: setItem.isCompleted
-                                ? Colors.green.withOpacity(0.1)
+                                ? Colors.green.withValues(alpha: 0.1)
                                 : theme.cardTheme.color,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -225,7 +225,7 @@ class _ActiveWorkoutViewState extends State<ActiveWorkoutView> {
                                     radius: 14,
                                     backgroundColor: setItem.isCompleted
                                         ? Colors.green
-                                        : Colors.grey.withOpacity(0.3),
+                                        : Colors.grey.withValues(alpha: 0.3),
                                     child: Text(
                                       '${setItem.setNumber}',
                                       style: const TextStyle(

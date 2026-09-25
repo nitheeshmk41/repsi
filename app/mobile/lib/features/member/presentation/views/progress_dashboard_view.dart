@@ -81,7 +81,7 @@ class ProgressDashboardView extends StatelessWidget {
                               dotData: const FlDotData(show: true),
                               belowBarData: BarAreaData(
                                 show: true,
-                                color: theme.primaryColor.withOpacity(0.15),
+                                color: theme.primaryColor.withValues(alpha: 0.15),
                               ),
                             ),
                           ],
@@ -172,9 +172,9 @@ class ProgressDashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.08),
+        color: Colors.grey.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

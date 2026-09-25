@@ -106,7 +106,7 @@ class _TrainerChatViewState extends ConsumerState<TrainerChatView> {
                         bottomRight: Radius.circular(msg.isFromTrainer ? 16 : 4),
                       ),
                       border: msg.isFromTrainer
-                          ? Border.all(color: Colors.grey.withOpacity(0.2))
+                          ? Border.all(color: Colors.grey.withValues(alpha: 0.2))
                           : null,
                     ),
                     child: Text(

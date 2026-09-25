@@ -909,5 +909,242 @@ export const repsiApi = {
     }
     return await res.json();
   },
+
+  // Trainer Module
+  async getTrainers(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/trainers`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn("Failed to fetch trainers", err);
+    }
+    return [];
+  },
+
+  async createTrainer(data: {
+    name: string;
+    phone: string;
+    email?: string;
+    specialization?: string;
+    hourly_rate?: number;
+    commission_percentage?: number;
+    bio?: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create trainer");
+    }
+    return await res.json();
+  },
+
+  async updateTrainer(id: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainers/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update trainer");
+    return await res.json();
+  },
+
+  async deleteTrainer(id: string): Promise<void> {
+    await fetch(`${API_BASE}/trainers/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+  },
+
+  async getCurrentTrainerProfile(): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainers/me`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to load trainer profile");
+    return await res.json();
+  },
+
+  async getCurrentTrainerClients(search?: string, statusFilter?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (statusFilter) params.set("status_filter", statusFilter);
+    const res = await fetch(`${API_BASE}/trainers/me/clients?${params.toString()}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async getCurrentTrainerSchedule(): Promise<{ sessions: any[]; classes: any[] }> {
+    const res = await fetch(`${API_BASE}/trainers/me/schedule`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return { sessions: [], classes: [] };
+    return await res.json();
+  },
+
+  async assignClientToTrainer(trainerId: string, clientId: string, notes?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer-client/assign`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ trainer_id: trainerId, client_id: clientId, notes }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to assign client");
+    }
+    return await res.json();
+  },
+
+  async updateTrainerClientStatus(relationshipId: string, status: string, notes?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer-client/${relationshipId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ status, notes }),
+    });
+    if (!res.ok) throw new Error("Failed to update assignment status");
+    return await res.json();
+  },
+
+  async getClientWorkouts(clientId: string): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/trainer/clients/${clientId}/workouts`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async createClientWorkout(clientId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer/clients/${clientId}/workouts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create workout plan");
+    }
+    return await res.json();
+  },
+
+  async updateWorkout(workoutId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/workouts/${workoutId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update workout");
+    return await res.json();
+  },
+
+  async completeWorkout(workoutId: string, completionPercentage = 100.0): Promise<any> {
+    const res = await fetch(`${API_BASE}/workouts/${workoutId}/complete?completion_percentage=${completionPercentage}`, {
+      method: "POST",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Failed to log workout completion");
+    return await res.json();
+  },
+
+  async getTrainerSessions(clientId?: string): Promise<any[]> {
+    const url = clientId ? `${API_BASE}/trainer/sessions?client_id=${clientId}` : `${API_BASE}/trainer/sessions`;
+    const res = await fetch(url, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async createTrainerSession(data: { title: string; client_id?: string; scheduled_at: string; duration_minutes?: number; notes?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer/sessions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create training session");
+    }
+    return await res.json();
+  },
+
+  async updateTrainerSession(sessionId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update session");
+    return await res.json();
+  },
+
+  async getClientNotes(clientId: string): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/trainer/clients/${clientId}/notes`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async createClientNote(clientId: string, content: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/trainer/clients/${clientId}/notes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create note");
+    }
+    return await res.json();
+  },
+
+  async getClientTrainers(clientId: string): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/clients/${clientId}/trainers`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
 };
 

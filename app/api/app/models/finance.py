@@ -40,7 +40,7 @@ class Invoice(Base, TimestampMixin, TenantMixin):
 
     id = Column(String(64), primary_key=True, default=generate_uuid)
     invoice_number = Column(String(50), nullable=False, index=True)
-    member_id = Column(String(64), ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
+    member_id = Column(String(64), ForeignKey("members.id", ondelete="CASCADE"), nullable=True)
     subtotal = Column(Float, nullable=False)
     tax_amount = Column(Float, default=0.0, nullable=False)  # GST
     total_amount = Column(Float, nullable=False)

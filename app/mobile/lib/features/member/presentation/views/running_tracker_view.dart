@@ -132,9 +132,9 @@ class _RunningTrackerViewState extends State<RunningTrackerView> {
                 Container(
                   height: 140,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.15),
+                    color: Colors.grey.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                   ),
                   child: const Center(
                     child: Column(

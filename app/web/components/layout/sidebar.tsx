@@ -97,14 +97,15 @@ const ownerNavGroups: NavGroupDef[] = [
 
 const trainerNavGroups: NavGroupDef[] = [
   {
-    title: "Trainer Portal",
+    title: "TRAINER PORTAL",
     items: [
       { label: "Dashboard", path: "/trainer/dashboard", icon: LayoutDashboard },
-      { label: "My Members", path: "/trainer/members", icon: Users },
-      { label: "Trainer Chat", path: "/chat", icon: MessageSquare },
-      { label: "Attendance", path: "/attendance", icon: CalendarCheck },
-      { label: "Workout Plans", path: "/trainer/workouts", icon: Dumbbell },
-      { label: "Equipment Status", path: "/machines", icon: Wrench },
+      { label: "Clients", path: "/trainer/clients", icon: Users },
+      { label: "Workouts", path: "/trainer/workouts", icon: Dumbbell },
+      { label: "Schedule", path: "/trainer/schedule", icon: Calendar },
+      { label: "Classes", path: "/trainer/classes", icon: CalendarCheck },
+      { label: "Messages", path: "/chat", icon: MessageSquare },
+      { label: "Profile", path: "/trainer/profile", icon: Settings },
     ],
   },
 ];

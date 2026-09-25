@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/member_repository.dart';
 import 'active_workout_view.dart';
-import 'gym_machines_view.dart';
 import 'membership_payments_view.dart';
 import 'qr_attendance_view.dart';
 import 'running_tracker_view.dart';
@@ -23,7 +22,7 @@ class MemberHomeView extends ConsumerWidget {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: theme.primaryColor.withOpacity(0.2),
+              backgroundColor: theme.primaryColor.withValues(alpha: 0.2),
               child: Text(
                 'N',
                 style: TextStyle(
@@ -68,9 +67,9 @@ class MemberHomeView extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.12),
+                color: Colors.orange.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
@@ -121,7 +120,7 @@ class MemberHomeView extends ConsumerWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -199,7 +198,7 @@ class MemberHomeView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                     ),
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +222,7 @@ class MemberHomeView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                     ),
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,7 +325,7 @@ class MemberHomeView extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.12),
+                        color: Colors.green.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -493,7 +492,7 @@ class MemberHomeView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),
@@ -523,7 +522,7 @@ class MemberHomeView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 18),

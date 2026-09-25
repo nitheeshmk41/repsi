@@ -22,37 +22,6 @@ def get_workspaces(
     return db.query(Workspace).filter(Workspace.id == tenant.workspace_id, Workspace.is_active == True).all()
 
 
-@router.get("/{id}", response_model=WorkspaceResponse)
-def get_workspace(
-    id: str,
-    tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
-):
-    ws = db.query(Workspace).filter(Workspace.id == id).first()
-    if not ws:
-        ws = db.query(Workspace).filter(Workspace.slug == id).first()
-    if not ws or ws.id != tenant.workspace_id:
-        raise HTTPException(status_code=404, detail="Workspace not found or unauthorized access.")
-    return ws
-
-
-@router.put("/{id}", response_model=WorkspaceResponse)
-def update_workspace(
-    id: str,
-    data: WorkspaceUpdate,
-    tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
-):
-    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
-    if not ws:
-        raise HTTPException(status_code=404, detail="Workspace not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(ws, key, value)
-    db.commit()
-    db.refresh(ws)
-    return ws
-
-
 @router.get("/entitlements", tags=["Workspaces"])
 def get_workspace_entitlements(
     tenant: TenantContext = Depends(get_current_tenant),
@@ -119,33 +88,22 @@ def get_workspace_billing(
     member_count = db.query(Member).filter(Member.workspace_id == ws.id).count()
     trainer_count = db.query(Trainer).filter(Trainer.workspace_id == ws.id).count()
 
-    return {
-        "plan": {
-            "id": plan.lower(),
-            "name": "Growth Tier",
-            "price_inr": 1499,
-            "currency": "INR",
-            "interval": "month",
-            "status": "active",
-            "next_billing_date": "2026-10-14",
-            "is_founding_offer": True,
-            "founding_offer_label": "Founding Gym — 3 Months Free",
-        },
-        "usage": {
-            "members": {"current": member_count or 184, "limit": 300},
-            "staff": {"current": trainer_count or 5, "limit": 10},
-            "websites": {"current": 1, "limit": 1},
-            "custom_domains": {"current": 0, "limit": 1},
-        },
-        "payment_method": {
-            "brand": "Visa",
-            "last4": "4242",
-            "exp_month": 12,
-            "exp_year": 2028,
-            "type": "Credit Card",
-            "gateway": "Razorpay Subscriptions",
-        },
-        "invoices": [
+    from app.models.finance import Invoice
+    invoices = db.query(Invoice).filter(Invoice.workspace_id == ws.id).order_by(Invoice.created_at.desc()).all()
+    inv_list = []
+    for inv in invoices:
+        inv_list.append({
+            "id": inv.invoice_number,
+            "date": inv.created_at.strftime("%b %d, %Y") if inv.created_at else "Sep 14, 2026",
+            "amount": f"₹{inv.total_amount:,.0f}",
+            "amount_num": inv.total_amount,
+            "status": inv.status,
+            "plan": f"{plan.capitalize()} Tier",
+            "txRef": inv.notes or "Razorpay Subscriptions",
+        })
+
+    if not inv_list:
+        inv_list = [
             {
                 "id": "INV-2026-001",
                 "date": "Sep 14, 2026",
@@ -174,7 +132,49 @@ def get_workspace_billing(
                 "pdf_url": "/api/v1/workspaces/billing/invoice/INV-2026-003.pdf"
             }
         ]
+
+    return {
+        "plan": {
+            "id": plan.lower(),
+            "name": f"{plan.capitalize()} Tier",
+            "price_inr": 1499 if plan.lower() == "growth" else 2499 if plan.lower() == "pro" else 699,
+            "currency": "INR",
+            "interval": "month",
+            "status": "active",
+            "next_billing_date": "2026-10-14",
+            "is_founding_offer": True,
+            "founding_offer_label": "Founding Gym — 3 Months Free",
+        },
+        "usage": {
+            "members": {"current": member_count or 184, "limit": 300},
+            "staff": {"current": trainer_count or 5, "limit": 10},
+            "websites": {"current": 1, "limit": 1},
+            "custom_domains": {"current": 0, "limit": 1},
+        },
+        "payment_method": {
+            "brand": "Visa",
+            "last4": "4242",
+            "exp_month": 12,
+            "exp_year": 2028,
+            "type": "Credit Card",
+            "gateway": "Razorpay Subscriptions",
+        },
+        "invoices": inv_list
     }
+
+
+@router.get("/{id}", response_model=WorkspaceResponse)
+def get_workspace(
+    id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    ws = db.query(Workspace).filter(Workspace.id == id).first()
+    if not ws:
+        ws = db.query(Workspace).filter(Workspace.slug == id).first()
+    if not ws or ws.id != tenant.workspace_id:
+        raise HTTPException(status_code=404, detail="Workspace not found or unauthorized access.")
+    return ws
 
 
 @router.post("/seed-demo-data")

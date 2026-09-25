@@ -115,7 +115,7 @@ class WorkoutDashboardView extends ConsumerWidget {
                           ),
                           Chip(
                             label: Text('${workout.exercises.length} Exercises'),
-                            backgroundColor: theme.primaryColor.withOpacity(0.1),
+                            backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                             labelStyle: TextStyle(
                               color: theme.primaryColor,
                               fontWeight: FontWeight.bold,
@@ -140,7 +140,7 @@ class WorkoutDashboardView extends ConsumerWidget {
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
-                              backgroundColor: Colors.blue.withOpacity(0.1),
+                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
                               child: Text(
                                 '${index + 1}',
                                 style: TextStyle(
