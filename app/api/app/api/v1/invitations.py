@@ -9,7 +9,7 @@ from sqlalchemy import func
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.email import send_gym_invitation
+from app.core.email import send_gym_invitation, send_direct_credentials_email
 from app.core.security import get_password_hash, create_access_token
 from app.middleware.tenant import get_current_tenant, TenantContext
 from app.models.invitation import GymInvitation, InvitationRole, InvitationStatus
@@ -318,3 +318,142 @@ def accept_invitation(data: InvitationAcceptRequest, db: Session = Depends(get_d
             "role": assigned_role.value
         }
     }
+
+
+class DirectAddRequest(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    role: InvitationRole
+    password: Optional[str] = None
+    specialization: Optional[str] = None
+
+
+@router.post("/direct-add", status_code=status.HTTP_201_CREATED)
+def direct_add_user(
+    data: DirectAddRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    if tenant.role not in ["OWNER", "SUPER_ADMIN", "ADMIN", "MANAGER"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only gym owners and managers can provision user accounts directly."
+        )
+
+    workspace = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found.")
+
+    normalized_email = data.email.strip().lower()
+    raw_password = data.password.strip() if data.password and len(data.password.strip()) >= 6 else secrets.token_urlsafe(8)
+
+    # 1. Create or update User account
+    user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
+    if not user:
+        user = User(
+            email=normalized_email,
+            full_name=data.name.strip(),
+            hashed_password=get_password_hash(raw_password),
+            phone=data.phone.strip() if data.phone else None,
+            is_active=True
+        )
+        db.add(user)
+        db.flush()
+    else:
+        user.hashed_password = get_password_hash(raw_password)
+        if data.phone and not user.phone:
+            user.phone = data.phone.strip()
+        user.is_active = True
+
+    # 2. WorkspaceMember role
+    assigned_role = UserRole.TRAINER if data.role == InvitationRole.TRAINER else UserRole.USER
+    ws_member = db.query(WorkspaceMember).filter(
+        WorkspaceMember.workspace_id == workspace.id,
+        WorkspaceMember.user_id == user.id
+    ).first()
+
+    if not ws_member:
+        ws_member = WorkspaceMember(
+            workspace_id=workspace.id,
+            user_id=user.id,
+            role=assigned_role,
+            is_active=True
+        )
+        db.add(ws_member)
+    else:
+        ws_member.role = assigned_role
+        ws_member.is_active = True
+
+    # 3. Create Member or Trainer entity
+    if data.role == InvitationRole.MEMBER:
+        existing_member = db.query(Member).filter(
+            Member.workspace_id == workspace.id,
+            func.lower(Member.email) == normalized_email
+        ).first()
+        if not existing_member:
+            name_parts = data.name.strip().split(" ", 1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+            member = Member(
+                workspace_id=workspace.id,
+                first_name=first_name,
+                last_name=last_name,
+                email=normalized_email,
+                phone=data.phone or "",
+                status=MemberStatus.ACTIVE,
+                joined_date=date.today()
+            )
+            db.add(member)
+        else:
+            existing_member.status = MemberStatus.ACTIVE
+
+    elif data.role == InvitationRole.TRAINER:
+        existing_trainer = db.query(Trainer).filter(
+            Trainer.workspace_id == workspace.id,
+            func.lower(Trainer.email) == normalized_email
+        ).first()
+        if not existing_trainer:
+            trainer = Trainer(
+                workspace_id=workspace.id,
+                user_id=user.id,
+                name=data.name.strip(),
+                email=normalized_email,
+                phone=data.phone or "",
+                specialization=data.specialization or "General Fitness",
+                status="ACTIVE",
+                is_active=True
+            )
+            db.add(trainer)
+        else:
+            existing_trainer.user_id = user.id
+            existing_trainer.status = "ACTIVE"
+            existing_trainer.is_active = True
+            if data.specialization:
+                existing_trainer.specialization = data.specialization
+
+    db.commit()
+
+    # 4. Dispatch Email with credentials
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    login_url = f"{frontend_url}/login"
+
+    send_direct_credentials_email(
+        email=normalized_email,
+        name=data.name.strip(),
+        role=data.role.value,
+        gym_name=workspace.name,
+        password=raw_password,
+        login_url=login_url
+    )
+
+    return {
+        "status": "success",
+        "message": f"Account for {data.name} created and credentials emailed to {normalized_email}.",
+        "user_id": user.id,
+        "email": normalized_email,
+        "password": raw_password,
+        "role": assigned_role.value
+    }
+
