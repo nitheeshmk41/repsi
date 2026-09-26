@@ -309,6 +309,31 @@ export const repsiApi = {
     }
   },
 
+  async directAddUser(data: {
+    name: string;
+    email: string;
+    phone?: string;
+    role: "member" | "trainer";
+    password?: string;
+    specialization?: string;
+  }): Promise<{ status: string; message: string; user_id?: string; email?: string; password?: string }> {
+    const res = await fetch(`${API_BASE}/invitations/direct-add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    } else {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to add user directly");
+    }
+  },
+
   async verifyInvitation(tokenStr: string): Promise<{
     id: string;
     email: string;
