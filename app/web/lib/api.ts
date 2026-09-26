@@ -41,9 +41,15 @@ export interface ApiPayment {
   status: "success" | "pending";
 }
 
+function getAuthCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(^| )repsi_session=([^;]+)"));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 function getAuthHeader(): Record<string, string> {
   if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("repsi_auth_token");
+  const token = localStorage.getItem("repsi_auth_token") || getAuthCookie();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -636,15 +642,18 @@ export const repsiApi = {
     return [];
   },
 
-  // Razorpay Gateway
-  async createRazorpayOrder(data: {
+  // Cashfree Gateway
+  async createCashfreeOrder(data: {
     amount: number;
     currency?: string;
     member_id?: string;
     membership_id?: string;
     notes?: Record<string, any>;
+    customer_name?: string;
+    customer_email?: string;
+    customer_phone?: string;
   }): Promise<any> {
-    const res = await fetch(`${API_BASE}/payments/razorpay/create-order`, {
+    const res = await fetch(`${API_BASE}/payments/cashfree/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -654,20 +663,25 @@ export const repsiApi = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Failed to create Razorpay order");
+      throw new Error(err.detail || "Failed to create Cashfree order");
     }
     return await res.json();
   },
 
-  async verifyRazorpayPayment(data: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
+  async verifyCashfreePayment(data: {
+    cashfree_order_id?: string;
+    order_id?: string;
+    cashfree_payment_id?: string;
+    payment_id?: string;
+    signature?: string;
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
     member_id?: string;
     amount: number;
     membership_id?: string;
   }): Promise<any> {
-    const res = await fetch(`${API_BASE}/payments/razorpay/verify`, {
+    const res = await fetch(`${API_BASE}/payments/cashfree/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -677,9 +691,18 @@ export const repsiApi = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Razorpay payment verification failed");
+      throw new Error(err.detail || "Cashfree payment verification failed");
     }
     return await res.json();
+  },
+
+  // Razorpay Gateway (Compatibility Aliases)
+  async createRazorpayOrder(data: any): Promise<any> {
+    return this.createCashfreeOrder(data);
+  },
+
+  async verifyRazorpayPayment(data: any): Promise<any> {
+    return this.verifyCashfreePayment(data);
   },
 
   // CRM Endpoints

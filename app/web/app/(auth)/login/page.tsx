@@ -182,33 +182,25 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="w-full max-w-[400px]">
+    <div className="w-full max-w-[380px]">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="md:hidden flex justify-center mb-4">
-          <Image
-            src="/logos/logo_trans.png"
-            alt="REPSI Logo"
-            width={64}
-            height={64}
-            className="object-contain"
-          />
-        </div>
-
-        <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">Welcome back</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1.5">
-          Sign in to your REPSI gym workspace or platform
+        <h1 className="text-[28px] sm:text-[30px] font-bold text-[#111714] tracking-tight">
+          Welcome back
+        </h1>
+        <p className="text-[15px] text-[#66706A] mt-1.5">
+          Sign in to your REPSI workspace
         </p>
       </div>
 
-      {/* Card */}
-      <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)] space-y-4">
+      {/* Form Container - No card border or shadow, floating directly on background */}
+      <div className="space-y-4">
         {/* Google Sign-in */}
         <button
           type="button"
           onClick={() => handleGoogleLogin()}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 h-10 px-4 rounded-[8px] border border-[var(--border)] bg-[var(--background)] text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)] transition-all shadow-2xs active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2.5 h-10 px-4 rounded-lg border border-[#D5DDD7] bg-white text-sm font-medium text-[#111714] hover:bg-zinc-50 hover:border-[#C0CCC3] active:scale-[0.99] transition-all disabled:opacity-60 cursor-pointer shadow-2xs"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -219,12 +211,12 @@ export default function LoginPage() {
           <span>Continue with Google</span>
         </button>
 
-        <div className="relative my-4">
+        <div className="relative my-5">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--border)]" />
+            <div className="w-full border-t border-[#E1E6E3]" />
           </div>
-          <div className="relative flex justify-center text-[11px]">
-            <span className="bg-[var(--surface)] px-2 text-[var(--text-muted)] font-medium">
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-[#F7F9F8] px-3 text-[#8A9690] font-normal">
               or continue with email
             </span>
           </div>
@@ -232,9 +224,9 @@ export default function LoginPage() {
 
         {/* Error */}
         {error && (
-          <div className="rounded-[8px] border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-600 dark:text-rose-400 space-y-1">
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700 space-y-1">
             <p className="font-semibold">{error}</p>
-            <Link href="/signup" className="underline font-bold text-rose-600 dark:text-rose-300 block">
+            <Link href="/signup" className="underline font-bold text-rose-700 block">
               Create account →
             </Link>
           </div>
@@ -243,29 +235,29 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[var(--text)] mb-1.5">
+            <label htmlFor="email" className="block text-sm font-medium text-[#111714] mb-1.5">
               Email address
             </label>
             <input
               id="email"
               type="text"
               autoComplete="email"
-              placeholder="you@example.com or phone"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex h-10 w-full rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-[var(--ring)] transition-colors"
+              className="flex h-10 w-full rounded-lg border border-[#D5DDD7] bg-white px-3 text-sm text-[#111714] placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A34A] focus-visible:border-[#16A34A] transition-colors"
             />
           </div>
 
           {/* Password */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="password" className="text-sm font-medium text-[var(--text)]">
+              <label htmlFor="password" className="text-sm font-medium text-[#111714]">
                 Password
               </label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--primary-dark)] dark:hover:text-[var(--primary-hover)] transition-colors"
+                className="text-xs text-[#66706A] hover:text-[#16A34A] transition-colors"
               >
                 Forgot password?
               </Link>
@@ -278,12 +270,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="flex h-10 w-full rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 pr-10 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:border-[var(--ring)] transition-colors"
+                className="flex h-10 w-full rounded-lg border border-[#D5DDD7] bg-white px-3 pr-10 text-sm text-[#111714] placeholder:text-[#9CA3AF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A34A] focus-visible:border-[#16A34A] transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A9690] hover:text-[#111714] transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -292,16 +284,16 @@ export default function LoginPage() {
           </div>
 
           {/* Remember me */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-0.5">
             <input
               id="remember"
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="h-4 w-4 rounded border-[var(--border)] accent-[var(--primary)]"
+              className="h-4 w-4 rounded border-[#D5DDD7] text-[#16A34A] focus:ring-[#16A34A] accent-[#16A34A]"
             />
-            <label htmlFor="remember" className="text-sm text-[var(--text-secondary)]">
-              Remember me for 30 days
+            <label htmlFor="remember" className="text-sm text-[#66706A] cursor-pointer selection:bg-none">
+              Remember me
             </label>
           </div>
 
@@ -309,22 +301,28 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-semibold hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer mt-1"
           >
             {loading ? (
               <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <>Sign in <ArrowRight className="h-3.5 w-3.5" /></>
+              <>
+                <span>Sign in</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </>
             )}
           </button>
         </form>
       </div>
 
       {/* Sign up link */}
-      <p className="text-center text-sm text-[var(--text-muted)] mt-6">
+      <p className="text-center text-sm text-[#66706A] mt-6">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-[var(--text)] hover:text-[var(--primary-dark)] dark:hover:text-[var(--primary-hover)] transition-colors">
-          Create one free
+        <Link
+          href="/signup"
+          className="font-semibold text-[#111714] hover:text-[#16A34A] transition-colors"
+        >
+          Create one
         </Link>
       </p>
     </div>

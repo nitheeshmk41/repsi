@@ -99,7 +99,7 @@ def get_workspace_billing(
             "amount_num": inv.total_amount,
             "status": inv.status,
             "plan": f"{plan.capitalize()} Tier",
-            "txRef": inv.notes or "Razorpay Subscriptions",
+            "txRef": inv.notes or "Cashfree Subscriptions",
         })
 
     if not inv_list:
@@ -157,7 +157,7 @@ def get_workspace_billing(
             "exp_month": 12,
             "exp_year": 2028,
             "type": "Credit Card",
-            "gateway": "Razorpay Subscriptions",
+            "gateway": "Cashfree Subscriptions",
         },
         "invoices": inv_list
     }

@@ -58,7 +58,7 @@ const deepFeatures = [
     badge: "Finances",
     description: "Never chase renewals again. Enable UPI autopay, recurring card mandates, and automated tax-compliant GST receipts instantly.",
     bullets: [
-      "Integrated UPI AutoPay, Razorpay, and Stripe gateways",
+      "Integrated UPI AutoPay, Cashfree, and Stripe gateways",
       "Automated WhatsApp payment links with one-click payment",
       "Split payments, cash register, and petty cash expense tracking",
       "Instant GST invoices and monthly chartered accountant export",

@@ -10,41 +10,37 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col">
-      {/* Logo Header */}
-      <header className="flex h-16 items-center px-6 border-b border-[var(--border)] bg-[var(--surface)]">
-        <Link href="/" className="flex items-center gap-2">
+    <div className="min-h-screen bg-[#F7F9F8] text-[#111714] flex flex-col justify-between selection:bg-[#16A34A]/20 selection:text-[#16A34A]">
+      {/* Top Header - Small REPSI logo only */}
+      <header className="p-6 sm:p-8">
+        <Link href="/" className="inline-block transition-opacity hover:opacity-80">
           <Image
             src="/logos/primary_logo.png"
             alt="REPSI"
-            width={170}
-            height={55}
-            className="h-10 w-auto object-contain dark:hidden"
-            priority
-          />
-          <Image
-            src="/logos/white_logo.png"
-            alt="REPSI"
-            width={170}
-            height={55}
-            className="h-10 w-auto object-contain hidden dark:block"
+            width={120}
+            height={40}
+            className="h-5 sm:h-6 w-auto object-contain"
             priority
           />
         </Link>
-
       </header>
 
-      {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      {/* Center - Centered around 45–48% of viewport height */}
+      <main className="flex-1 flex flex-col justify-center items-center px-4 -mt-10 pb-8">
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="h-12 flex items-center justify-center px-6 border-t border-[var(--border)]">
-        <p className="text-xs text-[var(--text-muted)]">
-          © {new Date().getFullYear()} REPSI · 
-          <Link href="#" className="hover:text-[var(--text-secondary)] ml-1">Privacy</Link> · 
-          <Link href="#" className="hover:text-[var(--text-secondary)] ml-1">Terms</Link>
+      {/* Footer - Tiny at bottom */}
+      <footer className="py-6 text-center text-xs text-[#8A9690]">
+        <p>
+          © 2026 REPSI ·{" "}
+          <Link href="/about" className="hover:text-[#111714] transition-colors">
+            Privacy
+          </Link>{" "}
+          ·{" "}
+          <Link href="/about" className="hover:text-[#111714] transition-colors">
+            Terms
+          </Link>
         </p>
       </footer>
     </div>

@@ -1242,7 +1242,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                     className="w-full px-3 py-2 rounded-xl bg-surface-elevated border border-border text-sm text-text outline-none"
                   >
                     <option value="upi">UPI (GPay / PhonePe)</option>
-                    <option value="card">Card / Razorpay</option>
+                    <option value="card">Card / Cashfree</option>
                     <option value="cash">Cash</option>
                   </select>
                 </div>

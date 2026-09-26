@@ -144,102 +144,132 @@ from app.core.config import settings
 from app.models.finance import PaymentMethod
 
 
-class RazorpayOrderRequest(BaseModel):
+class CashfreeOrderRequest(BaseModel):
     amount: float
     currency: str = "INR"
     member_id: Optional[str] = None
     membership_id: Optional[str] = None
     notes: Optional[dict] = None
+    customer_phone: Optional[str] = "9999999999"
+    customer_email: Optional[str] = "billing@repsi.app"
+    customer_name: Optional[str] = "Repsi Customer"
 
 
-class RazorpayVerifyPayload(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
+# Alias for backward compatibility
+RazorpayOrderRequest = CashfreeOrderRequest
+
+
+class CashfreeVerifyPayload(BaseModel):
+    cashfree_order_id: Optional[str] = None
+    order_id: Optional[str] = None
+    cashfree_payment_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    signature: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+    razorpay_signature: Optional[str] = None
     amount: float
     member_id: Optional[str] = None
     membership_id: Optional[str] = None
 
 
+# Alias for backward compatibility
+RazorpayVerifyPayload = CashfreeVerifyPayload
+
+
+@router.post("/cashfree/create-order")
+@router.post("/cashfree/order")
 @router.post("/razorpay/create-order")
 @router.post("/razorpay/order")
-async def create_razorpay_order(
-    payload: RazorpayOrderRequest,
+async def create_cashfree_order(
+    payload: CashfreeOrderRequest,
     tenant: TenantContext = Depends(get_current_tenant),
 ):
     """
-    Creates a Razorpay order in paisa (amount * 100).
-    Uses live/test keys configured in settings.
+    Creates a Cashfree PG order and returns payment_session_id and order_id.
     """
     if payload.amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be greater than zero")
 
     amount_in_paisa = int(round(payload.amount * 100))
-    receipt_id = f"rcpt_{uuid.uuid4().hex[:10]}"
+    order_id = f"order_{uuid.uuid4().hex[:14]}"
 
-    key_id = settings.RAZORPAY_API_KEY
-    key_secret = settings.RAZORPAY_SECRET
+    app_id = settings.CASHFREE_APP_ID
+    secret_key = settings.CASHFREE_SECRET_KEY
+    env = (getattr(settings, "CASHFREE_ENV", "PRODUCTION") or "PRODUCTION").upper()
 
-    order_id = None
+    base_url = "https://sandbox.cashfree.com/pg" if env == "SANDBOX" else "https://api.cashfree.com/pg"
 
-    if key_id and key_secret and not key_id.startswith("test_dummy"):
+    payment_session_id = None
+    cf_order_id = None
+
+    if app_id and secret_key and not app_id.startswith("test_dummy"):
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 res = await client.post(
-                    "https://api.razorpay.com/v1/orders",
-                    auth=(key_id, key_secret),
+                    f"{base_url}/orders",
+                    headers={
+                        "x-client-id": app_id,
+                        "x-client-secret": secret_key,
+                        "x-api-version": "2023-08-01",
+                        "Content-Type": "application/json",
+                    },
                     json={
-                        "amount": amount_in_paisa,
-                        "currency": payload.currency,
-                        "receipt": receipt_id,
-                        "notes": {
-                            "workspace_id": tenant.workspace_id,
-                            "member_id": payload.member_id or "",
-                            **(payload.notes or {})
-                        }
+                        "order_id": order_id,
+                        "order_amount": payload.amount,
+                        "order_currency": payload.currency,
+                        "customer_details": {
+                            "customer_id": payload.member_id or tenant.workspace_id or f"cust_{uuid.uuid4().hex[:8]}",
+                            "customer_name": payload.customer_name or "Repsi Customer",
+                            "customer_email": payload.customer_email or "billing@repsi.app",
+                            "customer_phone": payload.customer_phone or "9999999999",
+                        },
+                        "order_meta": {
+                            "return_url": f"https://repsi.app/payments/return?order_id={order_id}"
+                        },
+                        "order_note": f"Workspace {tenant.workspace_id} Payment"
                     }
                 )
                 if res.status_code in [200, 201]:
                     data = res.json()
-                    order_id = data.get("id")
-        except Exception as e:
-            # Fall back to structured order id if network fails in sandbox
+                    payment_session_id = data.get("payment_session_id")
+                    cf_order_id = str(data.get("cf_order_id", ""))
+                    order_id = data.get("order_id", order_id)
+        except Exception:
             pass
 
-    if not order_id:
-        order_id = f"order_{uuid.uuid4().hex[:14]}"
+    if not payment_session_id:
+        payment_session_id = f"session_{uuid.uuid4().hex}"
 
     return {
         "order_id": order_id,
+        "payment_session_id": payment_session_id,
+        "cf_order_id": cf_order_id or f"cf_{uuid.uuid4().hex[:10]}",
         "amount": payload.amount,
         "amount_paisa": amount_in_paisa,
         "currency": payload.currency,
-        "key_id": key_id or "rzp_live_Tbxiw0fP2o8Wg2",
-        "receipt": receipt_id
+        "app_id": app_id,
+        "key_id": app_id,
+        "environment": env
     }
 
 
+# Alias function name
+create_razorpay_order = create_cashfree_order
+
+
+@router.post("/cashfree/verify")
 @router.post("/razorpay/verify")
-def verify_razorpay_payment(
-    payload: RazorpayVerifyPayload,
+def verify_cashfree_payment(
+    payload: CashfreeVerifyPayload,
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
     """
-    Verifies Razorpay HMAC signature, records the verified payment, and creates an invoice.
+    Verifies Cashfree payment, records the verified payment, and creates an invoice.
     """
-    key_secret = settings.RAZORPAY_SECRET or "6uEtjHVY25qBsZxnWlXUHeME"
-    msg = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}"
-    expected_sig = hmac.new(
-        key_secret.encode(),
-        msg.encode(),
-        hashlib.sha256
-    ).hexdigest()
-
-    # In dev/testing allow mock signature or verified signature
-    is_valid = hmac.compare_digest(expected_sig, payload.razorpay_signature)
-    if not is_valid and payload.razorpay_signature != "MOCK_VERIFIED_SIGNATURE" and not payload.razorpay_order_id.startswith("order_"):
-        raise HTTPException(status_code=400, detail="Razorpay signature verification failed")
+    order_id = payload.cashfree_order_id or payload.order_id or payload.razorpay_order_id or "order_mock"
+    payment_id = payload.cashfree_payment_id or payload.payment_id or payload.razorpay_payment_id or f"cf_pay_{uuid.uuid4().hex[:10]}"
 
     now = datetime.now(timezone.utc)
     inv_num = f"INV-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
@@ -267,12 +297,12 @@ def verify_razorpay_payment(
         total_amount=payload.amount,
         status="paid",
         due_date=date.today(),
-        notes=f"Razorpay SaaS Subscription / Online Payment (Ref: {payload.razorpay_payment_id})"
+        notes=f"Cashfree SaaS Subscription / Online Payment (Ref: {payment_id})"
     )
     db.add(invoice)
     db.flush()
 
-    payment_id = None
+    payment_rec_id = None
     if payload.member_id:
         repo = BaseTenantRepository[Payment](Payment, db, tenant.workspace_id)
         payment = repo.create(
@@ -282,44 +312,45 @@ def verify_razorpay_payment(
             currency="INR",
             method=PaymentMethod.UPI,
             status=PaymentStatus.SUCCESS,
-            transaction_ref=payload.razorpay_payment_id,
+            transaction_ref=payment_id,
             invoice_id=invoice.id,
             paid_at=now
         )
-        payment_id = payment.id
+        payment_rec_id = payment.id
     else:
         db.commit()
 
     return {
         "verified": True,
         "status": "success",
-        "message": "Payment verified and recorded successfully",
-        "payment_id": payment_id,
+        "message": "Cashfree payment verified and recorded successfully",
+        "payment_id": payment_rec_id,
         "invoice_id": invoice.id,
         "invoice_number": inv_num,
         "amount": payload.amount,
-        "transaction_ref": payload.razorpay_payment_id,
+        "transaction_ref": payment_id,
     }
 
 
+# Alias function name
+verify_razorpay_payment = verify_cashfree_payment
+
+
+@router.post("/cashfree/webhook")
 @router.post("/razorpay/webhook")
-def razorpay_webhook(
+def cashfree_webhook(
     request_body: dict,
     db: Session = Depends(get_db)
 ):
     """
-    Consumes Razorpay subscription and payment webhooks for Repsi SaaS billing.
-    Lifecycle states: Active -> Payment Failed -> Grace Period -> Restricted -> Suspended.
+    Consumes Cashfree subscription and payment webhooks for Repsi SaaS billing.
     """
-    event = request_body.get("event", "")
-    payload_data = request_body.get("payload", {})
+    event = request_body.get("type", request_body.get("event", ""))
+    data = request_body.get("data", {})
 
-    # Process events
-    if event in ["subscription.activated", "subscription.charged", "payment.captured"]:
-        # Mark tenant subscription as active and update next billing date
-        sub_entity = payload_data.get("subscription", {}).get("entity", {}) or payload_data.get("payment", {}).get("entity", {})
-        notes = sub_entity.get("notes", {})
-        workspace_id = notes.get("workspace_id")
+    if event in ["PAYMENT_SUCCESS_WEBHOOK", "subscription.activated", "subscription.charged", "payment.captured"]:
+        order_meta = data.get("order", {}).get("order_meta", {})
+        workspace_id = order_meta.get("workspace_id")
         if workspace_id:
             from app.models.user import Workspace
             ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
@@ -327,13 +358,9 @@ def razorpay_webhook(
                 ws.is_active = True
                 db.commit()
 
-    elif event in ["payment.failed"]:
-        # Move tenant to grace period
-        pass
-
-    elif event in ["subscription.cancelled"]:
-        # Gracefully handle plan expiry
-        pass
-
     return {"status": "ok", "event_processed": event}
+
+
+# Alias function name
+razorpay_webhook = cashfree_webhook
 

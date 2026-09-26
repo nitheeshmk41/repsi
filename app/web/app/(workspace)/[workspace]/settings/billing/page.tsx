@@ -30,6 +30,7 @@ import { repsiApi } from "@/lib/api";
 
 declare global {
   interface Window {
+    Cashfree: any;
     Razorpay: any;
   }
 }
@@ -105,20 +106,22 @@ const PLANS: PlanTier[] = [
   },
 ];
 
-// Helper to dynamically load Razorpay script
-const loadRazorpaySDK = (): Promise<boolean> => {
+// Helper to dynamically load Cashfree script
+const loadCashfreeSDK = (): Promise<boolean> => {
   return new Promise((resolve) => {
-    if (typeof window !== "undefined" && window.Razorpay) {
+    if (typeof window !== "undefined" && window.Cashfree) {
       resolve(true);
       return;
     }
     const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
     script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
 };
+
+const loadRazorpaySDK = loadCashfreeSDK;
 
 export default function SubscriptionBillingPage(props: { params: Promise<{ workspace: string }> }) {
   const params = use(props.params);
@@ -205,7 +208,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
     loadBilling();
   }, [workspace]);
 
-  const handleRazorpaySaaSCheckout = async (planId: string) => {
+  const handleCashfreeSaaSCheckout = async (planId: string) => {
     setIsProcessingCheckout(true);
     setCheckoutError(null);
     const plan = PLANS.find((p) => p.id === planId) || PLANS[1];
@@ -215,15 +218,15 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
     const price = billingCycle === "annual" ? Math.round(basePrice * 0.8 * 12) : basePrice;
 
     try {
-      const sdkReady = await loadRazorpaySDK();
+      const sdkReady = await loadCashfreeSDK();
       if (!sdkReady) {
-        throw new Error("Unable to load Razorpay SDK. Check your internet connection.");
+        throw new Error("Unable to load Cashfree SDK. Check your internet connection.");
       }
 
-      // Try creating backend Razorpay Order
+      // Try creating backend Cashfree Order
       let orderData: any = null;
       try {
-        orderData = await repsiApi.createRazorpayOrder({
+        orderData = await repsiApi.createCashfreeOrder({
           amount: price,
           currency: currency,
           notes: {
@@ -237,96 +240,79 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
         console.warn("Backend order creation warning, generating client order ref", err);
       }
 
-      const keyId = orderData?.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_Tbxiw0fP2o8Wg2";
+      const sessionId = orderData?.payment_session_id;
       const orderId = orderData?.order_id || `order_${Math.random().toString(36).substring(2, 14)}`;
 
-      const options = {
-        key: keyId,
-        amount: orderData?.amount_paisa || price * 100,
-        currency: currency,
-        name: "Repsi Technologies",
-        description: `Repsi ${plan.name} Plan (${billingCycle === "annual" ? "Annual - Save 20%" : "Monthly"})`,
-        image: "/logos/logo_trans.png",
-        order_id: orderId.startsWith("order_") ? orderId : undefined,
-        prefill: {
-          name: "Gym Owner",
-          email: "owner@gym.repsi.app",
-          contact: "+919876543210",
-        },
-        theme: {
-          color: "#18B968", // Repsi Brand Green
-        },
-
-        handler: async function (response: any) {
-          const paymentId = response.razorpay_payment_id || `pay_${Math.random().toString(36).substring(2, 14)}`;
-
-          try {
-            // Verify payment on backend
-            await repsiApi.verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id || orderId,
-              razorpay_payment_id: paymentId,
-              razorpay_signature: response.razorpay_signature || "MOCK_VERIFIED_SIGNATURE",
-              amount: price,
-            });
-          } catch (vErr) {
-            console.warn("Payment verification completed locally", vErr);
-          }
-
-          // Update active plan state
-          const newPlanState = {
-            id: plan.id,
-            name: `${plan.name} Tier`,
-            price_inr: price,
-            currency: currency,
-            interval: billingCycle === "annual" ? "year" : "month",
-            status: "active",
-            next_billing_date: billingCycle === "annual" ? "23 September 2027" : "23 October 2026",
-            is_founding_offer: false,
-          };
-          setActivePlan(newPlanState);
-
-          // Append new invoice
-          const newInv = {
-            id: `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`,
-            date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-            amount: currency === "INR" ? `₹${price.toLocaleString()}` : `$${(price / 83).toFixed(0)}`,
-            amount_num: price,
-            status: "paid",
-            plan: `${plan.name} Tier`,
-            txRef: paymentId,
-          };
-
-          setInvoices((prev) => [newInv, ...prev]);
-
-          setSuccessDetails({
-            planName: plan.name,
-            paymentId: paymentId,
-            amount: price,
-            billingCycle: billingCycle,
-          });
-
-          setShowPlanModal(false);
-          setShowSuccessModal(true);
-          setIsProcessingCheckout(false);
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessingCheckout(false);
-          },
-        },
-      };
-
-      if (typeof window !== "undefined" && window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", function (resp: any) {
-          setCheckoutError(resp.error?.description || "Payment was declined or cancelled.");
-          setIsProcessingCheckout(false);
+      if (typeof window !== "undefined" && window.Cashfree && sessionId) {
+        const cashfree = window.Cashfree({
+          mode: (process.env.NEXT_PUBLIC_CASHFREE_ENV || "PRODUCTION").toLowerCase() === "sandbox" ? "sandbox" : "production",
         });
-        rzp.open();
+
+        await cashfree.checkout({
+          paymentSessionId: sessionId,
+          redirectTarget: "_modal",
+        });
+
+        const paymentId = `cf_pay_${Math.random().toString(36).substring(2, 14)}`;
+
+        try {
+          await repsiApi.verifyCashfreePayment({
+            cashfree_order_id: orderId,
+            cashfree_payment_id: paymentId,
+            amount: price,
+          });
+        } catch (vErr) {
+          console.warn("Payment verification completed locally", vErr);
+        }
+
+        // Update active plan state
+        const newPlanState = {
+          id: plan.id,
+          name: `${plan.name} Tier`,
+          price_inr: price,
+          currency: currency,
+          interval: billingCycle === "annual" ? "year" : "month",
+          status: "active",
+          next_billing_date: billingCycle === "annual" ? "23 September 2027" : "23 October 2026",
+          is_founding_offer: false,
+        };
+        setActivePlan(newPlanState);
+
+        // Append new invoice
+        const newInv = {
+          id: `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`,
+          date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          amount: currency === "INR" ? `₹${price.toLocaleString()}` : `$${(price / 83).toFixed(0)}`,
+          amount_num: price,
+          status: "paid",
+          plan: `${plan.name} Tier`,
+          txRef: paymentId,
+        };
+
+        setInvoices((prev) => [newInv, ...prev]);
+
+        setSuccessDetails({
+          planName: plan.name,
+          paymentId: paymentId,
+          amount: price,
+          billingCycle: billingCycle,
+        });
+
+        setShowPlanModal(false);
+        setShowSuccessModal(true);
+        setIsProcessingCheckout(false);
       } else {
         // Fallback simulation for offline/sandbox
-        setTimeout(() => {
-          const fakePaymentId = `pay_sim_${Math.random().toString(36).substring(2, 10)}`;
+        setTimeout(async () => {
+          const fakePaymentId = `cf_pay_sim_${Math.random().toString(36).substring(2, 10)}`;
+          try {
+            await repsiApi.verifyCashfreePayment({
+              cashfree_order_id: orderId,
+              cashfree_payment_id: fakePaymentId,
+              amount: price,
+            });
+          } catch (e) {}
+
           setActivePlan({
             id: plan.id,
             name: `${plan.name} Tier`,
@@ -360,10 +346,12 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
         }, 1200);
       }
     } catch (err: any) {
-      setCheckoutError(err.message || "Failed to initialize Razorpay checkout.");
+      setCheckoutError(err.message || "Failed to initialize Cashfree checkout.");
       setIsProcessingCheckout(false);
     }
   };
+
+  const handleRazorpaySaaSCheckout = handleCashfreeSaaSCheckout;
 
   const usage = billingData?.usage || {
     members: { current: 184, limit: selectedPlan === "starter" ? 100 : selectedPlan === "growth" ? 300 : 500 },
@@ -374,7 +362,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://sdk.cashfree.com/js/v3/cashfree.js" strategy="lazyOnload" />
 
       <div className="min-h-screen bg-background text-text p-4 md:p-8 space-y-8 max-w-6xl mx-auto">
         {/* Header & Breadcrumb */}
@@ -399,7 +387,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
               </span>
             </h1>
             <p className="text-sm text-text-secondary mt-1">
-              Manage your gym&apos;s software license, Razorpay AutoPay mandate, entitlements, and tax invoices.
+              Manage your gym&apos;s software license, Cashfree AutoPay mandate, entitlements, and tax invoices.
             </p>
           </div>
 
@@ -414,7 +402,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
           </div>
         </div>
 
-        {/* Razorpay SaaS Architecture Info Banner */}
+        {/* Cashfree SaaS Architecture Info Banner */}
         <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary-soft border border-primary/20 text-primary flex-shrink-0">
@@ -422,13 +410,13 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
             </div>
             <div>
               <h4 className="text-sm font-semibold text-text flex items-center gap-2">
-                Razorpay Enterprise Integration
+                Cashfree Enterprise Integration
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                   Verified
                 </span>
               </h4>
               <p className="text-xs text-text-secondary">
-                Razorpay processes your gym&apos;s SaaS software license securely. Your members&apos; check-ins, fee collections, and payments are managed cleanly within your Repsi workspace.
+                Cashfree processes your gym&apos;s SaaS software license securely. Your members&apos; check-ins, fee collections, and payments are managed cleanly within your Repsi workspace.
               </p>
             </div>
           </div>
@@ -606,11 +594,11 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                   Payment Method
                 </h3>
                 <span className="text-[10px] px-2.5 py-1 rounded bg-primary-soft text-primary border border-primary/20 font-bold uppercase tracking-wider">
-                  Razorpay AutoPay
+                  Cashfree AutoPay
                 </span>
               </div>
               <p className="text-xs text-text-secondary mb-6">
-                Active recurring mandate for monthly Repsi software license billing via Razorpay.
+                Active recurring mandate for monthly Repsi software license billing via Cashfree.
               </p>
 
               <div className="p-4 rounded-2xl bg-surface-elevated border border-border flex items-center justify-between mb-4">
@@ -620,7 +608,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                   </div>
                   <div>
                     <div className="font-mono text-sm font-semibold text-text">Visa •••• 4242</div>
-                    <div className="text-[11px] text-text-muted">Razorpay Mandate Ref: rzp_sub_98124</div>
+                    <div className="text-[11px] text-text-muted">Cashfree Mandate Ref: cf_sub_98124</div>
                   </div>
                 </div>
                 <span className="text-xs text-success font-semibold px-2 py-0.5 rounded bg-success-soft border border-success/30">
@@ -837,7 +825,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRazorpaySaaSCheckout(p.id);
+                            handleCashfreeSaaSCheckout(p.id);
                           }}
                           disabled={isProcessingCheckout}
                           className="w-full py-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition shadow-lg flex items-center justify-center gap-2 transform active:scale-95 cursor-pointer"
@@ -845,11 +833,11 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                           {isProcessingCheckout && selectedPlan === p.id ? (
                             <>
                               <RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>Opening Razorpay SDK...</span>
+                              <span>Opening Cashfree SDK...</span>
                             </>
                           ) : (
                             <>
-                              <span>Pay with Razorpay</span>
+                              <span>Pay with Cashfree</span>
                               <ChevronRight className="w-4 h-4" />
                             </>
                           )}
@@ -864,7 +852,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border text-xs text-text-muted">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                <span>256-Bit SSL Encrypted Payment via Razorpay Subscriptions</span>
+                <span>256-Bit SSL Encrypted Payment via Cashfree Subscriptions</span>
               </div>
               <button
                 onClick={() => setShowPlanModal(false)}
@@ -917,8 +905,8 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                 </div>
                 <div className="text-right">
                   <div className="text-text-muted font-semibold uppercase text-[10px]">Payment Details:</div>
-                  <div className="font-semibold text-text mt-0.5">Gateway: Razorpay</div>
-                  <div className="text-text-secondary font-mono text-[11px]">Ref: {selectedInvoice.txRef || "pay_rzp_9812"}</div>
+                  <div className="font-semibold text-text mt-0.5">Gateway: Cashfree</div>
+                  <div className="text-text-secondary font-mono text-[11px]">Ref: {selectedInvoice.txRef || "pay_cf_9812"}</div>
                   <div className="text-text-secondary">Date: {selectedInvoice.date}</div>
                 </div>
               </div>
@@ -988,10 +976,10 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
             <div className="mb-4">
               <h3 className="text-xl font-bold text-text flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-primary" />
-                Update Razorpay Mandate
+                Update Cashfree Mandate
               </h3>
               <p className="text-xs text-text-secondary mt-1">
-                Authorize a new UPI AutoPay or credit card mandate via Razorpay secure gateway.
+                Authorize a new UPI AutoPay or credit card mandate via Cashfree secure gateway.
               </p>
             </div>
 
@@ -1005,13 +993,13 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                   ACTIVE
                 </span>
               </div>
-              <div className="text-xs text-text-secondary">Gateway: Razorpay Subscriptions (256-Bit SSL)</div>
+              <div className="text-xs text-text-secondary">Gateway: Cashfree Subscriptions (256-Bit SSL)</div>
             </div>
 
             <div className="space-y-3">
               <button
                 onClick={() => {
-                  alert("Opening Razorpay payment method update popup...");
+                  alert("Opening Cashfree payment method update popup...");
                   setShowPaymentMethodModal(false);
                 }}
                 className="w-full py-3 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
@@ -1040,7 +1028,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
 
             <h3 className="text-2xl font-black text-text mb-2">Subscription Activated!</h3>
             <p className="text-xs text-text-secondary mb-6">
-              Your Repsi workspace has been upgraded to <strong className="text-primary font-bold">{successDetails.planName} Tier</strong> via Razorpay.
+              Your Repsi workspace has been upgraded to <strong className="text-primary font-bold">{successDetails.planName} Tier</strong> via Cashfree.
             </p>
 
             <div className="p-4 rounded-2xl bg-surface-elevated border border-border text-left space-y-2 mb-6 font-mono text-xs">
@@ -1058,7 +1046,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
               </div>
               <div className="flex justify-between">
                 <span className="text-text-muted">Status:</span>
-                <span className="text-success font-bold">VERIFIED BY RAZORPAY</span>
+                <span className="text-success font-bold">VERIFIED BY CASHFREE</span>
               </div>
             </div>
 

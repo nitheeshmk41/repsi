@@ -225,7 +225,7 @@ class MemberRepository {
         amount: 4000.0,
         date: DateTime.now().subtract(const Duration(days: 36)),
         status: 'PAID',
-        paymentMethod: 'Razorpay',
+        paymentMethod: 'Cashfree',
         receiptNumber: 'REC-2026-08014',
       ),
     ];

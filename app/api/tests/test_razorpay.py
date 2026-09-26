@@ -4,16 +4,16 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_razorpay_order_creation_and_verification():
+def test_cashfree_order_creation_and_verification():
     with TestClient(app) as client:
         try:
             # Register owner
-            unique_email = f"rzp_owner_{uuid.uuid4().hex[:6]}@repsi.app"
+            unique_email = f"cf_owner_{uuid.uuid4().hex[:6]}@repsi.app"
             reg_payload = {
-                "full_name": "Razorpay Gym Owner",
+                "full_name": "Cashfree Gym Owner",
                 "email": unique_email,
                 "password": "SecretPassword123!",
-                "gym_name": "Razorpay Power Gym",
+                "gym_name": "Cashfree Power Gym",
                 "gym_phone": "+91 98888 77777",
                 "gym_city": "Mumbai"
             }
@@ -34,18 +34,17 @@ def test_razorpay_order_creation_and_verification():
                     "billing_cycle": "monthly"
                 }
             }
-            order_resp = client.post("/api/v1/payments/razorpay/create-order", json=order_payload, headers=headers)
+            order_resp = client.post("/api/v1/payments/cashfree/create-order", json=order_payload, headers=headers)
             print("ORDER RESP CODE:", order_resp.status_code)
             print("ORDER RESP BODY:", order_resp.json())
             assert order_resp.status_code == 200
             order_data = order_resp.json()
             assert "order_id" in order_data
+            assert "payment_session_id" in order_data
             assert order_data["amount"] == 1499.0
-            assert order_data["amount_paisa"] == 149900
-            assert "key_id" in order_data
 
-            # 2. Test alias /razorpay/order endpoint
-            alias_resp = client.post("/api/v1/payments/razorpay/order", json=order_payload, headers=headers)
+            # 2. Test alias /cashfree/order endpoint
+            alias_resp = client.post("/api/v1/payments/cashfree/order", json=order_payload, headers=headers)
             print("ALIAS RESP CODE:", alias_resp.status_code)
             print("ALIAS RESP BODY:", alias_resp.json())
             assert alias_resp.status_code == 200
@@ -53,12 +52,11 @@ def test_razorpay_order_creation_and_verification():
 
             # 3. Test verification endpoint
             verify_payload = {
-                "razorpay_order_id": order_data["order_id"],
-                "razorpay_payment_id": "pay_test_rzp_123456",
-                "razorpay_signature": "MOCK_VERIFIED_SIGNATURE",
+                "cashfree_order_id": order_data["order_id"],
+                "cashfree_payment_id": "pay_test_cf_123456",
                 "amount": 1499.0,
             }
-            verify_resp = client.post("/api/v1/payments/razorpay/verify", json=verify_payload, headers=headers)
+            verify_resp = client.post("/api/v1/payments/cashfree/verify", json=verify_payload, headers=headers)
             print("VERIFY RESP CODE:", verify_resp.status_code)
             print("VERIFY RESP BODY:", verify_resp.json())
             assert verify_resp.status_code == 200

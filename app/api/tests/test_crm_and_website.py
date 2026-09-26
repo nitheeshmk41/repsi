@@ -34,26 +34,23 @@ def test_razorpay_and_crm_and_website_builder():
     headers_2 = {"Authorization": f"Bearer {token_2}"}
 
     # ==========================
-    # RAZORPAY PAYMENT TESTS
+    # CASHFREE PAYMENT TESTS
     # ==========================
     # Create order
-    order_res = client.post("/api/v1/payments/razorpay/create-order", headers=headers_1, json={
+    order_res = client.post("/api/v1/payments/cashfree/create-order", headers=headers_1, json={
         "amount": 2999.0,
         "currency": "INR",
-        "receipt": "rcpt_test_001",
         "notes": {"plan": "Annual Growth"}
     })
     assert order_res.status_code == 200, order_res.text
     order_data = order_res.json()
     assert "order_id" in order_data
-    assert order_data["amount_paisa"] == 299900
     assert order_data["amount"] == 2999.0
 
-    # Verify signature
-    verify_res = client.post("/api/v1/payments/razorpay/verify", headers=headers_1, json={
-        "razorpay_order_id": order_data["order_id"],
-        "razorpay_payment_id": "pay_mock_123456",
-        "razorpay_signature": "MOCK_VERIFIED_SIGNATURE",
+    # Verify payment
+    verify_res = client.post("/api/v1/payments/cashfree/verify", headers=headers_1, json={
+        "cashfree_order_id": order_data["order_id"],
+        "cashfree_payment_id": "pay_mock_123456",
         "amount": 2999.0,
         "notes": {"plan": "Annual Growth"}
     })

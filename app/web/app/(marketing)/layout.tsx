@@ -12,7 +12,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="light bg-white text-zinc-900 min-h-screen font-sans antialiased">
+    <div className="min-h-screen font-sans antialiased">
       {children}
     </div>
   );
