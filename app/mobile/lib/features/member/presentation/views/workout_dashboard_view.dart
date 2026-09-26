@@ -1,199 +1,197 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../data/member_repository.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../shared/animations/repsi_stagger.dart';
+import '../../../../shared/widgets/repsi_button.dart';
+import '../../../../shared/widgets/repsi_card.dart';
 import 'active_workout_view.dart';
-import 'exercise_library_view.dart';
 
-class WorkoutDashboardView extends ConsumerWidget {
+class WorkoutDashboardView extends StatelessWidget {
   const WorkoutDashboardView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final todayWorkoutAsync = ref.watch(todayWorkoutProvider);
+  Widget build(BuildContext context) {
+    final exercises = [
+      {'name': 'Bench Press', 'sets': '4 × 10', 'weight': '60 kg', 'icon': Icons.fitness_center_rounded},
+      {'name': 'Incline Dumbbell Press', 'sets': '3 × 12', 'weight': '20 kg', 'icon': Icons.fitness_center_rounded},
+      {'name': 'Cable Fly', 'sets': '3 × 15', 'weight': '15 kg', 'icon': Icons.sports_gymnastics_rounded},
+      {'name': 'Triceps Pushdown', 'sets': '3 × 12', 'weight': '25 kg', 'icon': Icons.trending_down_rounded},
+    ];
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Workout Hub',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExerciseLibraryView()),
-              );
-            },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Workout Plan',
+          style: AppTypography.heading.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
-        ],
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Quick Hero Action to Exercise Library
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ExerciseLibraryView()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.primaryColor, Colors.indigo],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.pageHorizontalPadding,
+            vertical: 12,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Badge + Plan Header (Mockup Screen 3)
+              RepsiStaggerItem(
+                index: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                    border: Border.all(color: AppColors.border, width: 1),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.menu_book_rounded, color: Colors.white, size: 36),
-                    SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Exercise Library',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Explore form guides, muscles & equipment',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            const Text(
-              "ASSIGNED WORKOUT PLAN",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            todayWorkoutAsync.when(
-              data: (workout) => Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            workout.title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          Chip(
-                            label: Text('${workout.exercises.length} Exercises'),
-                            backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-                            labelStyle: TextStyle(
-                              color: theme.primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.bolt_rounded, size: 14, color: AppColors.primaryDark),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Today's Workout",
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.primaryDark,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Chest + Triceps',
+                        style: AppTypography.heading.copyWith(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
-                        workout.description,
-                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        '4 exercises · 45 min',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
-                      const Divider(height: 24),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: workout.exercises.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final item = workout.exercises[index];
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  color: theme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              item.exercise.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              '${item.sets.length} Sets · Target: ${item.exercise.equipment.name}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: const Icon(Icons.fitness_center, size: 18, color: Colors.grey),
+                      const SizedBox(height: 20),
+                      RepsiButton(
+                        text: 'Start Workout',
+                        leadingIcon: const Icon(Icons.play_arrow_rounded, size: 22),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ActiveWorkoutView()),
                           );
                         },
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ActiveWorkoutView(workout: workout),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'START WORKOUT SESSION',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
+                        isFullWidth: true,
+                        size: RepsiButtonSize.large,
                       ),
                     ],
                   ),
                 ),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, __) => Text('Error: $err'),
-            ),
-          ],
+              const SizedBox(height: 24),
+
+              // Exercises List Header
+              RepsiStaggerItem(
+                index: 1,
+                child: Text(
+                  'Exercises (${exercises.length})',
+                  style: AppTypography.sectionHeading.copyWith(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Exercise Cards
+              ...List.generate(exercises.length, (index) {
+                final ex = exercises[index];
+                return RepsiStaggerItem(
+                  index: index + 2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: RepsiCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border, width: 0.8),
+                            ),
+                            child: Icon(
+                              ex['icon'] as IconData,
+                              size: 22,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ex['name'] as String,
+                                  style: AppTypography.headingSmall.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${ex['sets']} · ${ex['weight']}',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 20,
+                            color: AppColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );

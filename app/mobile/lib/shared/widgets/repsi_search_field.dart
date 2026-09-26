@@ -6,14 +6,14 @@ import '../../app/theme/app_typography.dart';
 
 class RepsiSearchField extends StatefulWidget {
   final String hintText;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onChanged;
   final VoidCallback? onClear;
   final TextEditingController? controller;
 
   const RepsiSearchField({
     super.key,
-    this.hintText = 'Search members, plans, records...',
-    required this.onChanged,
+    this.hintText = 'Search...',
+    this.onChanged,
     this.onClear,
     this.controller,
   });
@@ -88,7 +88,7 @@ class _RepsiSearchFieldState extends State<RepsiSearchField> {
                   color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
                   onPressed: () {
                     _controller.clear();
-                    widget.onChanged('');
+                    widget.onChanged?.call('');
                     widget.onClear?.call();
                   },
                 )

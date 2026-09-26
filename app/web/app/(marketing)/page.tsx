@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, 
   CheckCircle2, 
@@ -34,17 +35,63 @@ import {
   Send,
   X,
   ArrowUp,
-  Play
+  Play,
+  RotateCcw,
+  Sparkle
 } from "lucide-react";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { DemoLogos } from "@/components/marketing/demo-logos";
 import { GradientWaves } from "@/components/ui/gradient-waves";
 import { FadeIn } from "@/components/ui/fade-in";
+import { ScrollExpand } from "@/components/ui/scroll-expand";
+
+function CountUp({ 
+  end, 
+  prefix = "", 
+  suffix = "", 
+  formatter 
+}: { 
+  end: number; 
+  prefix?: string; 
+  suffix?: string; 
+  formatter?: (val: number) => string; 
+}) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const duration = 1100;
+    let animationFrameId: number;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easedProgress * end));
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [end]);
+
+  const displayVal = formatter ? formatter(count) : count.toLocaleString();
+  return <>{prefix}{displayVal}{suffix}</>;
+}
 
 export default function HomePage() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [hoveredFeature, setHoveredFeature] = useState<"members" | "progress" | "time" | "business" | null>(null);
+  const [demoActive, setDemoActive] = useState(false);
+  const [demoStep, setDemoStep] = useState<number>(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,44 +105,101 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!demoActive) return;
+    const interval = setInterval(() => {
+      setDemoStep((prev) => {
+        if (prev >= 3) {
+          setDemoActive(false);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [demoActive]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const startDemo = () => {
+    setDemoStep(0);
+    setDemoActive(true);
+  };
+
+  const demoTitles = ["Members Directory", "Attendance Engine", "Payments & Revenue", "Business Analytics"];
+  const highlightKey = demoActive
+    ? (["members", "progress", "business", "business"][demoStep] as "members" | "progress" | "time" | "business")
+    : hoveredFeature;
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] font-sans antialiased overflow-x-hidden relative">
-      {/* ── 1. Navbar (Transparent in Hero Section) ───────────────── */}
+      {/* ── 1. Navbar (Sticky with glassmorphism backdrop) ───────────────── */}
       <MarketingNav />
 
-      {/* ── 2. Hero Section (Explicit Light Theme & Balanced Gradient Backdrop) ── */}
-      <section className="relative min-h-[calc(100vh-4rem)] lg:max-h-[920px] flex flex-col justify-center py-6 lg:py-8 overflow-hidden bg-gradient-to-b from-[#f4fbf6] via-[#fafdfb] to-white text-zinc-900">
-        {/* Organic Green Curve & Ambient Wave Backdrop */}
+      {/* ── 2. Hero Section (Centered Copy + Dead-Center Scroll Expand Dashboard) ── */}
+      <section 
+        onMouseMove={handleMouseMove}
+        className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-start pt-8 pb-16 overflow-hidden bg-gradient-to-b from-[#f2faf4] via-[#fafdfb] to-white text-zinc-900"
+      >
+        {/* Ambient Waves & Cursor Radial Glow */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden select-none">
-          {/* Organic light green background glow shape with soft radial blur */}
-          <div className="absolute -top-10 right-0 w-[55vw] h-[750px] bg-gradient-to-br from-emerald-100/40 via-emerald-50/20 to-transparent rounded-bl-[40px] blur-3xl opacity-60" />
-          
+          {/* Dynamic Subtle Cursor Glow */}
+          <div 
+            className="absolute inset-0 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(750px circle at ${mousePos.x}px ${mousePos.y}px, rgba(34, 197, 94, 0.09), transparent 80%)`,
+            }}
+          />
+
+          {/* 3 Huge Blurred Green Floating Blobs */}
+          <motion.div
+            animate={{ x: [0, 40, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-16 left-1/2 -translate-x-1/2 w-[700px] h-[550px] bg-gradient-to-br from-emerald-300/35 via-emerald-400/20 to-emerald-200/10 rounded-full blur-[115px] pointer-events-none z-0"
+          />
+          <motion.div
+            animate={{ x: [0, -30, 0] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/3 -left-20 w-[500px] h-[500px] bg-gradient-to-tr from-emerald-200/30 via-teal-300/15 to-transparent rounded-full blur-[110px] pointer-events-none z-0"
+          />
+          <motion.div
+            animate={{ y: [0, 30, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-10 right-10 w-[550px] h-[550px] bg-gradient-to-tl from-emerald-400/30 via-emerald-300/15 to-transparent rounded-full blur-[115px] pointer-events-none z-0"
+          />
+
           {/* Wave SVG Overlay */}
-          <svg className="absolute bottom-0 right-0 w-full h-[500px] text-emerald-50/40" viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute bottom-0 right-0 w-full h-[450px] text-emerald-50/40" viewBox="0 0 1440 500" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-100 320 C 300 150, 700 450, 1500 200 L 1500 600 L -100 600 Z" fill="currentColor" />
           </svg>
 
-          {/* ReactBits Gradient Waves Canvas — Soft ambient backdrop */}
-          <div className="absolute inset-0 opacity-70 pointer-events-none z-0">
+          {/* ReactBits Ambient Wave Canvas */}
+          <div className="absolute inset-0 opacity-60 pointer-events-none z-0">
             <GradientWaves
               horizonColor="#16A34A"
               waveColor="#22C55E"
               crestColor="#84CC16"
-              speed={0.5}
-              amplitude={2.5}
+              speed={0.4}
+              amplitude={2.2}
               waveScale={1.0}
               waveRatio={0.9}
-              swell={25}
-              turbulence={20}
+              swell={22}
+              turbulence={18}
               tilt={1.11}
               zoom={1}
               height={5.8}
               fogDepth={14}
               detail="high"
-              brightness={1.2}
-              opacity={0.85}
+              brightness={1.15}
+              opacity={0.8}
               mouseInteraction
-              parallaxStrength={0.4}
+              parallaxStrength={0.3}
               grain
               grainIntensity={0.03}
               className="w-full h-full"
@@ -103,524 +207,566 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-            
-            {/* Left Column: Text & CTAs & Feature Icons */}
-            <div className="lg:col-span-5 flex flex-col justify-center text-left pt-2">
-              {/* Headline */}
-              <FadeIn delay={0.1}>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-zinc-900 leading-[1.06]">
-                  Run your studio.
-                  <span className="block text-[#16A34A] mt-0.5">
-                    Grow your business.
-                  </span>
-                </h1>
-              </FadeIn>
+        {/* Centered Hero Header Content */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center flex flex-col items-center pt-6 pb-10">
+          
+          {/* Main Headline */}
+          <FadeIn delay={0.1}>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-zinc-900 leading-[1.05] max-w-4xl">
+              Run your studio.
+              <span className="block text-[#16A34A] mt-1">
+                Grow your business.
+              </span>
+            </h1>
+          </FadeIn>
 
-              {/* Subtext */}
-              <FadeIn delay={0.3}>
-                <p className="mt-3.5 text-base sm:text-lg text-zinc-600 max-w-xl font-normal leading-relaxed">
-                  Manage members, memberships, attendance, trainers, payments, and analytics — all in one place.
-                </p>
-              </FadeIn>
+          {/* Subtext Description */}
+          <FadeIn delay={0.25}>
+            <p className="mt-5 text-lg sm:text-xl text-zinc-600 max-w-2xl font-normal leading-relaxed">
+              Members, trainers, attendance, payments, and analytics — all connected in one powerful platform.
+            </p>
+          </FadeIn>
 
-              {/* CTAs — Distinct Hierarchy (Primary Pill vs Secondary Text-Link) */}
-              <FadeIn delay={0.4}>
-                <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-5">
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-sm shadow-lg shadow-[#16A34A]/25 hover:shadow-xl hover:shadow-[#16A34A]/30 transition-all active:scale-[0.98]"
-                  >
-                    <span>Get Started Free</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <button
-                    onClick={() => setVideoOpen(true)}
-                    className="inline-flex items-center gap-2.5 py-2 px-1 text-zinc-700 hover:text-zinc-950 font-semibold text-sm group transition-colors"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-emerald-100/90 text-[#16A34A] flex items-center justify-center group-hover:bg-[#16A34A] group-hover:text-white transition-all shadow-xs group-hover:scale-110">
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                    </div>
-                    <span className="underline-offset-4 group-hover:underline">See how it works</span>
-                  </button>
+          {/* CTA Buttons */}
+          <FadeIn delay={0.35}>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+              <Link
+                href="/signup"
+                className="group inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#18B968] hover:bg-[#15A85E] text-white font-bold text-base shadow-lg shadow-[#18B968]/25 hover:shadow-xl hover:shadow-[#18B968]/35 transition-all active:scale-[0.98]"
+              >
+                <span>Get Started Free</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+              </Link>
+
+              {/* Watch Demo Button */}
+              <button
+                onClick={startDemo}
+                className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-white hover:bg-zinc-50 text-zinc-800 font-bold text-base transition-all shadow-md hover:shadow-lg border border-zinc-200/90 active:scale-[0.98] group cursor-pointer"
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${demoActive ? 'bg-[#16A34A] text-white animate-pulse' : 'bg-emerald-100 text-[#18B968] group-hover:bg-[#18B968] group-hover:text-white'}`}>
+                  <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                 </div>
-              </FadeIn>
+                <span>{demoActive ? "Playing Interactive Demo..." : "Watch Demo"}</span>
+              </button>
 
-              {/* Trust Checkmarks */}
-              <FadeIn delay={0.5}>
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs font-semibold text-zinc-600">
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                    <span>14-day access</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                    <span>No credit card required</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                    <span>Cancel anytime</span>
-                  </div>
+              {/* Google Play link button */}
+              <a
+                href="https://play.google.com/store/apps/details?id=app.repsi.mobile"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition-all shadow-md hover:shadow-lg active:scale-[0.98] border border-zinc-800 group"
+              >
+                <svg className="w-4 h-4 fill-current text-white group-hover:text-emerald-400 transition-colors" viewBox="0 0 24 24">
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186a2.37 2.37 0 0 1-.61-1.614V3.428c0-.623.23-1.205.609-1.614zM15.206 13.414l2.766 2.766-12.89 7.42 10.124-10.186zm0-2.828L5.082.4l12.89 7.42-2.766 2.766zm1.996 1.414l3.77-2.17a1.69 1.69 0 0 0 0-2.86l-3.77-2.17-2.12 2.12 2.12 3.08z" />
+                </svg>
+                <div className="flex flex-col text-left leading-none">
+                  <span className="text-[8px] uppercase tracking-wider text-zinc-400 font-medium">Get it on</span>
+                  <span className="text-xs font-bold text-white tracking-tight mt-0.5">Google Play</span>
                 </div>
-              </FadeIn>
-
-              {/* 4 Feature Highlights */}
-              <FadeIn delay={0.6}>
-                <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5 border-t border-zinc-200/90">
-                  <div className="space-y-0.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center mb-1.5">
-                      <Users className="w-4.5 h-4.5" />
-                    </div>
-                    <h4 className="text-xs font-bold text-zinc-900 leading-tight">Manage Members</h4>
-                    <p className="text-[11px] text-zinc-500">with ease</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center mb-1.5">
-                      <BarChart3 className="w-4.5 h-4.5" />
-                    </div>
-                    <h4 className="text-xs font-bold text-zinc-900 leading-tight">Track Progress</h4>
-                    <p className="text-[11px] text-zinc-500">in real time</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center mb-1.5">
-                      <CalendarCheck className="w-4.5 h-4.5" />
-                    </div>
-                    <h4 className="text-xs font-bold text-zinc-900 leading-tight">Save Time</h4>
-                    <p className="text-[11px] text-zinc-500">on daily tasks</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center mb-1.5">
-                      <TrendingUp className="w-4.5 h-4.5" />
-                    </div>
-                    <h4 className="text-xs font-bold text-zinc-900 leading-tight">Grow Your Business</h4>
-                    <p className="text-[11px] text-zinc-500">with insights</p>
-                  </div>
-                </div>
-              </FadeIn>
-
-              {/* Social Proof Rating Badge (Bottom Left - Replaces Orphaned Elements) */}
-              <FadeIn delay={0.7}>
-                <div className="mt-8 flex items-center gap-3 p-2.5 pr-4 rounded-2xl bg-white/90 border border-emerald-200/90 shadow-sm backdrop-blur-sm max-w-max">
-                  <div className="flex -space-x-2 overflow-hidden">
-                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">A</div>
-                    <div className="w-7 h-7 rounded-full bg-zinc-800 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">V</div>
-                    <div className="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white">R</div>
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-amber-500 text-xs font-bold">★★★★★</span>
-                      <span className="text-xs font-extrabold text-zinc-900">4.9/5</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 font-medium">Loved by 250+ fitness studios</p>
-                  </div>
-                </div>
-              </FadeIn>
+              </a>
             </div>
+          </FadeIn>
 
-            {/* Right Column: Light Dashboard Mockup + Bright Athlete Image (Framed UI with Clear Margins) */}
-            <div className="lg:col-span-7 relative flex items-center justify-center pr-0 lg:pr-12 xl:pr-16 pb-8 xl:pb-12">
-              <FadeIn delay={0.4} direction="up" className="w-full relative">
-                {/* Backdrop Glow */}
-                <div className="absolute -inset-4 bg-gradient-to-r from-emerald-200/50 via-emerald-100/30 to-emerald-200/40 rounded-[32px] blur-2xl opacity-60 -z-10 pointer-events-none" />
+          {/* Trust Checkmarks */}
+          <FadeIn delay={0.45}>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-zinc-600">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#18B968]" />
+                <span>14-day access</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#18B968]" />
+                <span>No credit card required</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#18B968]" />
+                <span>Cancel anytime</span>
+              </div>
+            </div>
+          </FadeIn>
 
-                {/* Main Dashboard Window Container — Sleek Framed Card UI (No Fake Browser Chrome) */}
-                <div id="dashboard-preview" className="rounded-2xl border border-zinc-200/90 bg-white shadow-2xl shadow-emerald-950/12 overflow-hidden ring-1 ring-zinc-950/5">
+          {/* 4 Interactive Feature Badges */}
+          <FadeIn delay={0.55}>
+            <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl w-full">
+              <div 
+                onMouseEnter={() => setHoveredFeature("members")}
+                onMouseLeave={() => setHoveredFeature(null)}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${hoveredFeature === "members" || (demoActive && demoStep === 0) ? 'bg-emerald-50 border-[#16A34A] ring-2 ring-emerald-500/40 shadow-sm scale-[1.03]' : 'bg-white/80 border-zinc-200/90 hover:bg-zinc-50'}`}
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${hoveredFeature === "members" || (demoActive && demoStep === 0) ? 'bg-[#16A34A] text-white scale-110' : 'bg-emerald-50 text-[#16A34A]'}`}>
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xs font-bold text-zinc-900 leading-tight">Manage Members</h4>
+                  <p className="text-[10px] text-zinc-500">with ease</p>
+                </div>
+              </div>
+
+              <div 
+                onMouseEnter={() => setHoveredFeature("progress")}
+                onMouseLeave={() => setHoveredFeature(null)}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${hoveredFeature === "progress" || (demoActive && demoStep === 1) ? 'bg-emerald-50 border-[#16A34A] ring-2 ring-emerald-500/40 shadow-sm scale-[1.03]' : 'bg-white/80 border-zinc-200/90 hover:bg-zinc-50'}`}
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${hoveredFeature === "progress" || (demoActive && demoStep === 1) ? 'bg-[#16A34A] text-white scale-110' : 'bg-emerald-50 text-[#16A34A]'}`}>
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xs font-bold text-zinc-900 leading-tight">Track Progress</h4>
+                  <p className="text-[10px] text-zinc-500">in real time</p>
+                </div>
+              </div>
+
+              <div 
+                onMouseEnter={() => setHoveredFeature("time")}
+                onMouseLeave={() => setHoveredFeature(null)}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${hoveredFeature === "time" ? 'bg-emerald-50 border-[#16A34A] ring-2 ring-emerald-500/40 shadow-sm scale-[1.03]' : 'bg-white/80 border-zinc-200/90 hover:bg-zinc-50'}`}
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${hoveredFeature === "time" ? 'bg-[#16A34A] text-white scale-110' : 'bg-emerald-50 text-[#16A34A]'}`}>
+                  <CalendarCheck className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xs font-bold text-zinc-900 leading-tight">Save Time</h4>
+                  <p className="text-[10px] text-zinc-500">on daily tasks</p>
+                </div>
+              </div>
+
+              <div 
+                onMouseEnter={() => setHoveredFeature("business")}
+                onMouseLeave={() => setHoveredFeature(null)}
+                className={`p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${hoveredFeature === "business" || (demoActive && (demoStep === 2 || demoStep === 3)) ? 'bg-emerald-50 border-[#16A34A] ring-2 ring-emerald-500/40 shadow-sm scale-[1.03]' : 'bg-white/80 border-zinc-200/90 hover:bg-zinc-50'}`}
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${hoveredFeature === "business" || (demoActive && (demoStep === 2 || demoStep === 3)) ? 'bg-[#16A34A] text-white scale-110' : 'bg-emerald-50 text-[#16A34A]'}`}>
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-xs font-bold text-zinc-900 leading-tight">Grow Business</h4>
+                  <p className="text-[10px] text-zinc-500">with insights</p>
+                </div>
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* Scroll Down Indicator */}
+          <FadeIn delay={0.65}>
+            <div className="mt-7 flex items-center gap-2 text-xs font-mono font-bold text-zinc-400 animate-bounce">
+              <ChevronDown className="w-4 h-4 text-[#16A34A]" />
+              <span>Scroll to expand dashboard</span>
+              <ChevronDown className="w-4 h-4 text-[#16A34A]" />
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* ── Dead-Center React Bits Scroll Expand Dashboard Component ── */}
+        <div className="relative pt-4 pb-12 z-20 w-full flex flex-col items-center">
+          
+          {/* Demo Mode Step Banner Bar (if active) */}
+          {demoActive && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-3 z-40 bg-zinc-900/95 backdrop-blur-md text-white px-5 py-2 rounded-full border border-emerald-500/40 shadow-xl flex items-center gap-4 text-xs"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-mono font-bold text-emerald-400">Interactive Tour:</span>
+                <span className="font-bold text-white">{demoTitles[demoStep]}</span>
+              </div>
+              <button 
+                onClick={() => setDemoActive(false)}
+                className="text-[10px] text-zinc-400 hover:text-white px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-mono cursor-pointer"
+              >
+                Stop Demo
+              </button>
+            </motion.div>
+          )}
+
+          {/* React Bits Scroll Expand Component */}
+          <ScrollExpand>
+            <div className="relative w-full">
+              {/* Concentrated Green Radial Glow behind Dashboard */}
+              <div className="absolute -inset-6 bg-gradient-to-r from-emerald-300/60 via-emerald-400/40 to-emerald-300/50 rounded-[40px] blur-3xl opacity-80 -z-10 pointer-events-none" />
+
+              {/* Main Framed Clean Dashboard Card (No browser chrome) */}
+              <div 
+                id="dashboard-preview" 
+                className={`rounded-2xl border transition-all duration-300 bg-white shadow-2xl shadow-emerald-950/20 overflow-hidden ring-1 ring-zinc-950/5 ${demoActive ? 'ring-2 ring-emerald-500 shadow-emerald-500/25' : 'border-zinc-200/90'}`}
+              >
+                {/* Dashboard Inner Layout */}
+                <div className="flex h-auto bg-[#f8fafc]">
                   
-                  {/* Dashboard Layout inside Mockup (Pure Crisp Light Palette) */}
-                  <div className="flex h-auto bg-[#f8fafc]">
-                    
-                    {/* Mini Sidebar with Divider Line & Section Grouping */}
-                    <div className="hidden sm:flex w-44 border-r border-zinc-200/80 bg-white p-3 flex-col justify-between shrink-0 text-xs">
-                      <div className="space-y-3">
-                        {/* Logo & Workspace Info with Separator Line */}
-                        <div className="flex items-center gap-2.5 px-2 py-1.5 mb-2.5 border-b border-zinc-200/90 pb-3">
-                          <Image src="/logos/repsi_logo_black.png" alt="REPSI" width={26} height={26} className="object-contain" />
-                          <div className="flex flex-col">
-                            <span className="font-extrabold text-xs text-zinc-900 tracking-tight leading-none">Repsi</span>
-                            <span className="text-[9px] font-semibold text-emerald-600 leading-none mt-1">Apex Fitness</span>
+                  {/* Sidebar */}
+                  <div className="hidden sm:flex w-44 border-r border-zinc-200/80 bg-white p-3 flex-col justify-between shrink-0 text-xs">
+                    <div className="space-y-3">
+                      {/* Workspace Info */}
+                      <div className="flex items-center gap-2.5 px-2 py-1.5 mb-2 border-b border-zinc-200/90 pb-2.5">
+                        <Image src="/logos/logo_trans.png" alt="REPSI" width={26} height={26} className="object-contain" />
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-xs text-zinc-900 tracking-tight leading-none">Repsi</span>
+                          <span className="text-[9px] font-semibold text-emerald-600 leading-none mt-1">Apex Fitness</span>
+                        </div>
+                      </div>
+
+                      {/* Sidebar Nav Items */}
+                      <nav className="space-y-2.5">
+                        <div>
+                          <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Main</p>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#16A34A] font-bold text-xs shadow-2xs border-l-2 border-[#16A34A]">
+                              <LayoutDashboard className="w-3.5 h-3.5 text-[#16A34A]" />
+                              <span>Dashboard</span>
+                            </div>
+                            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all text-xs ${highlightKey === 'members' ? 'bg-emerald-100 text-[#16A34A] font-bold ring-2 ring-emerald-500/50 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80'}`}>
+                              <Users className="w-3.5 h-3.5" />
+                              <span>Members</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs">
+                              <CreditCard className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Memberships</span>
+                            </div>
+                            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all text-xs ${highlightKey === 'progress' ? 'bg-emerald-100 text-[#16A34A] font-bold ring-2 ring-emerald-500/50 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80'}`}>
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>Attendance</span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Nav Items Grouped with Distinct Hierarchy */}
-                        <nav className="space-y-2.5">
-                          <div>
-                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Main</p>
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#16A34A] font-bold text-xs shadow-2xs border-l-2 border-[#16A34A]">
-                                <LayoutDashboard className="w-3.5 h-3.5 text-[#16A34A]" />
-                                <span>Dashboard</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <Users className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Members</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <CreditCard className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Memberships</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <UserCheck className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Attendance</span>
-                              </div>
+                        <div>
+                          <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Management</p>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs">
+                              <Dumbbell className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Trainers</span>
+                            </div>
+                            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all text-xs ${highlightKey === 'business' ? 'bg-emerald-100 text-[#16A34A] font-bold ring-2 ring-emerald-500/50 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80'}`}>
+                              <IndianRupee className="w-3.5 h-3.5" />
+                              <span>Payments</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:bg-zinc-100/80 transition-colors text-xs">
+                              <BarChart3 className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Analytics</span>
                             </div>
                           </div>
+                        </div>
+                      </nav>
+                    </div>
+                  </div>
 
-                          <div>
-                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">Management</p>
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <Dumbbell className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Trainers</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <IndianRupee className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Payments</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <BarChart3 className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Analytics</span>
-                              </div>
-                            </div>
+                  {/* Main Dashboard Panel */}
+                  <div className="flex-1 p-4 sm:p-5 space-y-4 overflow-x-hidden">
+                    
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-900 tracking-tight flex items-center gap-1.5">
+                          <span>Welcome back, Alex! 👋</span>
+                        </h3>
+                        <p className="text-xs text-zinc-500">
+                          Here&apos;s what&apos;s happening at Apex Fitness today.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="w-8 h-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 shadow-2xs hover:bg-zinc-50">
+                          <Bell className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-zinc-200 text-xs shadow-2xs">
+                          <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] font-bold">AF</div>
+                          <div className="hidden md:block text-left">
+                            <p className="font-bold leading-none text-zinc-900 text-xs">Apex Fitness</p>
+                            <p className="text-[10px] text-zinc-500 leading-none mt-0.5">Gym Owner</p>
                           </div>
-
-                          <div>
-                            <p className="px-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1">System</p>
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Messages</span>
-                              </div>
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-zinc-500 font-medium hover:text-zinc-900 hover:bg-zinc-100/80 transition-colors text-xs group">
-                                <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700" />
-                                <span>Settings</span>
-                              </div>
-                            </div>
-                          </div>
-                        </nav>
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                        </div>
                       </div>
                     </div>
 
-                    {/* Main Dashboard Content */}
-                    <div className="flex-1 p-3.5 sm:p-4 space-y-3 overflow-x-hidden">
+                    {/* 4 Stat Cards with Count-Up Animations */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       
-                      {/* Top Header inside Dashboard */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-base font-bold text-zinc-900 tracking-tight">
-                            Welcome back, Alex! 👋
-                          </h3>
-                          <p className="text-[11px] text-zinc-500">
-                            Here&apos;s what&apos;s happening at Apex Fitness today.
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button className="w-7 h-7 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 shadow-2xs hover:bg-zinc-50">
-                            <Bell className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px] shadow-2xs">
-                            <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[9px] font-bold">AF</div>
-                            <div className="hidden md:block text-left">
-                              <p className="font-bold leading-none text-zinc-900 text-[10px]">Apex Fitness</p>
-                              <p className="text-[9px] text-zinc-500 leading-none mt-0.5">Gym Owner</p>
-                            </div>
-                            <ChevronDown className="w-3 h-3 text-zinc-400" />
+                      {/* Active Members */}
+                      <div className={`p-3 rounded-xl border transition-all ${highlightKey === 'members' ? 'border-[#16A34A] bg-emerald-50/70 shadow-md ring-2 ring-emerald-400 scale-[1.02]' : 'border-zinc-200/90 bg-white shadow-2xs'}`}>
+                        <div className="flex items-center justify-between text-zinc-400 mb-1">
+                          <span className="text-xs font-medium text-zinc-500">Active Members</span>
+                          <div className="w-5 h-5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                            <Users className="w-3.5 h-3.5" />
                           </div>
                         </div>
+                        <p className="text-lg font-bold text-zinc-900">
+                          <CountUp end={1284} />
+                        </p>
+                        <span className="text-[10px] text-emerald-600 font-semibold">↑ 12% vs last month</span>
                       </div>
 
-                      {/* 4 Stat Cards */}
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white shadow-2xs">
-                          <div className="flex items-center justify-between text-zinc-400 mb-1">
-                            <span className="text-[10px] font-medium text-zinc-500">Active Members</span>
-                            <div className="w-4.5 h-4.5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
-                              <Users className="w-3 h-3" />
-                            </div>
+                      {/* Monthly Revenue */}
+                      <div className={`p-3 rounded-xl border transition-all ${highlightKey === 'business' ? 'border-[#16A34A] bg-emerald-50/70 shadow-md ring-2 ring-emerald-400 scale-[1.02]' : 'border-zinc-200/90 bg-white shadow-2xs'}`}>
+                        <div className="flex items-center justify-between text-zinc-400 mb-1">
+                          <span className="text-xs font-medium text-zinc-500">Monthly Revenue</span>
+                          <div className="w-5 h-5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                            <IndianRupee className="w-3.5 h-3.5" />
                           </div>
-                          <p className="text-base font-bold text-zinc-900">1,284</p>
-                          <span className="text-[9px] text-emerald-600 font-semibold">↑ 12% vs last month</span>
                         </div>
-
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white shadow-2xs">
-                          <div className="flex items-center justify-between text-zinc-400 mb-1">
-                            <span className="text-[10px] font-medium text-zinc-500">Monthly Revenue</span>
-                            <div className="w-4.5 h-4.5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
-                              <IndianRupee className="w-3 h-3" />
-                            </div>
-                          </div>
-                          <p className="text-base font-bold text-zinc-900">₹4,82,500</p>
-                          <span className="text-[9px] text-emerald-600 font-semibold">↑ 16% vs last month</span>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white shadow-2xs">
-                          <div className="flex items-center justify-between text-zinc-400 mb-1">
-                            <span className="text-[10px] font-medium text-zinc-500">Today&apos;s Attendance</span>
-                            <div className="w-4.5 h-4.5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
-                              <UserCheck className="w-3 h-3" />
-                            </div>
-                          </div>
-                          <p className="text-base font-bold text-zinc-900">186</p>
-                          <span className="text-[9px] text-emerald-600 font-semibold">↑ 6% vs yesterday</span>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white shadow-2xs">
-                          <div className="flex items-center justify-between text-zinc-400 mb-1">
-                            <span className="text-[10px] font-medium text-zinc-500">Expiring Soon</span>
-                            <div className="w-4.5 h-4.5 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
-                              <Clock className="w-3 h-3" />
-                            </div>
-                          </div>
-                          <p className="text-base font-bold text-zinc-900">24</p>
-                          <span className="text-[9px] text-zinc-400">Memberships</span>
-                        </div>
+                        <p className="text-lg font-bold text-zinc-900">
+                          <CountUp end={482500} formatter={(val) => "₹" + val.toLocaleString("en-IN")} />
+                        </p>
+                        <span className="text-[10px] text-emerald-600 font-semibold">↑ 16% vs last month</span>
                       </div>
 
-                      {/* Middle Row: Revenue Bar Chart & Attendance Donut */}
-                      <div className="grid grid-cols-1 md:grid-cols-7 gap-2.5">
+                      {/* Today's Attendance */}
+                      <div className={`p-3 rounded-xl border transition-all ${highlightKey === 'progress' ? 'border-[#16A34A] bg-emerald-50/70 shadow-md ring-2 ring-emerald-400 scale-[1.02]' : 'border-zinc-200/90 bg-white shadow-2xs'}`}>
+                        <div className="flex items-center justify-between text-zinc-400 mb-1">
+                          <span className="text-xs font-medium text-zinc-500">Today&apos;s Attendance</span>
+                          <div className="w-5 h-5 rounded-lg bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                            <UserCheck className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-zinc-900">
+                          <CountUp end={186} />
+                        </p>
+                        <span className="text-[10px] text-emerald-600 font-semibold">↑ 6% vs yesterday</span>
+                      </div>
+
+                      {/* Expiring Soon */}
+                      <div className="p-3 rounded-xl border border-zinc-200/90 bg-white shadow-2xs">
+                        <div className="flex items-center justify-between text-zinc-400 mb-1">
+                          <span className="text-xs font-medium text-zinc-500">Expiring Soon</span>
+                          <div className="w-5 h-5 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
+                            <Clock className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-zinc-900">
+                          <CountUp end={24} />
+                        </p>
+                        <span className="text-[10px] text-zinc-400">Memberships</span>
+                      </div>
+                    </div>
+
+                    {/* Revenue Bar Chart & Attendance Donut */}
+                    <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+                      
+                      {/* Revenue Bar Chart Animation */}
+                      <div className={`md:col-span-4 p-3.5 rounded-xl border transition-all ${highlightKey === 'business' ? 'border-[#16A34A] bg-emerald-50/50 ring-2 ring-emerald-400 shadow-md' : 'border-zinc-200/90 bg-white'}`}>
+                        <div className="flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-bold text-zinc-900">Revenue Growth</span>
+                            <span className="text-[10px] text-emerald-600 font-semibold ml-2">₹4.82L Jul</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-500 border border-zinc-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            7 Months <ChevronDown className="w-2.5 h-2.5" />
+                          </span>
+                        </div>
                         
-                        {/* Revenue Bar Chart with Distinct Active Month (Jul) Highlight */}
-                        <div className="md:col-span-4 p-3 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <div>
-                              <span className="font-bold text-zinc-900">Revenue Overview</span>
-                              <span className="text-[10px] text-emerald-600 font-semibold ml-2">₹4.82L Total</span>
+                        {/* Bar Chart Area */}
+                        <div className="relative h-32 flex items-end pt-4">
+                          <div className="absolute inset-x-0 top-3 bottom-5 flex flex-col justify-between pointer-events-none">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[8px] font-mono text-zinc-400">₹5L</span>
+                              <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
                             </div>
-                            <span className="text-[10px] text-zinc-500 border border-zinc-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                              7 Months <ChevronDown className="w-2.5 h-2.5" />
-                            </span>
-                          </div>
-                          
-                          {/* Chart Area with Y-axis markers & Gridlines */}
-                          <div className="relative h-28 flex items-end pt-4">
-                            {/* Horizontal Gridlines & Left Labels */}
-                            <div className="absolute inset-x-0 top-3 bottom-5 flex flex-col justify-between pointer-events-none">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[8px] font-mono text-zinc-400">₹5L</span>
-                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[8px] font-mono text-zinc-400">₹3.5L</span>
-                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[8px] font-mono text-zinc-400">₹2L</span>
-                                <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-[8px] font-mono text-zinc-400">₹0</span>
-                                <div className="w-[calc(100%-28px)] border-b border-zinc-200" />
-                              </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[8px] font-mono text-zinc-400">₹3.5L</span>
+                              <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
                             </div>
-
-                            {/* Bar Columns Container (Offset for Y-Axis labels) */}
-                            <div className="w-full pl-7 flex items-end justify-between gap-1.5 h-full pb-5 z-10">
-                              {[
-                                { label: 'Jan', val: 40, amt: '₹1.9L' },
-                                { label: 'Feb', val: 55, amt: '₹2.6L' },
-                                { label: 'Mar', val: 65, amt: '₹3.1L' },
-                                { label: 'Apr', val: 78, amt: '₹3.7L' },
-                                { label: 'May', val: 90, amt: '₹4.3L' },
-                                { label: 'Jun', val: 82, amt: '₹3.9L' },
-                                { label: 'Jul', val: 100, amt: '₹4.8L', current: true },
-                              ].map((bar, i) => (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group/bar relative">
-                                  {/* Active Month Badge */}
-                                  {bar.current ? (
-                                    <div className="absolute -top-4 flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 text-white text-[8px] font-mono font-bold rounded shadow-sm z-20 whitespace-nowrap">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                      <span>{bar.amt} · Jul</span>
-                                    </div>
-                                  ) : (
-                                    <span className="opacity-0 group-hover/bar:opacity-100 transition-opacity absolute -top-3.5 px-1 py-0.2 bg-zinc-800 text-white text-[8px] font-mono font-bold rounded pointer-events-none">
-                                      {bar.amt}
-                                    </span>
-                                  )}
-                                  <div
-                                    className={`w-full rounded-t transition-all ${
-                                      bar.current 
-                                        ? 'bg-gradient-to-t from-[#16A34A] to-[#15803D] shadow-md ring-2 ring-emerald-500/40' 
-                                        : 'bg-emerald-200/90 hover:bg-emerald-300/90'
-                                    }`}
-                                    style={{ height: `${bar.val}%` }}
-                                  />
-                                  <span className={`text-[8px] font-mono absolute -bottom-4 ${bar.current ? 'font-bold text-[#16A34A]' : 'text-zinc-400'}`}>
-                                    {bar.label}
-                                  </span>
-                                </div>
-                              ))}
+                            <div className="flex items-center justify-between">
+                              <span className="text-[8px] font-mono text-zinc-400">₹2L</span>
+                              <div className="w-[calc(100%-28px)] border-b border-dashed border-zinc-200" />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[8px] font-mono text-zinc-400">₹0</span>
+                              <div className="w-[calc(100%-28px)] border-b border-zinc-200" />
                             </div>
                           </div>
-                        </div>
 
-                        {/* Attendance Donut Ring */}
-                        <div className="md:col-span-3 p-3 rounded-xl border border-zinc-200/90 bg-white flex flex-col justify-between">
-                          <span className="text-xs font-bold text-zinc-900">Attendance Today</span>
-                          <div className="flex items-center justify-around py-0.5">
-                            {/* Ring Mock SVG */}
-                            <div className="relative w-16 h-16 flex items-center justify-center">
-                              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                                <path
-                                  className="text-zinc-100"
-                                  strokeWidth="4"
-                                  stroke="currentColor"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <path
-                                  className="text-[#16A34A]"
-                                  strokeDasharray="85, 100"
-                                  strokeWidth="4"
-                                  strokeLinecap="round"
-                                  stroke="currentColor"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                <span className="text-xs font-black text-zinc-900 leading-none">186</span>
-                                <span className="text-[7px] text-zinc-400 leading-none mt-0.5">Check-ins</span>
-                              </div>
-                            </div>
-
-                            {/* Legend */}
-                            <div className="text-[10px] space-y-1 font-medium">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
-                                <span className="text-zinc-600">Present</span>
-                                <span className="font-bold text-zinc-900 ml-auto">186</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-zinc-300" />
-                                <span className="text-zinc-600">Absent</span>
-                                <span className="font-bold text-zinc-900 ml-auto">32</span>
-                              </div>
-                              <div className="border-t border-zinc-200 pt-0.5 flex justify-between gap-2 text-zinc-500 text-[9px]">
-                                <span>Total</span>
-                                <span className="font-bold text-zinc-900">218</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bottom Grid: Recent Members, Activity, Quick Actions */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-0.5">
-                        
-                        {/* Recent Members */}
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
-                          <span className="text-xs font-bold text-zinc-900">Recent Members</span>
-                          <div className="space-y-1.5 text-[10px]">
+                          {/* Bars Growing from Bottom */}
+                          <div className="w-full pl-7 flex items-end justify-between gap-2 h-full pb-5 z-10">
                             {[
-                              { name: 'Priya Sharma', time: 'Joined 2 days ago' },
-                              { name: 'Rahul Verma', time: 'Joined 4 days ago' },
-                              { name: 'Sneha Iyer', time: 'Joined 1 week ago' },
-                            ].map((m, i) => (
-                              <div key={i} className="flex items-center justify-between py-0.5 border-b border-zinc-100 last:border-none">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-4.5 h-4.5 rounded-full bg-emerald-100 text-[#16A34A] text-[9px] font-bold flex items-center justify-center">
-                                    {m.name[0]}
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold text-zinc-900 leading-none">{m.name}</p>
-                                    <p className="text-[8px] text-zinc-400 leading-none mt-0.5">{m.time}</p>
-                                  </div>
-                                </div>
-                                <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-[#16A34A] text-[8px] font-bold">
-                                  Active
+                              { label: 'Jan', val: 40, amt: '₹1.9L' },
+                              { label: 'Feb', val: 55, amt: '₹2.6L' },
+                              { label: 'Mar', val: 65, amt: '₹3.1L' },
+                              { label: 'Apr', val: 78, amt: '₹3.7L' },
+                              { label: 'May', val: 90, amt: '₹4.3L' },
+                              { label: 'Jun', val: 82, amt: '₹3.9L' },
+                              { label: 'Jul', val: 100, amt: '₹4.8L', current: true },
+                            ].map((bar, i) => (
+                              <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group/bar relative">
+                                {/* Active Month Tooltip & Glow */}
+                                {bar.current ? (
+                                  <motion.div 
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.8, duration: 0.3 }}
+                                    className="absolute -top-4 flex items-center gap-1 px-1.5 py-0.5 bg-zinc-900 text-white text-[8px] font-mono font-bold rounded shadow-md z-20 whitespace-nowrap"
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    <span>{bar.amt} · Jul</span>
+                                  </motion.div>
+                                ) : (
+                                  <span className="opacity-0 group-hover/bar:opacity-100 transition-opacity absolute -top-3.5 px-1 py-0.2 bg-zinc-800 text-white text-[8px] font-mono font-bold rounded pointer-events-none">
+                                    {bar.amt}
+                                  </span>
+                                )}
+
+                                {/* Growing Bar Element */}
+                                <motion.div
+                                  initial={{ height: "0%" }}
+                                  animate={{ height: `${bar.val}%` }}
+                                  transition={{ duration: 0.6, delay: 0.2 + i * 0.07, ease: "easeOut" }}
+                                  className={`w-full rounded-t transition-all ${
+                                    bar.current 
+                                      ? 'bg-gradient-to-t from-[#16A34A] to-[#22C55E] shadow-md shadow-emerald-500/40 ring-2 ring-emerald-400' 
+                                      : 'bg-emerald-200/90 hover:bg-emerald-300/90'
+                                  }`}
+                                />
+                                <span className={`text-[8px] font-mono absolute -bottom-4 ${bar.current ? 'font-bold text-[#16A34A]' : 'text-zinc-400'}`}>
+                                  {bar.label}
                                 </span>
                               </div>
                             ))}
                           </div>
                         </div>
+                      </div>
 
-                        {/* Recent Activity */}
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
-                          <span className="text-xs font-bold text-zinc-900">Recent Activity</span>
-                          <div className="space-y-1.5 text-[9px]">
-                            <div className="flex items-start gap-1.5">
-                              <div className="w-4 h-4 rounded-full bg-emerald-100 text-[#16A34A] flex items-center justify-center mt-0.5 shrink-0">
-                                <FileText className="w-2.5 h-2.5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-zinc-900 leading-tight">Membership renewed</p>
-                                <p className="text-zinc-400">Rahul Verma · 2h ago</p>
-                              </div>
+                      {/* Attendance Donut SVG Animation */}
+                      <div className={`md:col-span-3 p-3.5 rounded-xl border transition-all flex flex-col justify-between ${highlightKey === 'progress' ? 'border-[#16A34A] bg-emerald-50/50 ring-2 ring-emerald-400 shadow-md' : 'border-zinc-200/90 bg-white'}`}>
+                        <span className="text-xs font-bold text-zinc-900">Attendance Today</span>
+                        <div className="flex items-center justify-around py-1">
+                          
+                          {/* SVG Donut Ring */}
+                          <div className="relative w-20 h-20 flex items-center justify-center">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                              <path
+                                className="text-zinc-100"
+                                strokeWidth="4"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                              />
+                              <motion.path
+                                className="text-[#16A34A]"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                stroke="currentColor"
+                                fill="none"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                initial={{ strokeDasharray: "0, 100" }}
+                                animate={{ strokeDasharray: "85, 100" }}
+                                transition={{ duration: 1.1, delay: 0.5, ease: "easeOut" }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                              <span className="text-sm font-black text-zinc-900 leading-none">
+                                <CountUp end={186} />
+                              </span>
+                              <span className="text-[8px] text-zinc-400 leading-none mt-0.5">Check-ins</span>
                             </div>
-                            <div className="flex items-start gap-1.5">
-                              <div className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mt-0.5 shrink-0">
-                                <Users className="w-2.5 h-2.5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-zinc-900 leading-tight">New member added</p>
-                                <p className="text-zinc-400">Sneha Iyer · 5h ago</p>
-                              </div>
+                          </div>
+
+                          {/* Legend */}
+                          <div className="text-xs space-y-1.5 font-medium">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
+                              <span className="text-zinc-600">Present</span>
+                              <span className="font-bold text-zinc-900 ml-auto">
+                                <CountUp end={186} />
+                              </span>
                             </div>
-                            <div className="flex items-start gap-1.5">
-                              <div className="w-4 h-4 rounded-full bg-emerald-100 text-[#16A34A] flex items-center justify-center mt-0.5 shrink-0">
-                                <IndianRupee className="w-2.5 h-2.5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-zinc-900 leading-tight">Payment received</p>
-                                <p className="text-zinc-400">₹12,000 · 1d ago</p>
-                              </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-zinc-300" />
+                              <span className="text-zinc-600">Absent</span>
+                              <span className="font-bold text-zinc-900 ml-auto">32</span>
+                            </div>
+                            <div className="border-t border-zinc-200 pt-1 flex justify-between gap-3 text-zinc-500 text-[10px]">
+                              <span>Total</span>
+                              <span className="font-bold text-zinc-900">218</span>
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
 
-                        {/* Quick Actions Panel — Clean, Full Width buttons with zero overlap */}
-                        <div className="p-2.5 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
-                          <span className="text-xs font-bold text-zinc-900">Quick Actions</span>
-                          <div className="grid grid-cols-2 gap-1 text-[9px]">
-                            <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span className="truncate">Add Member</span>
-                              <Plus className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
-                            </button>
-                            <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span className="truncate">Attendance</span>
-                              <CalendarCheck className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
-                            </button>
-                            <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span className="truncate">Membership</span>
-                              <FileText className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
-                            </button>
-                            <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold transition-colors">
-                              <span className="truncate">Message</span>
-                              <Send className="w-3 h-3 text-zinc-400 shrink-0 ml-0.5" />
-                            </button>
+                    {/* Recent Members & Activity & Actions */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-0.5">
+                      
+                      {/* Recent Members */}
+                      <div className={`p-3 rounded-xl border transition-all ${highlightKey === 'members' ? 'border-[#16A34A] bg-emerald-50/50 ring-2 ring-emerald-400 shadow-xs' : 'border-zinc-200/90 bg-white'}`}>
+                        <span className="text-xs font-bold text-zinc-900">Recent Members</span>
+                        <div className="space-y-1.5 text-[10px] mt-1.5">
+                          {[
+                            { name: 'Priya Sharma', time: 'Joined 2 days ago' },
+                            { name: 'Rahul Verma', time: 'Joined 4 days ago' },
+                            { name: 'Sneha Iyer', time: 'Joined 1 week ago' },
+                          ].map((m, i) => (
+                            <div key={i} className="flex items-center justify-between py-0.5 border-b border-zinc-100 last:border-none">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 text-[#16A34A] text-[9px] font-bold flex items-center justify-center">
+                                  {m.name[0]}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-zinc-900 leading-none">{m.name}</p>
+                                  <p className="text-[8px] text-zinc-400 leading-none mt-0.5">{m.time}</p>
+                                </div>
+                              </div>
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-[#16A34A] text-[8px] font-bold">
+                                Active
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Recent Activity */}
+                      <div className="p-3 rounded-xl border border-zinc-200/90 bg-white space-y-1.5">
+                        <span className="text-xs font-bold text-zinc-900">Recent Activity</span>
+                        <div className="space-y-1.5 text-[9px] mt-1.5">
+                          <div className="flex items-start gap-1.5">
+                            <div className="w-4 h-4 rounded-full bg-emerald-100 text-[#16A34A] flex items-center justify-center mt-0.5 shrink-0">
+                              <FileText className="w-2.5 h-2.5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-zinc-900 leading-tight">Membership renewed</p>
+                              <p className="text-zinc-400">Rahul Verma · 2h ago</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-1.5">
+                            <div className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mt-0.5 shrink-0">
+                              <Users className="w-2.5 h-2.5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-zinc-900 leading-tight">New member added</p>
+                              <p className="text-zinc-400">Sneha Iyer · 5h ago</p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
+                      {/* Quick Actions Panel */}
+                      <div className={`p-3 rounded-xl border transition-all ${highlightKey === 'time' ? 'border-[#16A34A] bg-emerald-50/50 ring-2 ring-emerald-400 shadow-xs' : 'border-zinc-200/90 bg-white'}`}>
+                        <span className="text-xs font-bold text-zinc-900">Quick Actions</span>
+                        <div className="grid grid-cols-2 gap-1.5 text-[9px] mt-1.5">
+                          <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-[#16A34A] hover:text-white text-zinc-800 font-semibold transition-all">
+                            <span className="truncate">Add Member</span>
+                            <Plus className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                          <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-[#16A34A] hover:text-white text-zinc-800 font-semibold transition-all">
+                            <span className="truncate">Attendance</span>
+                            <CalendarCheck className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                          <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-[#16A34A] hover:text-white text-zinc-800 font-semibold transition-all">
+                            <span className="truncate">Membership</span>
+                            <FileText className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                          <button className="flex items-center justify-between p-1.5 rounded-lg bg-zinc-100 hover:bg-[#16A34A] hover:text-white text-zinc-800 font-semibold transition-all">
+                            <span className="truncate">Message</span>
+                            <Send className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Offset Gym Photo Card — Positioned outside dashboard card area with zero text truncation */}
-                <div className="hidden 2xl:block absolute -right-16 -bottom-8 w-48 rounded-2xl overflow-hidden border-4 border-white shadow-2xl shadow-emerald-950/25 z-30 transform rotate-3 hover:rotate-0 transition-transform duration-300 pointer-events-none">
-                  <div className="relative h-56 w-full">
-                    <Image
-                      src="/images/marketing/hero_athlete.jpg"
-                      alt="REPSI Fitness"
-                      fill
-                      className="object-cover object-center"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-transparent" />
-                    
-                    {/* Handwriting Text Overlay */}
-                    <div className="absolute bottom-3 left-3 right-3 text-white font-handwriting text-xl leading-none font-bold">
-                      <p>Stronger Gyms</p>
-                      <p className="text-emerald-400">Brighter Communities</p>
-                      <svg className="w-full h-2 text-emerald-400 mt-1" viewBox="0 0 100 10" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="M5,5 Q50,1 95,5" />
-                      </svg>
-                    </div>
                   </div>
                 </div>
-              </FadeIn>
+              </div>
             </div>
-
-          </div>
+          </ScrollExpand>
         </div>
       </section>
 

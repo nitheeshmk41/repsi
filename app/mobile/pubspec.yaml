@@ -38,6 +38,7 @@ dependencies:
   shimmer: ^3.0.0
   cached_network_image: ^3.4.1
   flutter_dotenv: ^5.1.0
+  lottie: ^3.6.1
 
 dev_dependencies:
   flutter_test:
@@ -48,11 +49,13 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/logos/repsi_standalone_icon.png
+  image_path: assets/logos/app_icon.png
   remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
   assets:
     - assets/logos/
+    - assets/images/
+    - assets/animations/
     - .env

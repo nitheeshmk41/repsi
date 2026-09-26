@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,6 +10,19 @@ export function MarketingNav() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 15) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navItems = [
     {
@@ -60,19 +73,29 @@ export function MarketingNav() {
 
   return (
     <header className={
-      isHome
-        ? "relative z-50 w-full bg-transparent border-b border-zinc-200/50"
-        : "relative z-50 w-full border-b border-zinc-200 bg-white"
+      isScrolled
+        ? "sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md border-b border-zinc-200/80 shadow-xs transition-all duration-300"
+        : isHome
+        ? "sticky top-0 z-50 w-full bg-transparent border-b border-zinc-200/40 transition-all duration-300"
+        : "sticky top-0 z-50 w-full border-b border-zinc-200 bg-white transition-all duration-300"
     }>
       <div className="mx-auto max-w-7xl px-4 sm:px-8 lg:px-12 flex h-16 items-center justify-between">
-        {/* Logo (Black Logo Exclusively) */}
+        {/* Logo */}
         <Link href="/" className="flex items-center group">
           <Image
-            src="/logos/repsi_logo_black.png"
+            src="/logos/primary_logo.png"
             alt="REPSI"
             width={200}
             height={65}
-            className="h-10 sm:h-12 w-auto object-contain"
+            className="h-10 sm:h-12 w-auto object-contain dark:hidden"
+            priority
+          />
+          <Image
+            src="/logos/white_logo.png"
+            alt="REPSI"
+            width={200}
+            height={65}
+            className="h-10 sm:h-12 w-auto object-contain hidden dark:block"
             priority
           />
         </Link>
@@ -84,25 +107,25 @@ export function MarketingNav() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors py-2"
+                className="text-sm font-medium text-zinc-600 hover:text-[#16A34A] transition-colors py-2"
               >
                 {item.title}
               </Link>
             ) : (
               <div key={item.title} className="relative group">
-                <button className="flex items-center gap-1 text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors py-2">
-                  {item.title}
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:rotate-180 transition-transform duration-200" />
+                <button className="flex items-center gap-1 text-sm font-medium text-zinc-600 hover:text-[#16A34A] transition-colors py-2 cursor-pointer">
+                  <span>{item.title}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#16A34A] group-hover:translate-y-0.5 transition-all duration-200" />
                 </button>
                 
-                {/* Dropdown Menu */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
-                  <div className="bg-white rounded-xl shadow-xl border border-zinc-200/80 p-2 min-w-[200px]">
+                {/* Dropdown Menu (Opacity 0 -> 1, translateY -4px -> 0, ~180ms) */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 -translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50">
+                  <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-zinc-200/90 p-2 min-w-[200px]">
                     {item.links?.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
-                        className="block px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 rounded-lg transition-colors"
+                        className="block px-4 py-2 text-sm text-zinc-600 hover:text-[#16A34A] hover:bg-emerald-50/80 rounded-lg transition-colors font-medium"
                       >
                         {link.label}
                       </Link>
@@ -124,10 +147,10 @@ export function MarketingNav() {
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.98]"
+            className="group inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-sm shadow-emerald-600/20 hover:shadow-md hover:shadow-emerald-600/30 active:scale-[0.98]"
           >
             <span>Get Started</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
           </Link>
         </div>
 

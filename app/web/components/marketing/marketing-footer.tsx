@@ -10,13 +10,21 @@ export function MarketingFooter() {
           <div className="col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2">
               <Image
-                src="/logos/repsi_logo_black.png"
+                src="/logos/primary_logo.png"
                 alt="REPSI"
                 width={160}
                 height={50}
-                className="h-10 w-auto object-contain"
+                className="h-10 w-auto object-contain dark:hidden"
+              />
+              <Image
+                src="/logos/white_logo.png"
+                alt="REPSI"
+                width={160}
+                height={50}
+                className="h-10 w-auto object-contain hidden dark:block"
               />
             </Link>
+
             <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
               The modern operating system for modern gyms. Effortlessly orchestrate members, payments, turnstile attendance, trainers, and revenue growth.
             </p>

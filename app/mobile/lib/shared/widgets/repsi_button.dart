@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import '../animations/repsi_motion.dart';
 
 enum RepsiButtonVariant {
   primary,
@@ -17,7 +19,7 @@ enum RepsiButtonSize {
   large,
 }
 
-class RepsiButton extends StatelessWidget {
+class RepsiButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
   final RepsiButtonVariant variant;
@@ -26,6 +28,9 @@ class RepsiButton extends StatelessWidget {
   final Widget? leadingIcon;
   final Widget? trailingIcon;
   final bool isFullWidth;
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
 
   const RepsiButton({
     super.key,
@@ -37,51 +42,108 @@ class RepsiButton extends StatelessWidget {
     this.leadingIcon,
     this.trailingIcon,
     this.isFullWidth = false,
+    this.width,
+    this.height,
+    this.borderRadius,
   });
+
+  @override
+  State<RepsiButton> createState() => _RepsiButtonState();
+}
+
+class _RepsiButtonState extends State<RepsiButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: RepsiMotion.buttonRelease,
+      reverseDuration: RepsiMotion.buttonPress,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: RepsiMotion.easeOut),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 1.0, end: 0.90).animate(
+      CurvedAnimation(parent: _controller, curve: RepsiMotion.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    if (widget.onPressed == null || widget.isLoading) return;
+    HapticFeedback.lightImpact();
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    if (widget.onPressed == null || widget.isLoading) return;
+    _controller.reverse();
+    widget.onPressed?.call();
+  }
+
+  void _onTapCancel() {
+    if (widget.onPressed == null || widget.isLoading) return;
+    _controller.reverse();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    double height;
+    double btnHeight;
     EdgeInsets padding;
     TextStyle textStyle;
 
-    switch (size) {
+    switch (widget.size) {
       case RepsiButtonSize.small:
-        height = 36;
-        padding = const EdgeInsets.symmetric(horizontal: AppSpacing.md);
+        btnHeight = 40;
+        padding = const EdgeInsets.symmetric(horizontal: 14);
         textStyle = AppTypography.buttonSmall;
         break;
       case RepsiButtonSize.medium:
-        height = 44;
-        padding = const EdgeInsets.symmetric(horizontal: AppSpacing.lg);
-        textStyle = AppTypography.buttonMedium;
+        btnHeight = 52;
+        padding = const EdgeInsets.symmetric(horizontal: 20);
+        textStyle = AppTypography.button;
         break;
       case RepsiButtonSize.large:
-        height = 50;
-        padding = const EdgeInsets.symmetric(horizontal: AppSpacing.xl);
+        btnHeight = 56;
+        padding = const EdgeInsets.symmetric(horizontal: 24);
         textStyle = AppTypography.buttonLarge;
         break;
+    }
+
+    if (widget.height != null) {
+      btnHeight = widget.height!;
     }
 
     Color bgColor;
     Color fgColor;
     BorderSide borderSide = BorderSide.none;
 
-    switch (variant) {
+    switch (widget.variant) {
       case RepsiButtonVariant.primary:
         bgColor = AppColors.primary;
         fgColor = Colors.white;
         break;
       case RepsiButtonVariant.secondary:
         bgColor = isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle;
-        fgColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+        fgColor = isDark ? AppColors.darkText : AppColors.text;
         break;
       case RepsiButtonVariant.outline:
         bgColor = Colors.transparent;
-        fgColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
-        borderSide = BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border);
+        fgColor = isDark ? AppColors.darkText : AppColors.text;
+        borderSide = BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border, width: 1);
         break;
       case RepsiButtonVariant.destructive:
         bgColor = AppColors.error;
@@ -89,58 +151,75 @@ class RepsiButton extends StatelessWidget {
         break;
       case RepsiButtonVariant.ghost:
         bgColor = Colors.transparent;
-        fgColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+        fgColor = isDark ? AppColors.darkText : AppColors.text;
         break;
     }
 
-    final bool isDisabled = onPressed == null || isLoading;
+    final bool isDisabled = widget.onPressed == null || widget.isLoading;
+    final radius = widget.borderRadius ?? BorderRadius.circular(AppSpacing.radiusButton);
 
     Widget content = Row(
-      mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (isLoading) ...[
+        if (widget.isLoading) ...[
           SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: 2.2,
               valueColor: AlwaysStoppedAnimation<Color>(fgColor),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-        ] else if (leadingIcon != null) ...[
-          leadingIcon!,
+        ] else if (widget.leadingIcon != null) ...[
+          widget.leadingIcon!,
           const SizedBox(width: AppSpacing.sm),
         ],
         Text(
-          text,
+          widget.text,
           style: textStyle.copyWith(
-            color: isDisabled && !isLoading
+            color: isDisabled && !widget.isLoading
                 ? (isDark ? AppColors.darkTextMuted : AppColors.textMuted)
                 : fgColor,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        if (trailingIcon != null && !isLoading) ...[
+        if (widget.trailingIcon != null && !widget.isLoading) ...[
           const SizedBox(width: AppSpacing.sm),
-          trailingIcon!,
+          widget.trailingIcon!,
         ],
       ],
     );
 
     return SizedBox(
-      height: height,
-      width: isFullWidth ? double.infinity : null,
-      child: Material(
-        color: isDisabled ? (variant == RepsiButtonVariant.outline || variant == RepsiButtonVariant.ghost ? Colors.transparent : (isDark ? AppColors.darkSurface : AppColors.borderLight)) : bgColor,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
-        child: InkWell(
-          onTap: isDisabled ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+      height: btnHeight,
+      width: widget.isFullWidth ? double.infinity : widget.width,
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Opacity(
+                opacity: isDisabled && !widget.isLoading
+                    ? 0.55
+                    : _opacityAnimation.value,
+                child: child,
+              ),
+            );
+          },
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+              color: isDisabled && widget.variant != RepsiButtonVariant.outline && widget.variant != RepsiButtonVariant.ghost
+                  ? (isDark ? AppColors.darkSurface : AppColors.borderLight)
+                  : bgColor,
+              borderRadius: radius,
               border: borderSide != BorderSide.none ? Border.fromBorderSide(borderSide) : null,
             ),
             alignment: Alignment.center,

@@ -7,11 +7,12 @@ class AppConfig {
   static const String appTagline = 'Your gym. Your progress.';
   static const String defaultWorkspaceSlug = 'apex-fitness';
 
-  // Base API configuration with emulator/device/cloud compatibility
   static String get baseUrl {
-    // 1. Override via dotenv if provided
-    final envUrl = dotenv.env['API_BASE_URL'];
-    if (envUrl != null && envUrl.isNotEmpty) return envUrl;
+    // 1. Override via dotenv if provided and initialized
+    if (dotenv.isInitialized) {
+      final envUrl = dotenv.env['API_BASE_URL'];
+      if (envUrl != null && envUrl.isNotEmpty) return envUrl;
+    }
 
     // 2. Override via Dart define if provided
     const definedUrl = String.fromEnvironment('API_BASE_URL');

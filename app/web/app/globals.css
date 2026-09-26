@@ -1,62 +1,67 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Caveat:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Caveat:wght@600;700&display=swap");
 @import "tailwindcss";
 
 .font-handwriting {
   font-family: "Caveat", cursive;
 }
 
-
 /* ─────────────────────────────────────────────────────────────────── */
 /* REPSI Design Tokens — Light Theme (default)                        */
+/* Green + Deep Charcoal + Soft Mint                                   */
 /* ─────────────────────────────────────────────────────────────────── */
 :root {
+  /* Font */
+  --font-sans: "Sora", sans-serif;
+
   /* Backgrounds */
-  --background: #f7f9f5;
+  --background: #f7faf8;
   --surface: #ffffff;
+  --surface-secondary: #f2f7f4;
   --surface-elevated: #ffffff;
   --sidebar: #ffffff;
-  --sidebar-border: #e2e8df;
+  --sidebar-border: #dde6e1;
 
-  /* Primary (neon green) */
-  --primary: #65e729;
-  --primary-hover: #58d120;
-  --primary-dark: #1a3b0a;
-  --primary-soft: #eafbe1;
-  --primary-foreground: #000000;
+  /* Primary (Repsi Green) */
+  --primary: #18b968;
+  --primary-hover: #15a85e;
+  --primary-dark: #0e8f50;
+  --primary-soft: #e8f8ef;
+  --primary-foreground: #ffffff;
 
   /* Text */
-  --text: #172033;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text: #101918;
+  --text-secondary: #66736e;
+  --text-muted: #8a9691;
   --text-inverse: #ffffff;
 
-  /* Borders */
-  --border: #e2e8df;
-  --border-strong: #cbd5c5;
+  /* Borders & Dividers */
+  --border: #dde6e1;
+  --border-strong: #cbd5d0;
+  --divider: #e8eeeb;
 
   /* Semantic */
-  --success: #22c55e;
-  --success-soft: #f0fdf4;
-  --success-foreground: #166534;
+  --success: #18b968;
+  --success-soft: #e8f8ef;
+  --success-foreground: #0e8f50;
   --warning: #f59e0b;
-  --warning-soft: #fffbeb;
-  --warning-foreground: #92400e;
-  --error: #ef4444;
-  --error-soft: #fef2f2;
-  --error-foreground: #991b1b;
+  --warning-soft: #fef3c7;
+  --warning-foreground: #b45309;
+  --error: #e5484d;
+  --error-soft: #fee2e2;
+  --error-foreground: #b91c1c;
   --info: #3b82f6;
   --info-soft: #eff6ff;
-  --info-foreground: #1e40af;
+  --info-foreground: #1d4ed8;
 
   /* Interactive */
-  --ring: #84cc16;
-  --ring-offset: #f7f9f5;
+  --ring: #18b968;
+  --ring-offset: #f7faf8;
 
   /* Sidebar nav active state */
-  --nav-active-bg: #f0fbe2;
-  --nav-active-text: #365314;
-  --nav-active-indicator: #84cc16;
-  --nav-hover-bg: #f1f5ee;
+  --nav-active-bg: #e8f8ef;
+  --nav-active-text: #0e8f50;
+  --nav-active-indicator: #18b968;
+  --nav-hover-bg: #f2f7f4;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
@@ -74,55 +79,58 @@
 
 /* ─────────────────────────────────────────────────────────────────── */
 /* REPSI Design Tokens — Dark Theme                                   */
+/* Deep Green-Black Background (#08110D)                              */
 /* ─────────────────────────────────────────────────────────────────── */
 .dark {
   /* Backgrounds */
-  --background: #0b0f0a;
-  --surface: #151c15;
-  --surface-elevated: #1b241a;
-  --sidebar: #101610;
-  --sidebar-border: #1f2a1e;
+  --background: #08110d;
+  --surface: #101b16;
+  --surface-elevated: #16241e;
+  --surface-soft: #1b2c24;
+  --sidebar: #08110d;
+  --sidebar-border: #263831;
 
-  /* Primary (neon green) */
-  --primary: #65e729;
-  --primary-hover: #58d120;
-  --primary-dark: #1a3b0a;
-  --primary-soft: #112807;
-  --primary-foreground: #000000;
+  /* Primary */
+  --primary: #25d979;
+  --primary-hover: #18b968;
+  --primary-dark: #18b968;
+  --primary-soft: #1b2c24;
+  --primary-foreground: #08110d;
 
   /* Text */
-  --text: #f1f5f0;
-  --text-secondary: #a3ada0;
-  --text-muted: #6b7668;
-  --text-inverse: #172033;
+  --text: #f4f8f6;
+  --text-secondary: #aab8b1;
+  --text-muted: #718079;
+  --text-inverse: #101918;
 
-  /* Borders */
-  --border: #263026;
-  --border-strong: #2e3c2d;
+  /* Borders & Dividers */
+  --border: #263831;
+  --border-strong: #334840;
+  --divider: #1e2d26;
 
   /* Semantic */
-  --success: #22c55e;
-  --success-soft: #0f2318;
-  --success-foreground: #86efac;
-  --warning: #f59e0b;
-  --warning-soft: #1c1506;
-  --warning-foreground: #fcd34d;
-  --error: #ef4444;
-  --error-soft: #1f0808;
-  --error-foreground: #fca5a5;
-  --info: #3b82f6;
-  --info-soft: #0c1526;
-  --info-foreground: #93c5fd;
+  --success: #25d979;
+  --success-soft: #16241e;
+  --success-foreground: #25d979;
+  --warning: #fbbf24;
+  --warning-soft: #241d08;
+  --warning-foreground: #fbbf24;
+  --error: #ff6b70;
+  --error-soft: #2b1113;
+  --error-foreground: #ff6b70;
+  --info: #60a5fa;
+  --info-soft: #0d1e33;
+  --info-foreground: #60a5fa;
 
   /* Interactive */
-  --ring: #84cc16;
-  --ring-offset: #0b0f0a;
+  --ring: #25d979;
+  --ring-offset: #08110d;
 
   /* Sidebar nav active state */
-  --nav-active-bg: #1d2a0f;
-  --nav-active-text: #a3e635;
-  --nav-active-indicator: #84cc16;
-  --nav-hover-bg: #1a221a;
+  --nav-active-bg: #16241e;
+  --nav-active-text: #25d979;
+  --nav-active-indicator: #25d979;
+  --nav-hover-bg: #101b16;
 
   /* Shadows — use borders for elevation in dark mode */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
@@ -135,9 +143,10 @@
 .light,
 html.dark .light,
 html.dark .light * {
-  --background: #f7f9f5;
+  --background: #f7faf8;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
+
   --sidebar: #ffffff;
   --sidebar-border: #e2e8df;
 

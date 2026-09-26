@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_colors.dart';
-import '../../auth/providers/auth_provider.dart';
+import '../../../shared/models/user_model.dart';
+import '../../../shared/navigation/repsi_bottom_nav.dart';
 import '../../workspaces/providers/workspace_provider.dart';
 
 class AppShellView extends ConsumerStatefulWidget {
@@ -22,7 +22,6 @@ class _AppShellViewState extends ConsumerState<AppShellView> {
   @override
   void initState() {
     super.initState();
-    // Fetch user's workspaces
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(workspaceProvider.notifier).fetchWorkspaces();
     });
@@ -37,56 +36,13 @@ class _AppShellViewState extends ConsumerState<AppShellView> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final workspaceState = ref.watch(workspaceProvider);
-    final authState = ref.watch(authProvider);
-
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: AppColors.background,
       body: widget.navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
-          border: Border(
-            top: BorderSide(
-              color: isDark ? AppColors.darkBorder : AppColors.border,
-              width: 1,
-            ),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: widget.navigationShell.currentIndex,
-          onDestinationSelected: _onTabSelected,
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
-          indicatorColor: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(LucideIcons.layoutDashboard),
-              selectedIcon: Icon(LucideIcons.layoutDashboard, color: AppColors.primary),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.users),
-              selectedIcon: Icon(LucideIcons.users, color: AppColors.primary),
-              label: 'Members',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.qrCode),
-              selectedIcon: Icon(LucideIcons.qrCode, color: AppColors.primary),
-              label: 'Attendance',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.indianRupee),
-              selectedIcon: Icon(LucideIcons.indianRupee, color: AppColors.primary),
-              label: 'Payments',
-            ),
-            NavigationDestination(
-              icon: Icon(LucideIcons.moreHorizontal),
-              selectedIcon: Icon(LucideIcons.moreHorizontal, color: AppColors.primary),
-              label: 'More',
-            ),
-          ],
-        ),
+      bottomNavigationBar: RepsiBottomNav(
+        currentIndex: widget.navigationShell.currentIndex,
+        onTap: _onTabSelected,
+        role: UserRole.owner,
       ),
     );
   }

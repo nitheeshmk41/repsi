@@ -187,13 +187,14 @@ export default function LoginPage() {
       <div className="text-center mb-6">
         <div className="md:hidden flex justify-center mb-4">
           <Image
-            src="/logos/repsi_logo.png"
+            src="/logos/logo_trans.png"
             alt="REPSI Logo"
             width={64}
             height={64}
             className="object-contain"
           />
         </div>
+
         <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">Welcome back</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1.5">
           Sign in to your REPSI gym workspace or platform

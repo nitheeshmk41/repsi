@@ -1,235 +1,304 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
-import '../../../shared/widgets/repsi_avatar.dart';
-import '../../../shared/widgets/repsi_bottom_sheet.dart';
+import '../../../shared/animations/repsi_stagger.dart';
+import '../../../shared/widgets/repsi_button.dart';
 import '../../../shared/widgets/repsi_card.dart';
-import '../../../shared/widgets/repsi_empty_state.dart';
-import '../../../shared/widgets/repsi_error_state.dart';
-import '../../../shared/widgets/repsi_metric_card.dart';
-import '../../../shared/widgets/repsi_skeleton.dart';
-import '../providers/attendance_provider.dart';
-import 'qr_scanner_sheet.dart';
+import '../../member/presentation/views/qr_attendance_view.dart';
 
-class AttendanceView extends ConsumerWidget {
+class AttendanceView extends StatefulWidget {
   const AttendanceView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final state = ref.watch(attendanceProvider);
+  State<AttendanceView> createState() => _AttendanceViewState();
+}
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
-        icon: const Icon(LucideIcons.scanLine, color: Colors.white, size: 20),
-        label: const Text(
-          'Scan QR Check-In',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        onPressed: () {
-          RepsiBottomSheet.show(
-            context: context,
-            child: const QrScannerSheet(),
-          );
-        },
-      ),
-      body: _buildContent(context, ref, state, isDark),
+class _AttendanceViewState extends State<AttendanceView> with SingleTickerProviderStateMixin {
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+  int _selectedTab = 0;
+
+  final int _presentCount = 82;
+  final int _totalCount = 186;
+
+  final List<Map<String, String>> _presentMembers = [
+    {'name': 'Rahul Kumar', 'time': '8:42 AM', 'plan': 'Premium'},
+    {'name': 'Arun Kumar', 'time': '8:47 AM', 'plan': 'Trainer'},
+    {'name': 'Sneha', 'time': '9:15 AM', 'plan': 'Premium'},
+    {'name': 'Vijay', 'time': '9:30 AM', 'plan': 'Standard'},
+  ];
+
+  final List<Map<String, String>> _absentMembers = [
+    {'name': 'Kavya', 'time': 'Not checked in', 'plan': 'Premium'},
+    {'name': 'Arjun', 'time': 'Not checked in', 'plan': 'Standard'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: _presentCount / _totalCount,
+    ).animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic));
+
+    _progressController.forward();
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, AttendanceState state, bool isDark) {
-    if (state.isLoading && state.summary == null) {
-      return ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: const [
-          Row(
-            children: [
-              Expanded(child: RepsiSkeleton(height: 90)),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(child: RepsiSkeleton(height: 90)),
-            ],
+  @override
+  void dispose() {
+    _progressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Attendance',
+          style: AppTypography.heading.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.pageHorizontalPadding,
+            vertical: 8,
           ),
-          SizedBox(height: AppSpacing.md),
-          RepsiSkeleton(height: 300),
-        ],
-      );
-    }
-
-    if (state.errorMessage != null && state.summary == null) {
-      return RepsiErrorState(
-        message: state.errorMessage!,
-        onRetry: () => ref.read(attendanceProvider.notifier).fetchSummary(),
-      );
-    }
-
-    final summary = state.summary;
-    final totalToday = summary?.totalToday ?? 42;
-    final currentlyInside = summary?.currentlyInside ?? 18;
-    final peakHour = summary?.peakHourTime ?? '6:00 PM - 7:00 PM';
-    final recentList = summary?.recentCheckIns ?? [];
-
-    final timeFormat = DateFormat('hh:mm a');
-
-    return RefreshIndicator(
-      onRefresh: () => ref.read(attendanceProvider.notifier).fetchSummary(),
-      color: AppColors.primary,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 80),
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: RepsiMetricCard(
-                  title: 'Today Total',
-                  value: '$totalToday',
-                  icon: LucideIcons.checkCircle,
-                  iconColor: AppColors.primary,
-                  subtitle: 'Members attended',
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: RepsiMetricCard(
-                  title: 'Inside Now',
-                  value: '$currentlyInside',
-                  icon: LucideIcons.userCheck,
-                  iconColor: AppColors.success,
-                  subtitle: 'Active on floor',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Peak hour banner
-          RepsiCard(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(LucideIcons.flame, color: AppColors.primaryDark, size: 16),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Peak Floor Traffic',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                        ),
+              // Date Navigator: < Mon, 22 Sep 2025 > (Owner Mockup Screen 3)
+              RepsiStaggerItem(
+                index: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                      onPressed: () {},
+                    ),
+                    Text(
+                      'Mon, 22 Sep 2025',
+                      style: AppTypography.headingSmall.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
                       ),
-                      Text(
-                        peakHour,
-                        style: AppTypography.caption.copyWith(
-                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Animated Circular Progress Ring Card
+              RepsiStaggerItem(
+                index: 1,
+                child: RepsiCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        height: 120,
+                        child: AnimatedBuilder(
+                          animation: _progressAnimation,
+                          builder: (context, _) {
+                            return Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 120,
+                                  height: 120,
+                                  child: CircularProgressIndicator(
+                                    value: _progressAnimation.value,
+                                    strokeWidth: 10,
+                                    backgroundColor: AppColors.border,
+                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '$_presentCount / $_totalCount',
+                                      style: AppTypography.headingSmall.copyWith(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.text,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Present',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+              ),
+              const SizedBox(height: 18),
 
-          Text(
-            'Recent Check-Ins',
-            style: AppTypography.headingSmall.copyWith(
-              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-
-          if (recentList.isEmpty)
-            const RepsiEmptyState(
-              icon: LucideIcons.qrCode,
-              title: 'No check-ins yet today',
-              message: 'Check-ins recorded via QR scanner will appear here in real-time.',
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: recentList.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
-              itemBuilder: (context, index) {
-                final record = recentList[index];
-                return RepsiCard(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+              // Present / Absent Tabs
+              RepsiStaggerItem(
+                index: 2,
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  padding: const EdgeInsets.all(3),
                   child: Row(
                     children: [
-                      RepsiAvatar(
-                        name: record.memberName ?? 'Member',
-                        imageUrl: record.memberPhotoUrl,
-                        size: 38,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              record.memberName ?? 'Member #${record.memberId.substring(0, 6)}',
-                              style: AppTypography.labelLarge.copyWith(
-                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                              ),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedTab = 0),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: _selectedTab == 0 ? AppColors.primarySoft : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
                             ),
-                            Text(
-                              'Via ${record.checkInMethod ?? 'QR SCAN'}',
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Present ($_presentCount)',
                               style: AppTypography.caption.copyWith(
-                                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                                color: _selectedTab == 0 ? AppColors.primaryDark : AppColors.textSecondary,
+                                fontWeight: _selectedTab == 0 ? FontWeight.w700 : FontWeight.w500,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            timeFormat.format(record.checkInTime),
-                            style: AppTypography.caption.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                             ),
                           ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedTab = 1),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             decoration: BoxDecoration(
-                              color: AppColors.successLight,
-                              borderRadius: BorderRadius.circular(4),
+                              color: _selectedTab == 1 ? AppColors.primarySoft : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
                             ),
-                            child: const Text(
-                              'IN',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.successDark,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Absent (${_totalCount - _presentCount})',
+                              style: AppTypography.caption.copyWith(
+                                color: _selectedTab == 1 ? AppColors.primaryDark : AppColors.textSecondary,
+                                fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w500,
                               ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Member Attendance List
+              Expanded(
+                child: ListView.separated(
+                  itemCount: _selectedTab == 0 ? _presentMembers.length : _absentMembers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final item = _selectedTab == 0 ? _presentMembers[index] : _absentMembers[index];
+
+                    return RepsiCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: _selectedTab == 0 ? AppColors.primarySoft : AppColors.surfaceSubtle,
+                            child: Text(
+                              item['name']![0],
+                              style: TextStyle(
+                                color: _selectedTab == 0 ? AppColors.primaryDark : AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['name']!,
+                                  style: AppTypography.headingSmall.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                                Text(
+                                  item['plan']!,
+                                  style: AppTypography.caption.copyWith(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            item['time']!,
+                            style: AppTypography.caption.copyWith(
+                              color: _selectedTab == 0 ? AppColors.primaryDark : AppColors.textMuted,
+                              fontWeight: _selectedTab == 0 ? FontWeight.w600 : FontWeight.w400,
+                              fontSize: 13,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-        ],
+                    );
+                  },
+                ),
+              ),
+
+              // Scan QR button (Mockup Screen 3)
+              RepsiButton(
+                text: 'Scan QR',
+                leadingIcon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrAttendanceView()),
+                  );
+                },
+                isFullWidth: true,
+                size: RepsiButtonSize.large,
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
       ),
     );
   }

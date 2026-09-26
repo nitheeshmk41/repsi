@@ -65,7 +65,7 @@ export function RevenueChart({ data }: { data?: Array<{ label: string; value: nu
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#18B968]" />
             <span className="text-[var(--text-secondary)]">Revenue</span>
           </div>
         </div>
@@ -76,8 +76,8 @@ export function RevenueChart({ data }: { data?: Array<{ label: string; value: nu
         <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#84CC16" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#84CC16" stopOpacity={0} />
+              <stop offset="5%" stopColor="#18B968" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#18B968" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -103,12 +103,13 @@ export function RevenueChart({ data }: { data?: Array<{ label: string; value: nu
           <Area
             type="monotone"
             dataKey="value"
-            stroke="#84CC16"
+            stroke="#18B968"
             strokeWidth={2}
             fill="url(#revGradient)"
             dot={false}
-            activeDot={{ r: 4, fill: "#84CC16", strokeWidth: 2, stroke: "var(--surface)" }}
+            activeDot={{ r: 4, fill: "#18B968", strokeWidth: 2, stroke: "var(--surface)" }}
           />
+
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -1,74 +1,101 @@
 import 'package:flutter/material.dart';
 
+/// Repsi Design System - Color Palette
+/// Green + Deep Charcoal + Soft Mint as core Repsi identity.
 class AppColors {
-  // Brand Colors (REPSI Green)
-  static const Color primary = Color(0xFF84CC16);
-  static const Color primaryNeon = Color(0xFF65E729);
-  static const Color primaryDark = Color(0xFF365314);
-  static const Color primaryHover = Color(0xFFA3E635);
-  static const Color primarySoft = Color(0xFFF0FBE2);
-  static const Color primarySoftDark = Color(0xFF1D2A0F);
+  // Core Brand Colors
+  static const Color primary = Color(0xFF18B968); // Repsi Green
+  static const Color primaryDark = Color(0xFF0E8F50); // Deep Green
+  static const Color emerald = Color(0xFF08A95B); // Emerald
+  static const Color primarySoft = Color(0xFFE8F8EF); // Soft Mint
+  static const Color primaryLight = Color(0xFFE8F8EF);
+  static const Color paleMint = Color(0xFFF2FBF6);
+  static const Color primaryHover = Color(0xFF15A85E);
 
-  // Light Theme Palette
-  static const Color lightBackground = Color(0xFFF7F9F5);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceElevated = Color(0xFFFFFFFF);
-  static const Color lightText = Color(0xFF111827);
-  static const Color lightTextSecondary = Color(0xFF64748B);
-  static const Color lightTextMuted = Color(0xFF94A3B8);
-  static const Color lightBorder = Color(0xFFE2E8DF);
-  static const Color lightBorderStrong = Color(0xFFCBD5C5);
+  // Light Theme
+  static const Color background = Color(0xFFF7FAF8);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSecondary = Color(0xFFF2F7F4);
+  static const Color surfaceSubtle = Color(0xFFF2F7F4);
 
-  // Dark Theme Palette
-  static const Color darkBackground = Color(0xFF0B0F0A);
-  static const Color darkSurface = Color(0xFF151C15);
-  static const Color darkSurfaceElevated = Color(0xFF1B241A);
-  static const Color darkNavigation = Color(0xFF101610);
-  static const Color darkText = Color(0xFFF1F5F0);
-  static const Color darkTextSecondary = Color(0xFFA3ADA0);
-  static const Color darkTextMuted = Color(0xFF6B7668);
-  static const Color darkBorder = Color(0xFF263026);
-  static const Color darkBorderStrong = Color(0xFF2E3C2D);
+  // Typography - Light
+  static const Color text = Color(0xFF101918); // Dark Charcoal
+  static const Color textPrimary = Color(0xFF101918);
+  static const Color textSecondary = Color(0xFF66736E); // Slate
+  static const Color textMuted = Color(0xFF8A9691);
 
-  // Status & Semantic Colors
-  static const Color success = Color(0xFF22C55E);
-  static const Color successSoft = Color(0xFFF0FDF4);
+  // Borders & Dividers - Light
+  static const Color border = Color(0xFFDDE6E1);
+  static const Color borderLight = Color(0xFFE8EEEB);
+  static const Color divider = Color(0xFFE8EEEB);
+  static const Color borderStrong = Color(0xFFCBD5D0);
+
+  // Semantic Status
+  static const Color success = Color(0xFF18B968);
+  static const Color successSoft = Color(0xFFE8F8EF);
+  static const Color successLight = Color(0xFFE8F8EF);
+  static const Color successDark = Color(0xFF0E8F50);
   static const Color warning = Color(0xFFF59E0B);
-  static const Color warningSoft = Color(0xFFFFFBEB);
-  static const Color error = Color(0xFFEF4444);
-  static const Color errorSoft = Color(0xFFFEF2F2);
+  static const Color warningSoft = Color(0xFFFEF3C7);
+  static const Color error = Color(0xFFE5484D);
+  static const Color errorSoft = Color(0xFFFEE2E2);
+  static const Color errorLight = Color(0xFFFEE2E2);
   static const Color info = Color(0xFF3B82F6);
   static const Color infoSoft = Color(0xFFEFF6FF);
 
-  static const Color background = lightBackground;
-  static const Color surface = lightSurface;
-  static const Color surfaceSubtle = lightSurfaceElevated;
-  static const Color textPrimary = lightText;
-  static const Color textSecondary = lightTextSecondary;
-  static const Color textMuted = lightTextMuted;
-  static const Color border = lightBorder;
-  static const Color borderLight = lightBorder;
-  static const Color darkTextPrimary = darkText;
-  static const Color primaryLight = primaryHover;
-  static const Color successLight = successSoft;
-  static const Color successDark = Color(0xFF166534);
-  static const Color errorLight = errorSoft;
+  // Dark Theme
+  static const Color darkBackground = Color(0xFF08110D);
+  static const Color darkSurface = Color(0xFF101B16);
+  static const Color darkSurfaceElevated = Color(0xFF16241E);
+  static const Color darkSurfaceSoft = Color(0xFF1B2C24);
+  static const Color darkPrimary = Color(0xFF25D979);
+  static const Color darkPrimaryDark = Color(0xFF18B968);
+  static const Color darkPrimaryLight = Color(0xFF9AF0C0);
+  static const Color darkText = Color(0xFFF4F8F6);
+  static const Color darkTextPrimary = Color(0xFFF4F8F6);
+  static const Color darkTextSecondary = Color(0xFFAAB8B1);
+  static const Color darkTextMuted = Color(0xFF718079);
+  static const Color darkBorder = Color(0xFF263831);
+  static const Color darkDivider = Color(0xFF1E2D26);
+  static const Color darkSuccess = Color(0xFF25D979);
+  static const Color darkWarning = Color(0xFFFBBF24);
+  static const Color darkError = Color(0xFFFF6B70);
+  static const Color darkInfo = Color(0xFF60A5FA);
 
-  static const Color badgeActiveBg = successSoft;
-  static const Color badgeActiveFg = Color(0xFF15803D);
-  static const Color badgeExpiringBg = warningSoft;
+  // Gradients
+  static const List<Color> brandGradient = [
+    Color(0xFF0E8F50),
+    Color(0xFF18B968),
+    Color(0xFF25D979),
+  ];
+
+  static const List<Color> softMintGradient = [
+    Color(0xFFE8F8EF),
+    Color(0xFFC9F2DB),
+    Color(0xFF8BE9B5),
+  ];
+
+  // Badges
+  static const Color badgeActiveBg = Color(0xFFE8F8EF);
+  static const Color badgeActiveFg = Color(0xFF0E8F50);
+  static const Color badgeExpiringBg = Color(0xFFFEF3C7);
   static const Color badgeExpiringFg = Color(0xFFB45309);
-  static const Color badgeExpiredBg = errorSoft;
+  static const Color badgeExpiredBg = Color(0xFFFEE2E2);
   static const Color badgeExpiredFg = Color(0xFFB91C1C);
-  static const Color badgeFrozenBg = infoSoft;
+  static const Color badgeFrozenBg = Color(0xFFEFF6FF);
   static const Color badgeFrozenFg = Color(0xFF1D4ED8);
   static const Color badgeCancelledBg = Color(0xFFF1F5F9);
   static const Color badgeCancelledFg = Color(0xFF475569);
 
-  // Utility Gradients
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF84CC16), Color(0xFF65E729)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Compatibility aliases
+  static const Color lightBackground = background;
+  static const Color lightSurface = surface;
+  static const Color lightSurfaceElevated = surface;
+  static const Color lightText = text;
+  static const Color lightTextSecondary = textSecondary;
+  static const Color lightTextMuted = textMuted;
+  static const Color lightBorder = border;
+  static const Color lightBorderStrong = borderStrong;
+  static const Color darkNavigation = darkSurface;
 }
+

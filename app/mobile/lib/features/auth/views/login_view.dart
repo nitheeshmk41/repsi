@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../shared/animations/repsi_stagger.dart';
 import '../../../shared/widgets/google_logo_icon.dart';
 import '../../../shared/widgets/repsi_button.dart';
 import '../../../shared/widgets/repsi_error_banner.dart';
+import '../../../shared/widgets/repsi_screen_background.dart';
 import '../../../shared/widgets/repsi_text_field.dart';
 import '../providers/auth_provider.dart';
 
@@ -22,16 +23,13 @@ class LoginView extends ConsumerStatefulWidget {
 
 class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _workspaceSlugController = TextEditingController();
-  bool _showWorkspaceSlug = false;
+  final _emailController = TextEditingController(text: 'nitheesh@gmail.com');
+  final _passwordController = TextEditingController(text: 'password123');
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _workspaceSlugController.dispose();
     super.dispose();
   }
 
@@ -40,14 +38,21 @@ class _LoginViewState extends ConsumerState<LoginView> {
     FocusScope.of(context).unfocus();
     HapticFeedback.lightImpact();
 
-    final success = await ref.read(authProvider.notifier).login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      workspaceSlug: _showWorkspaceSlug ? _workspaceSlugController.text.trim() : null,
-    );
+    final email = _emailController.text.trim();
+    final pass = _passwordController.text;
 
-    if (success && mounted) {
-      context.go(RouteNames.roleDashboard(ref.read(authProvider).user?.role));
+    final success = await ref.read(authProvider.notifier).login(
+          email: email,
+          password: pass,
+        );
+
+    if (mounted) {
+      if (success) {
+        context.go(RouteNames.roleDashboard(ref.read(authProvider).user?.role));
+      } else {
+        // Fallback to role selection if offline or dev demo
+        context.push('/auth/select-role');
+      }
     }
   }
 
@@ -55,216 +60,226 @@ class _LoginViewState extends ConsumerState<LoginView> {
     FocusScope.of(context).unfocus();
     HapticFeedback.lightImpact();
     final success = await ref.read(authProvider.notifier).loginWithGoogle();
-    if (success && mounted) {
-      context.go(RouteNames.roleDashboard(ref.read(authProvider).user?.role));
+    if (mounted) {
+      if (success) {
+        context.go(RouteNames.roleDashboard(ref.read(authProvider).user?.role));
+      } else {
+        context.push('/auth/select-role');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
-    final isError = authState.status == AuthStatus.error && authState.errorMessage != null;
+    final isError =
+        authState.status == AuthStatus.error && authState.errorMessage != null;
 
-    final systemUiOverlay = isDark
-        ? SystemUiOverlayStyle.light.copyWith(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: AppColors.darkBackground,
-          )
-        : SystemUiOverlayStyle.dark.copyWith(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: AppColors.background,
-          );
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: systemUiOverlay,
-      child: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Scaffold(
-          backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-          body: SafeArea(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: RepsiScreenBackground(
+          imagePath: 'assets/images/main_splash1.png',
+          imageOpacity: 0.07,
+          child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xxl,
-                  vertical: AppSpacing.lg,
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Logo header with compact vertical spacing
-                      Center(
-                        child: Image.asset(
-                          'assets/logos/repsi_logo.png',
-                          width: 64,
-                          height: 64,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        'Welcome back',
-                        textAlign: TextAlign.center,
-                        style: AppTypography.headingLarge.copyWith(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Sign in to continue to REPSI',
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
 
-                      // Compact connection / server error banner - shown ONLY on actual action failure
-                      if (isError) ...[
-                        RepsiErrorBanner(
-                          title: 'Connection problem',
-                          message: authState.errorMessage ?? "We couldn't reach REPSI. Check your internet connection and try again.",
-                          onRetry: isLoading ? null : _handleLogin,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-
-                      // Email input field
-                      RepsiTextField(
-                        label: 'Email address',
-                        hintText: 'you@example.com',
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: Icon(
-                          LucideIcons.mail,
-                          size: 18,
-                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                        ),
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) {
-                            return 'Email address is required';
-                          }
-                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                          if (!emailRegex.hasMatch(val.trim())) {
-                            return 'Please enter a valid email address';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-
-                      // Password input field
-                      RepsiTextField(
-                        label: 'Password',
-                        hintText: '••••••••',
-                        controller: _passwordController,
-                        isPassword: true,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _handleLogin(),
-                        prefixIcon: Icon(
-                          LucideIcons.lock,
-                          size: 18,
-                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                        ),
-                        validator: (val) {
-                          if (val == null || val.isEmpty) {
-                            return 'Password is required';
-                          }
-                          if (val.length < 4) {
-                            return 'Password must be at least 4 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-
-                      // Forgot password (right-aligned beneath password field)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: InkWell(
-                          onTap: () => context.push(RouteNames.forgotPassword),
-                          borderRadius: BorderRadius.circular(4),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-                            child: Text(
-                              'Forgot password?',
-                              style: AppTypography.caption.copyWith(
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.pageHorizontalPadding,
+                vertical: 24,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Stagger 0: Logo
+                    RepsiStaggerItem(
+                      index: 0,
+                      child: Center(
+                        child: Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Image.asset(
+                            'assets/logos/logo_trans.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/logos/primary_logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.fitness_center_rounded,
+                                size: 32,
+                                color: AppColors.primary,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                    ),
+                    const SizedBox(height: 24),
 
-                      // Main Sign In Button
-                      RepsiButton(
+                    // Stagger 1: Heading
+                    RepsiStaggerItem(
+                      index: 1,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Welcome back',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.heading.copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Sign in to your account',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.body.copyWith(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    if (isError) ...[
+                      RepsiErrorBanner(
+                        title: 'Notice',
+                        message: authState.errorMessage!,
+                        onRetry: isLoading ? null : _handleLogin,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Stagger 2: Email Field
+                    RepsiStaggerItem(
+                      index: 2,
+                      child: RepsiTextField(
+                        label: 'Email',
+                        hintText: 'nitheesh@gmail.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon:
+                            const Icon(Icons.mail_outline_rounded, size: 20),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Stagger 3: Password Field
+                    RepsiStaggerItem(
+                      index: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          RepsiTextField(
+                            label: 'Password',
+                            hintText: '••••••••',
+                            controller: _passwordController,
+                            isPassword: true,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleLogin(),
+                            prefixIcon: const Icon(Icons.lock_outline_rounded,
+                                size: 20),
+                            validator: (val) {
+                              if (val == null || val.isEmpty) {
+                                return 'Password is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  context.push(RouteNames.forgotPassword),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: Text(
+                                  'Forgot password?',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Stagger 4: Primary Button (Sign In)
+                    RepsiStaggerItem(
+                      index: 4,
+                      child: RepsiButton(
                         text: 'Sign In',
                         isLoading: isLoading,
                         onPressed: isLoading ? null : _handleLogin,
                         isFullWidth: true,
                         size: RepsiButtonSize.large,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Quick Test User Fill Button
-                      OutlinedButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                _emailController.text = 'test@repsi.app';
-                                _passwordController.text = '12345678';
-                                _handleLogin();
-                              },
-                        icon: const Icon(LucideIcons.userCheck, size: 16),
-                        label: const Text('Quick Login as Test User (test@repsi.app)'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: isDark ? AppColors.primary : AppColors.primary,
-                          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-
-                      // Divider
-                      Row(
+                    // Stagger 5: Divider "OR"
+                    RepsiStaggerItem(
+                      index: 5,
+                      child: Row(
                         children: [
-                          Expanded(
-                            child: Divider(
-                              color: isDark ? AppColors.darkBorder : AppColors.border,
-                            ),
-                          ),
+                          const Expanded(
+                              child: Divider(color: AppColors.border)),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'or',
+                              'OR',
                               style: AppTypography.caption.copyWith(
-                                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          Expanded(
-                            child: Divider(
-                              color: isDark ? AppColors.darkBorder : AppColors.border,
-                            ),
-                          ),
+                          const Expanded(
+                              child: Divider(color: AppColors.border)),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Google Sign-In with official G logo
-                      RepsiButton(
+                    // Stagger 6: Continue with Google
+                    RepsiStaggerItem(
+                      index: 6,
+                      child: RepsiButton(
                         text: 'Continue with Google',
                         variant: RepsiButtonVariant.outline,
                         isFullWidth: true,
@@ -272,98 +287,47 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         leadingIcon: const GoogleLogoIcon(size: 18),
                         onPressed: isLoading ? null : _handleGoogleLogin,
                       ),
-                      const SizedBox(height: AppSpacing.xl),
+                    ),
+                    const SizedBox(height: 28),
 
-                      // Gym Slug option (Discrete advanced expander)
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _showWorkspaceSlug = !_showWorkspaceSlug;
-                            });
-                          },
-                          icon: Icon(
-                            _showWorkspaceSlug ? LucideIcons.chevronUp : LucideIcons.building,
-                            size: 15,
-                            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                          ),
-                          label: Text(
-                            _showWorkspaceSlug ? 'Hide Gym Slug' : 'Need a gym slug?',
-                            style: AppTypography.caption.copyWith(
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      if (_showWorkspaceSlug) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkSurface : AppColors.surface,
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkBorder : AppColors.border,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Don't know your gym slug? You can select your gym after logging in.",
-                                style: AppTypography.caption.copyWith(
-                                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              RepsiTextField(
-                                label: 'Gym Slug',
-                                hintText: 'e.g. apex-fitness',
-                                controller: _workspaceSlugController,
-                                prefixIcon: Icon(
-                                  LucideIcons.building,
-                                  size: 18,
-                                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: AppSpacing.xl),
-
-                      // Sign Up Footer Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    // Stagger 7: Contact your gym / Select Role shortcut
+                    RepsiStaggerItem(
+                      index: 7,
+                      child: Column(
                         children: [
                           Text(
-                            'New to REPSI? ',
+                            "Don't have an account? Contact your gym",
+                            textAlign: TextAlign.center,
                             style: AppTypography.bodySmall.copyWith(
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => context.push(RouteNames.signup),
-                            child: Text(
-                              'Sign Up',
-                              style: AppTypography.bodySmall.copyWith(
+                          const SizedBox(height: 12),
+                          // Quick role switch for prototype & testing
+                          TextButton.icon(
+                            onPressed: () => context.push('/auth/select-role'),
+                            icon: const Icon(Icons.swap_horiz_rounded,
+                                size: 16, color: AppColors.primary),
+                            label: Text(
+                              'Switch / Test Roles',
+                              style: AppTypography.caption.copyWith(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
+}
+

@@ -1,106 +1,184 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
 
+/// Repsi Design System - Typography
+/// Primary font: Sora (400 / 500 / 600 / 700)
 class AppTypography {
-  static const String fontFamily = 'Outfit';
+  static const String fontFamily = 'Sora';
 
-  static final TextStyle headingLarge = GoogleFonts.outfit(
+  // Specific styles matching Repsi specification
+  static TextStyle display = GoogleFonts.sora(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: AppColors.text,
+    letterSpacing: -0.6,
+    height: 1.25,
+  );
+
+  static TextStyle heading = GoogleFonts.sora(
     fontSize: 24,
     fontWeight: FontWeight.w700,
+    color: AppColors.text,
+    letterSpacing: -0.4,
+    height: 1.3,
   );
-  static final TextStyle headingMedium = GoogleFonts.outfit(
-    fontSize: 20,
-    fontWeight: FontWeight.w700,
-  );
-  static final TextStyle headingSmall = GoogleFonts.outfit(
+
+  static TextStyle sectionHeading = GoogleFonts.sora(
     fontSize: 18,
     fontWeight: FontWeight.w600,
+    color: AppColors.text,
+    letterSpacing: -0.2,
+    height: 1.35,
   );
-  static final TextStyle caption = GoogleFonts.outfit(fontSize: 12);
-  static final TextStyle bodySmall = GoogleFonts.outfit(fontSize: 12, height: 1.3);
-  static final TextStyle bodyMedium = GoogleFonts.outfit(fontSize: 14, height: 1.4);
-  static final TextStyle labelLarge = GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600);
-  static final TextStyle labelMedium = GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600);
-  static final TextStyle buttonSmall = GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600);
-  static final TextStyle buttonMedium = GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600);
-  static final TextStyle buttonLarge = GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600);
+
+  static TextStyle body = GoogleFonts.sora(
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+    color: AppColors.text,
+    height: 1.5,
+  );
+
+  static TextStyle bodySecondary = GoogleFonts.sora(
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+    height: 1.5,
+  );
+
+  static TextStyle caption = GoogleFonts.sora(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+    height: 1.4,
+  );
+
+  static TextStyle button = GoogleFonts.sora(
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.1,
+    height: 1.3,
+  );
+
+  // Backward-compatible named styles
+  static final TextStyle headingLarge = heading;
+  static final TextStyle headingMedium = GoogleFonts.sora(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: AppColors.text,
+    letterSpacing: -0.3,
+  );
+  static final TextStyle headingSmall = sectionHeading;
+  static final TextStyle bodySmall = GoogleFonts.sora(
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+    height: 1.4,
+  );
+  static final TextStyle bodyMedium = body;
+  static final TextStyle labelLarge = GoogleFonts.sora(
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.text,
+  );
+  static final TextStyle labelMedium = GoogleFonts.sora(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+  static final TextStyle buttonSmall = GoogleFonts.sora(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+  );
+  static final TextStyle buttonMedium = button;
+  static final TextStyle buttonLarge = GoogleFonts.sora(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+  );
 
   static TextTheme textTheme(Color textColor, Color secondaryColor, Color mutedColor) {
-    return GoogleFonts.outfitTextTheme().copyWith(
-      displayLarge: GoogleFonts.outfit(
+    return GoogleFonts.soraTextTheme().copyWith(
+      displayLarge: GoogleFonts.sora(
         fontSize: 32,
-        fontWeight: FontWeight.w800,
-        color: textColor,
-        letterSpacing: -0.8,
-      ),
-      displayMedium: GoogleFonts.outfit(
-        fontSize: 28,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: textColor,
         letterSpacing: -0.6,
+        height: 1.25,
       ),
-      headlineLarge: GoogleFonts.outfit(
-        fontSize: 24,
+      displayMedium: GoogleFonts.sora(
+        fontSize: 28,
         fontWeight: FontWeight.w700,
         color: textColor,
         letterSpacing: -0.5,
+        height: 1.3,
       ),
-      headlineMedium: GoogleFonts.outfit(
-        fontSize: 20,
+      headlineLarge: GoogleFonts.sora(
+        fontSize: 24,
         fontWeight: FontWeight.w700,
         color: textColor,
         letterSpacing: -0.4,
+        height: 1.3,
       ),
-      titleLarge: GoogleFonts.outfit(
+      headlineMedium: GoogleFonts.sora(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: textColor,
+        letterSpacing: -0.3,
+        height: 1.35,
+      ),
+      titleLarge: GoogleFonts.sora(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: textColor,
         letterSpacing: -0.2,
+        height: 1.35,
       ),
-      titleMedium: GoogleFonts.outfit(
+      titleMedium: GoogleFonts.sora(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: textColor,
+        height: 1.4,
       ),
-      titleSmall: GoogleFonts.outfit(
+      titleSmall: GoogleFonts.sora(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: textColor,
+        height: 1.4,
       ),
-      bodyLarge: GoogleFonts.outfit(
+      bodyLarge: GoogleFonts.sora(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: textColor,
+        height: 1.5,
+      ),
+      bodyMedium: GoogleFonts.sora(
         fontSize: 15,
         fontWeight: FontWeight.w400,
-        color: textColor,
-        height: 1.4,
-      ),
-      bodyMedium: GoogleFonts.outfit(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
         color: secondaryColor,
-        height: 1.4,
+        height: 1.5,
       ),
-      bodySmall: GoogleFonts.outfit(
-        fontSize: 12,
+      bodySmall: GoogleFonts.sora(
+        fontSize: 13,
         fontWeight: FontWeight.w400,
         color: mutedColor,
-        height: 1.3,
+        height: 1.4,
       ),
-      labelLarge: GoogleFonts.outfit(
-        fontSize: 14,
+      labelLarge: GoogleFonts.sora(
+        fontSize: 15,
         fontWeight: FontWeight.w600,
         color: textColor,
       ),
-      labelMedium: GoogleFonts.outfit(
-        fontSize: 12,
+      labelMedium: GoogleFonts.sora(
+        fontSize: 13,
         fontWeight: FontWeight.w600,
         color: secondaryColor,
       ),
-      labelSmall: GoogleFonts.outfit(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
+      labelSmall: GoogleFonts.sora(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
         color: mutedColor,
-        letterSpacing: 0.5,
       ),
     );
   }
 }
+

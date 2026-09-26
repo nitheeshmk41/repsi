@@ -39,37 +39,18 @@ function ThemeToggle() {
     return <div className="h-9 w-9 rounded-[8px] bg-[var(--border)] animate-pulse" />;
   }
 
-  const icon =
-    theme === "dark" ? (
-      <Moon className="h-4 w-4" />
-    ) : theme === "light" ? (
-      <Sun className="h-4 w-4" />
-    ) : (
-      <Monitor className="h-4 w-4" />
-    );
+  const isDark = theme === "dark";
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
-          {icon}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          <Sun className="mr-2 h-4 w-4" />
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          <Moon className="mr-2 h-4 w-4" />
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          <Monitor className="mr-2 h-4 w-4" />
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      aria-label="Toggle theme"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    >
+      {isDark ? <Moon className="h-4 w-4 text-emerald-400" /> : <Sun className="h-4 w-4 text-amber-500" />}
+    </Button>
   );
 }
 

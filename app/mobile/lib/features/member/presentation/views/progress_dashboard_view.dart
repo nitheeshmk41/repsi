@@ -1,192 +1,290 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../shared/animations/repsi_stagger.dart';
+import '../../../../shared/widgets/repsi_button.dart';
+import '../../../../shared/widgets/repsi_card.dart';
 
-class ProgressDashboardView extends StatelessWidget {
+class ProgressDashboardView extends StatefulWidget {
   const ProgressDashboardView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<ProgressDashboardView> createState() => _ProgressDashboardViewState();
+}
 
+class _ProgressDashboardViewState extends State<ProgressDashboardView> {
+  int _selectedTab = 0;
+  final List<String> _tabs = ['Overview', 'Measurements', 'Photos'];
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Progress & Body Analytics'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Progress',
+          style: AppTypography.heading.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // WEIGHT TREND CHART CARD
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Weight Progression',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.pageHorizontalPadding,
+            vertical: 12,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Tabs: Overview, Measurements, Photos (Mockup Screen 5)
+              RepsiStaggerItem(
+                index: 0,
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  padding: const EdgeInsets.all(3),
+                  child: Row(
+                    children: List.generate(_tabs.length, (index) {
+                      final isSelected = _selectedTab == index;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedTab = index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primarySoft : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              _tabs[index],
+                              style: AppTypography.caption.copyWith(
+                                color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                fontSize: 13,
                               ),
                             ),
-                            Text(
-                              'Target: 70.0 kg · Current: 74.2 kg',
-                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                        Chip(
-                          label: Text('-2.4 kg'),
-                          backgroundColor: Colors.greenAccent,
-                          labelStyle: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      height: 160,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: const [
-                                FlSpot(0, 76.6),
-                                FlSpot(1, 75.8),
-                                FlSpot(2, 75.2),
-                                FlSpot(3, 74.8),
-                                FlSpot(4, 74.2),
-                              ],
-                              isCurved: true,
-                              color: theme.primaryColor,
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: const FlDotData(show: true),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: theme.primaryColor.withValues(alpha: 0.15),
-                              ),
-                            ),
-                          ],
+                      );
+                    }),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 2. Weight Line Chart Card
+              RepsiStaggerItem(
+                index: 1,
+                child: RepsiCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Weight',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
                         ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '72.4 kg',
+                            style: AppTypography.display.copyWith(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.arrow_downward_rounded, size: 13, color: AppColors.primaryDark),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '1.8 kg',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.primaryDark,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Last 30 days',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      // Smooth Line Chart
+                      SizedBox(
+                        height: 160,
+                        child: LineChart(
+                          LineChartData(
+                            gridData: const FlGridData(show: false),
+                            titlesData: const FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            lineTouchData: const LineTouchData(enabled: true),
+                            minY: 71,
+                            maxY: 75,
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: const [
+                                  FlSpot(0, 74.2),
+                                  FlSpot(1, 73.8),
+                                  FlSpot(2, 73.9),
+                                  FlSpot(3, 73.1),
+                                  FlSpot(4, 72.8),
+                                  FlSpot(5, 72.4),
+                                ],
+                                isCurved: true,
+                                curveSmoothness: 0.35,
+                                color: AppColors.primary,
+                                barWidth: 3,
+                                isStrokeCapRound: true,
+                                dotData: const FlDotData(show: false),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppColors.primary.withValues(alpha: 0.25),
+                                      AppColors.primary.withValues(alpha: 0.0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Body Measurements Row (Body Fat, Chest, Waist)
+              RepsiStaggerItem(
+                index: 2,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _MeasurementCard(
+                        label: 'Body Fat',
+                        value: '18.2%',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MeasurementCard(
+                        label: 'Chest',
+                        value: '38"',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MeasurementCard(
+                        label: 'Waist',
+                        value: '31"',
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const Spacer(),
 
-            // BODY MEASUREMENTS
-            const Text(
-              'BODY MEASUREMENTS',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: Colors.grey,
+              // 4. Add Progress Button (Mockup Screen 5)
+              RepsiStaggerItem(
+                index: 3,
+                child: RepsiButton(
+                  text: 'Add Progress',
+                  leadingIcon: const Icon(Icons.add_rounded, size: 20),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Add progress dialog opened')),
+                    );
+                  },
+                  isFullWidth: true,
+                  size: RepsiButtonSize.large,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 2.2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              children: [
-                _buildMeasurementTile('Chest', '102 cm', '+1.5 cm'),
-                _buildMeasurementTile('Waist', '82 cm', '-2.0 cm'),
-                _buildMeasurementTile('Arms', '38 cm', '+0.8 cm'),
-                _buildMeasurementTile('Thighs', '58 cm', '+1.0 cm'),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // STRENGTH PR HIGHLIGHTS
-            const Text(
-              'STRENGTH PR PROGRESSION',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.blueAccent,
-                      child: Icon(Icons.fitness_center, color: Colors.white, size: 20),
-                    ),
-                    title: const Text('Barbell Bench Press', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('75.0 kg × 6 reps'),
-                    trailing: const Text('New PR 🎉', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.purpleAccent,
-                      child: Icon(Icons.fitness_center, color: Colors.white, size: 20),
-                    ),
-                    title: const Text('Barbell Back Squat', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('110.0 kg × 5 reps'),
-                    trailing: const Text('2 weeks ago', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
-          ],
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildMeasurementTile(String title, String value, String delta) {
+class _MeasurementCard extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MeasurementCard({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(delta, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11)),
-            ],
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppTypography.headingSmall.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.text,
+            ),
           ),
         ],
       ),

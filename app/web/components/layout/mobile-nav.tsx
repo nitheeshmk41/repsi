@@ -129,7 +129,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
         <div className="flex items-center justify-between px-4 h-14 border-b border-[var(--border)]">
           <Link href={`/${workspace}/dashboard`} className="flex items-center gap-2.5">
             <Image
-              src="/logos/repsi_logo_black.png"
+              src="/logos/logo_trans.png"
               alt="REPSI"
               width={34}
               height={34}
@@ -137,6 +137,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             />
             <span className="font-bold text-[var(--text)] tracking-tight">REPSI</span>
           </Link>
+
           <button
             onClick={onClose}
             className="p-1.5 rounded-[6px] text-[var(--text-muted)] hover:bg-[var(--nav-hover-bg)] hover:text-[var(--text)] transition-colors"

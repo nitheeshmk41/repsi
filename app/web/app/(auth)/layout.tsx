@@ -15,14 +15,23 @@ export default function AuthLayout({
       <header className="flex h-16 items-center px-6 border-b border-[var(--border)] bg-[var(--surface)]">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/logos/repsi_logo_black.png"
+            src="/logos/primary_logo.png"
             alt="REPSI"
             width={170}
             height={55}
-            className="h-10 w-auto object-contain"
+            className="h-10 w-auto object-contain dark:hidden"
+            priority
+          />
+          <Image
+            src="/logos/white_logo.png"
+            alt="REPSI"
+            width={170}
+            height={55}
+            className="h-10 w-auto object-contain hidden dark:block"
             priority
           />
         </Link>
+
       </header>
 
       {/* Content */}

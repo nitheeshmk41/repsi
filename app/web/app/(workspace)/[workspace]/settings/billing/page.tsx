@@ -246,7 +246,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
         currency: currency,
         name: "Repsi Technologies",
         description: `Repsi ${plan.name} Plan (${billingCycle === "annual" ? "Annual - Save 20%" : "Monthly"})`,
-        image: "/logos/repsi_primary.png",
+        image: "/logos/logo_trans.png",
         order_id: orderId.startsWith("order_") ? orderId : undefined,
         prefill: {
           name: "Gym Owner",
@@ -254,8 +254,9 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
           contact: "+919876543210",
         },
         theme: {
-          color: "#65e729", // Repsi Brand Neon Green
+          color: "#18B968", // Repsi Brand Green
         },
+
         handler: async function (response: any) {
           const paymentId = response.razorpay_payment_id || `pay_${Math.random().toString(36).substring(2, 14)}`;
 
@@ -952,7 +953,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
             </table>
 
             <div className="flex items-center justify-between pt-4 border-t border-border">
-              <p className="text-[11px] text-text-muted">Thank you for powering your gym with Repsi OS!</p>
+              <p className="text-[11px] text-text-muted">Thank you for powering your gym with Repsi!</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}

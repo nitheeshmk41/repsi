@@ -310,6 +310,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  void setRole(String role) {
+    final normalized = role.toUpperCase();
+    final name = normalized == 'OWNER'
+        ? 'Nitheesh'
+        : (normalized == 'TRAINER'
+            ? 'Arun Kumar'
+            : (normalized == 'ADMIN' ? 'System Admin' : 'Rahul'));
+    final email = normalized == 'OWNER'
+        ? 'nitheesh@repsi.com'
+        : (normalized == 'TRAINER'
+            ? 'arun@repsi.com'
+            : (normalized == 'ADMIN' ? 'admin@repsi.com' : 'rahul@gmail.com'));
+
+    final user = (state.user ?? UserModel(
+      id: 'usr_demo',
+      email: email,
+      fullName: name,
+      isSuperadmin: normalized == 'ADMIN',
+      isActive: true,
+      role: normalized,
+    )).copyWith(
+      role: normalized,
+      fullName: name,
+      email: email,
+    );
+
+    state = state.copyWith(
+      status: AuthStatus.authenticated,
+      token: state.token ?? 'mock-jwt-token-active',
+      user: user,
+    );
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     await _storage.clearAll();

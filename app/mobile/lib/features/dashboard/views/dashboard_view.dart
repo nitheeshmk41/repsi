@@ -1,982 +1,320 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../shared/animations/repsi_stagger.dart';
 import '../../../shared/widgets/repsi_card.dart';
-import '../../../shared/widgets/repsi_error_state.dart';
-import '../../../shared/widgets/repsi_metric_card.dart';
-import '../../../shared/widgets/repsi_skeleton.dart';
-import '../../../shared/widgets/repsi_profile_bottom_sheet.dart';
+import '../../attendance/views/attendance_view.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../providers/dashboard_provider.dart';
+import '../../members/views/add_member_view.dart';
 
 class DashboardView extends ConsumerWidget {
   const DashboardView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final state = ref.watch(dashboardProvider);
-    final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final user = ref.watch(authProvider).user;
+    final ownerName = user?.fullName ?? 'Nitheesh';
 
-    if (state.isLoading && state.metrics == null) {
-      return _buildSkeleton(isDark);
-    }
-
-    if (state.errorMessage != null && state.metrics == null) {
-      return Scaffold(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-        body: SafeArea(
-          child: RepsiErrorState(
-            message: state.errorMessage!,
-            onRetry: () => ref.read(dashboardProvider.notifier).fetchMetrics(),
-          ),
-        ),
-      );
-    }
-
-    final m = state.metrics;
-    final activeCount = m?.activeMembers ?? 128;
-    final monthlyRev = m?.monthlyRevenue ?? 384500.0;
-    final todayAtt = m?.todayAttendance ?? 42;
-    final expiringCount = m?.expiringMemberships ?? 14;
-    final growthPct = m?.revenueGrowthPct ?? 12.4;
-    final peakHour = m?.attendancePeakHour ?? '6:00 PM - 7:30 PM';
-
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final activities = [
+      {'title': 'Arun checked in', 'time': '8:42 AM', 'icon': Icons.check_circle_outline_rounded, 'color': AppColors.primary},
+      {'title': 'Rahul paid ₹1,999', 'time': '10:32 AM', 'icon': Icons.receipt_rounded, 'color': Color(0xFF2563EB)},
+      {'title': 'New member added', 'time': '11:15 AM', 'icon': Icons.person_add_outlined, 'color': Color(0xFF9333EA)},
+    ];
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(dashboardProvider.notifier).fetchMetrics(),
-          color: AppColors.primary,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Owner Welcome Banner
-                Row(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.pageHorizontalPadding,
+            vertical: 16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Header: Good morning, Nitheesh 👋 (Owner Mockup Screen 1)
+              RepsiStaggerItem(
+                index: 0,
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Good morning, ${user?.fullName.split(' ').firstOrNull ?? 'Owner'}',
-                            style: AppTypography.headingMedium.copyWith(
-                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 20,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Apex Fitness • Owner Dashboard',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          icon: Stack(
-                            children: [
-                              const Icon(LucideIcons.bell, size: 20),
-                              Positioned(
-                                top: 2,
-                                right: 2,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          onPressed: () => context.push(RouteNames.notifications),
-                        ),
-                        GestureDetector(
-                          onTap: () => RepsiProfileBottomSheet.show(context),
-                          child: CircleAvatar(
-                            radius: 16,
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                            backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                            child: user?.avatarUrl == null
-                                ? Text(
-                                    (user != null && user.fullName.isNotEmpty) ? user.fullName[0].toUpperCase() : 'O',
-                                    style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
-                                  )
-                                : null,
+                        Text(
+                          'Good morning,',
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Quick Action Row: Razorpay Instant Collect & Gym CRM
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showRazorpayCollectDialog(context),
-                        icon: const Icon(LucideIcons.creditCard, size: 16),
-                        label: const Text('Razorpay', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0D6EFD),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showCrmBottomSheet(context),
-                        icon: const Icon(LucideIcons.target, size: 16),
-                        label: const Text('Gym CRM', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE11D48),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-              // 2. Needs Attention Card
-              RepsiCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                        const SizedBox(height: 2),
                         Row(
                           children: [
-                            const Icon(LucideIcons.alertCircle, size: 18, color: AppColors.error),
+                            Text(
+                              ownerName,
+                              style: AppTypography.heading.copyWith(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.text,
+                              ),
+                            ),
                             const SizedBox(width: 6),
-                            Text(
-                              'NEEDS ATTENTION',
-                              style: AppTypography.labelLarge.copyWith(
-                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                            const Text('👋', style: TextStyle(fontSize: 20)),
                           ],
-                        ),
-                        InkWell(
-                          onTap: () => context.go(RouteNames.members),
-                          child: Text(
-                            'View all >',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const Divider(height: 1),
-                    const SizedBox(height: AppSpacing.xs),
-
-                    // Item 1: Overdue payments
-                    InkWell(
-                      onTap: () => context.push(RouteNames.payments),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.redAccent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '6 overdue payments',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '₹18,500',
-                              style: AppTypography.caption.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ],
+                    GestureDetector(
+                      onTap: () => context.push(RouteNames.selectRole),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.border, width: 1.5),
+                          color: Colors.white,
                         ),
-                      ),
-                    ),
-
-                    // Item 2: Expiring memberships
-                    InkWell(
-                      onTap: () => context.go(RouteNames.members),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.orangeAccent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '24 memberships expiring',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              'Next 7 days',
-                              style: AppTypography.caption.copyWith(
-                                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Item 3: Inactive members
-                    InkWell(
-                      onTap: () => context.go(RouteNames.members),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.amber,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '13 inactive members',
-                                style: AppTypography.bodySmall.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '14+ days',
-                              style: AppTypography.caption.copyWith(
-                                color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 3. KPI Grid
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final itemWidth = (constraints.maxWidth - AppSpacing.sm) / 2;
-                  return Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      SizedBox(
-                        width: itemWidth,
-                        child: RepsiMetricCard(
-                          title: 'Active Members',
-                          value: '$activeCount',
-                          icon: LucideIcons.users,
-                          iconColor: AppColors.primary,
-                          subtitle: '+8 this month',
-                          onTap: () => context.go(RouteNames.members),
-                        ),
-                      ),
-                      SizedBox(
-                        width: itemWidth,
-                        child: RepsiMetricCard(
-                          title: 'Revenue (MTD)',
-                          value: currencyFormatter.format(monthlyRev),
-                          icon: LucideIcons.indianRupee,
-                          iconColor: AppColors.success,
-                          trendPct: growthPct,
-                          onTap: () => context.push(RouteNames.payments),
-                        ),
-                      ),
-                      SizedBox(
-                        width: itemWidth,
-                        child: RepsiMetricCard(
-                          title: 'Today Check-ins',
-                          value: '$todayAtt',
-                          icon: LucideIcons.qrCode,
-                          iconColor: AppColors.info,
-                          subtitle: 'Peak: $peakHour',
-                          onTap: () => context.go(RouteNames.attendance),
-                        ),
-                      ),
-                      SizedBox(
-                        width: itemWidth,
-                        child: RepsiMetricCard(
-                          title: 'Expiring (7 Days)',
-                          value: '$expiringCount',
-                          icon: LucideIcons.alertTriangle,
-                          iconColor: AppColors.warning,
-                          subtitle: 'Next 7 days',
-                          onTap: () => context.go(RouteNames.members),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 4. Quick Actions
-              Text(
-                'Quick Actions',
-                style: AppTypography.headingSmall.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final btnWidth = (constraints.maxWidth - (AppSpacing.sm * 3)) / 4;
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      SizedBox(
-                        width: btnWidth,
-                        child: _buildQuickActionButton(
-                          context: context,
-                          isDark: isDark,
-                          icon: LucideIcons.userPlus,
-                          label: 'Add',
-                          onTap: () => context.push(RouteNames.addMember),
-                        ),
-                      ),
-                      SizedBox(
-                        width: btnWidth,
-                        child: _buildQuickActionButton(
-                          context: context,
-                          isDark: isDark,
-                          icon: LucideIcons.creditCard,
-                          label: 'Pay',
-                          onTap: () => context.push(RouteNames.recordPayment),
-                        ),
-                      ),
-                      SizedBox(
-                        width: btnWidth,
-                        child: _buildQuickActionButton(
-                          context: context,
-                          isDark: isDark,
-                          icon: LucideIcons.qrCode,
-                          label: 'Scan',
-                          onTap: () => context.go(RouteNames.attendance),
-                        ),
-                      ),
-                      SizedBox(
-                        width: btnWidth,
-                        child: _buildQuickActionButton(
-                          context: context,
-                          isDark: isDark,
-                          icon: LucideIcons.users,
-                          label: 'Members',
-                          onTap: () => context.go(RouteNames.members),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 5. Revenue Trends Chart
-              RepsiCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Revenue Growth',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.successLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '+${growthPct.toStringAsFixed(1)}% MoM',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.successDark,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Monthly financial trajectory',
-                          style: AppTypography.caption.copyWith(
-                            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                          ),
-                        ),
-                        Row(
-                          children: ['1M', '3M', '6M', '1Y'].map((range) {
-                            final isSel = range == '6M';
-                            return Container(
-                              margin: const EdgeInsets.only(left: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? AppColors.primary
-                                    : (isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                range,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSel
-                                      ? Colors.white
-                                      : (isDark ? AppColors.darkTextMuted : AppColors.textMuted),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    SizedBox(
-                      height: 180,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: isDark ? AppColors.darkBorder : AppColors.border,
-                              strokeWidth: 1,
-                            ),
-                          ),
-                          titlesData: FlTitlesData(
-                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                            // Distinct month labels every tick without duplication
-                                  const months = ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']; // Skipped months to avoid overlapping
-                                  final idx = value.toInt();
-                                  if (idx >= 0 && idx < months.length) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Text(
-                                        months[idx],
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          minX: 0,
-                          maxX: 5,
-                          minY: 0,
-                          maxY: 6,
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: const [
-                                FlSpot(0, 1.8),
-                                FlSpot(1, 2.5),
-                                FlSpot(2, 3.1),
-                                FlSpot(3, 3.8),
-                                FlSpot(4, 4.2),
-                                FlSpot(5, 5.4),
-                              ],
-                              isCurved: true,
-                              color: AppColors.primary,
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: const FlDotData(show: false),
-                              belowBarData: BarAreaData(
-                                show: true,
-                                color: AppColors.primary.withValues(alpha: 0.12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 6. Live Gym Activity Card
-              RepsiCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'LIVE GYM ACTIVITY',
-                              style: AppTypography.labelLarge.copyWith(
-                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.successLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.successDark,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'LIVE',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.successDark,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          '42',
-                          style: AppTypography.headingLarge.copyWith(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
+                        child: const Center(
+                          child: Icon(
+                            Icons.storefront_rounded,
                             color: AppColors.primary,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'members currently in gym',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: 0.42,
-                        minHeight: 8,
-                        backgroundColor: isDark ? AppColors.darkSurfaceElevated : AppColors.surfaceSubtle,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Capacity: 42 / 100',
-                          style: AppTypography.caption.copyWith(
-                            color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                          ),
-                        ),
-                        Text(
-                          'Peak today: 6:00 PM – 8:30 PM',
-                          style: AppTypography.caption.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 20),
 
-              // 7. Recent Activity Section
-              RepsiCard(
+              // 2. "Today" 2x2 Stats Grid (Owner Mockup Screen 1)
+              RepsiStaggerItem(
+                index: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Recent Activity',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      'Today',
+                      style: AppTypography.sectionHeading.copyWith(
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
+                        color: AppColors.text,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const Divider(height: 1),
-                    const SizedBox(height: AppSpacing.xs),
-
-                    Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(LucideIcons.userCheck, size: 16, color: AppColors.primary),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _OwnerStatCard(
+                            label: 'Attendance',
+                            value: '82',
+                            subtext: 'members today',
+                            icon: Icons.qr_code_scanner_rounded,
+                          ),
                         ),
-                        title: Text('New member check-in', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                        subtitle: Text('Rahul Sharma • Annual Plan', style: AppTypography.caption),
-                        trailing: Text('Today 10:42', style: AppTypography.caption),
-                      ),
-                    ),
-                    Material(
-                      color: Colors.transparent,
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppColors.success.withValues(alpha: 0.1),
-                          child: const Icon(LucideIcons.creditCard, size: 16, color: AppColors.success),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _OwnerStatCard(
+                            label: 'Revenue',
+                            value: '₹18,400',
+                            subtext: 'collected today',
+                            icon: Icons.account_balance_wallet_outlined,
+                          ),
                         ),
-                        title: Text('Payment received', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                        subtitle: Text('₹2,500 via UPI', style: AppTypography.caption),
-                        trailing: Text('Today 10:31', style: AppTypography.caption),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _OwnerStatCard(
+                            label: 'Active Members',
+                            value: '186',
+                            subtext: 'total registered',
+                            icon: Icons.groups_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _OwnerStatCard(
+                            label: 'Expiring',
+                            value: '12',
+                            subtext: 'in next 7 days',
+                            icon: Icons.access_time_rounded,
+                            valueColor: AppColors.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 3. Quick Actions
+              RepsiStaggerItem(
+                index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quick Actions',
+                      style: AppTypography.sectionHeading.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _QuickActionBtn(
+                          label: 'Add Member',
+                          icon: Icons.person_add_rounded,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const AddMemberView()),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        _QuickActionBtn(
+                          label: 'Record Payment',
+                          icon: Icons.receipt_long_rounded,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Record payment dialog opened')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        _QuickActionBtn(
+                          label: 'Attendance',
+                          icon: Icons.qr_code_rounded,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const AttendanceView()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 4. Today's Activity Feed (Owner Mockup Screen 1)
+              RepsiStaggerItem(
+                index: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Today's Activity",
+                      style: AppTypography.sectionHeading.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    RepsiCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Column(
+                        children: List.generate(activities.length, (index) {
+                          final act = activities[index];
+                          final isLast = index == activities.length - 1;
+
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: (act['color'] as Color).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        act['icon'] as IconData,
+                                        size: 18,
+                                        color: act['color'] as Color,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Text(
+                                        act['title'] as String,
+                                        style: AppTypography.headingSmall.copyWith(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      act['time'] as String,
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (!isLast) const Divider(height: 1),
+                            ],
+                          );
+                        }),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xxl),
-            ],
-          ),
-        ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required BuildContext context,
-    required bool isDark,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(
-            color: isDark ? AppColors.darkBorder : AppColors.border,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 20, color: AppColors.primary),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTypography.caption.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showRazorpayCollectDialog(BuildContext context) {
-    final amountController = TextEditingController(text: '1499');
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(LucideIcons.creditCard, color: Color(0xFF0D6EFD)),
-            SizedBox(width: 8),
-            Text('Collect via Razorpay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Enter amount to generate Razorpay instant payment link for member:', style: TextStyle(fontSize: 12)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                prefixText: '₹ ',
-                labelText: 'Amount (INR)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D6EFD), foregroundColor: Colors.white),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Razorpay order created for ₹${amountController.text}. Payment link ready.'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            child: const Text('Generate Order'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCrmBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF18181B),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, scrollController) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(LucideIcons.target, color: Color(0xFFE11D48), size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Gym CRM & Leads',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _showAddLeadDialog(context);
-                    },
-                    icon: const Icon(LucideIcons.plus, size: 16),
-                    label: const Text('Add Lead'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFE11D48),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              // Stage Pills
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildStagePill('All Leads', true),
-                    _buildStagePill('New (3)', false),
-                    _buildStagePill('Contacted (5)', false),
-                    _buildStagePill('Trials (2)', false),
-                    _buildStagePill('Converted (12)', false),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    _buildLeadMobileCard(
-                      context,
-                      name: 'Aarav Patel',
-                      phone: '+91 98765 43210',
-                      stage: 'Trial Scheduled',
-                      plan: 'Strength & Conditioning',
-                      date: 'Today, 10:00 AM',
-                    ),
-                    _buildLeadMobileCard(
-                      context,
-                      name: 'Sneha Reddy',
-                      phone: '+91 98888 12345',
-                      stage: 'Contacted',
-                      plan: 'Weight Loss / HIIT',
-                      date: 'Yesterday',
-                    ),
-                    _buildLeadMobileCard(
-                      context,
-                      name: 'Vikram Malhotra',
-                      phone: '+91 97777 99999',
-                      stage: 'New Lead',
-                      plan: 'Annual Elite',
-                      date: '2 hrs ago',
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildStagePill(String title, bool active) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFFE11D48) : Colors.white10,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: active ? Colors.white : Colors.white70,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
+class _OwnerStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String subtext;
+  final IconData icon;
+  final Color? valueColor;
 
-  Widget _buildLeadMobileCard(
-    BuildContext context, {
-    required String name,
-    required String phone,
-    required String stage,
-    required String plan,
-    required String date,
-  }) {
+  const _OwnerStatCard({
+    required this.label,
+    required this.value,
+    required this.subtext,
+    required this.icon,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF27272A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -984,144 +322,75 @@ class DashboardView extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE11D48).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+              Text(
+                label,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
                 ),
-                child: Text(stage, style: const TextStyle(color: Color(0xFFFB7185), fontSize: 11, fontWeight: FontWeight.bold)),
               ),
+              Icon(icon, size: 18, color: AppColors.textMuted),
             ],
           ),
-          const SizedBox(height: 4),
-          Text('$plan • $date', style: const TextStyle(color: Colors.white60, fontSize: 12)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              // Quick Actions: Call -> WhatsApp -> Schedule -> Convert
-              IconButton.filledTonal(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Calling $name ($phone)...')),
-                  );
-                },
-                icon: const Icon(LucideIcons.phone, size: 16),
-                style: IconButton.styleFrom(backgroundColor: Colors.blue.withValues(alpha: 0.2), foregroundColor: Colors.blue),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Opening WhatsApp for $phone...')),
-                  );
-                },
-                icon: const Icon(LucideIcons.messageSquare, size: 16),
-                style: IconButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.2), foregroundColor: Colors.green),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Scheduled follow-up for $name')),
-                  );
-                },
-                icon: const Icon(LucideIcons.calendar, size: 16),
-                style: IconButton.styleFrom(backgroundColor: Colors.purple.withValues(alpha: 0.2), foregroundColor: Colors.purple),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$name converted to Member successfully! Linked to workspace.'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                },
-                icon: const Icon(LucideIcons.userCheck, size: 14),
-                label: const Text('Convert', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppTypography.heading.copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: valueColor ?? AppColors.text,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtext,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 11,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showAddLeadDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF18181B),
-        title: const Text('Add Gym Lead', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Full Name', labelStyle: TextStyle(color: Colors.white60)),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Phone Number', labelStyle: TextStyle(color: Colors.white60)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48), foregroundColor: Colors.white),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Lead ${nameCtrl.text} added to CRM!'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
-            child: const Text('Save Lead'),
+class _QuickActionBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QuickActionBtn({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkeleton(bool isDark) {
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             children: [
-              GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: AppSpacing.sm,
-                mainAxisSpacing: AppSpacing.sm,
-                childAspectRatio: 1.35,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(4, (_) => const RepsiSkeleton(height: 100)),
+              Icon(icon, color: AppColors.primary, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppTypography.caption.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                  color: AppColors.text,
+                ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const RepsiSkeleton(height: 220),
-              const SizedBox(height: AppSpacing.md),
-              const RepsiSkeleton(height: 120),
             ],
           ),
         ),

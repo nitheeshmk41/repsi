@@ -96,9 +96,10 @@ export function AttendanceChart({ data }: { data?: Array<{ label: string; value:
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={index === chartData.length - 1 ? "#84CC16" : "var(--border-strong)"}
+                fill={index === chartData.length - 1 ? "#18B968" : "var(--border-strong)"}
               />
             ))}
+
           </Bar>
         </BarChart>
       </ResponsiveContainer>

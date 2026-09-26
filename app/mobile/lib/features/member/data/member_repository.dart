@@ -8,6 +8,8 @@ import '../../../shared/models/workout_models.dart';
 class MemberRepository {
   final ApiClient _apiClient;
 
+  ApiClient get apiClient => _apiClient;
+
   MemberRepository(this._apiClient);
 
   Future<WorkoutPlan> getTodayWorkout() async {

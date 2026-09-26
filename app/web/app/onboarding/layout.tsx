@@ -37,14 +37,23 @@ export default function OnboardingLayout({
       <header className="h-16 border-b border-[var(--border)] bg-[var(--surface)] px-4 sm:px-6 flex items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
-            src="/logos/repsi_logo_black.png"
+            src="/logos/primary_logo.png"
             alt="REPSI"
             width={160}
             height={50}
-            className="h-9 sm:h-10 w-auto object-contain"
+            className="h-9 sm:h-10 w-auto object-contain dark:hidden"
+            priority
+          />
+          <Image
+            src="/logos/white_logo.png"
+            alt="REPSI"
+            width={160}
+            height={50}
+            className="h-9 sm:h-10 w-auto object-contain hidden dark:block"
             priority
           />
         </Link>
+
 
         {/* Stepper (Desktop) */}
         <div className="hidden md:flex items-center gap-2">

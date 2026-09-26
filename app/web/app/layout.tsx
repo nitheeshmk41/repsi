@@ -33,6 +33,7 @@ export default function RootLayout({
         {/*
           Inline script to prevent flash of incorrect theme.
           Runs before React hydration — sets the class immediately.
+          Defaults to light theme.
         */}
         <script
           suppressHydrationWarning
@@ -41,8 +42,7 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('repsi-theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && prefersDark)) {
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');
@@ -56,8 +56,8 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
           storageKey="repsi-theme"
         >
