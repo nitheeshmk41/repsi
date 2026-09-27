@@ -7,7 +7,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: "assets/.env");
+  } catch (e) {
+    debugPrint("Note: dotenv load skipped or using defaults: $e");
+  }
   runApp(const ProviderScope(child: RepsiApp()));
 }
 

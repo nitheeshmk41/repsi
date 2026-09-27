@@ -63,6 +63,7 @@ app/desktop/desktop-dist/
 .env.production.local
 .env.production
 *.env
+!app/mobile/assets/.env
 *.db
 
 # ─── Docker ─────────────────────────────────────────────────────────
