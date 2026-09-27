@@ -1,0 +1,23 @@
+{
+  "name": "Repsi - Modern Gym & Fitness Operating System",
+  "short_name": "Repsi",
+  "description": "All-in-one gym management software with QR attendance, automated WhatsApp billing, UPI payments, and member management.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
