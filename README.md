@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app/web/public/logos/repsi_logo.png" alt="REPSI Logo" width="180" />
+  <img src="app/web/public/new logos/dark_logo_trans.png" alt="REPSI Logo" width="180" />
   
   <h3>The Operating System for Modern Gyms & Fitness Businesses</h3>
   
