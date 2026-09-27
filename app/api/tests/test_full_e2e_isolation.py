@@ -127,7 +127,7 @@ def test_full_e2e_multi_tenancy_isolation():
 
     # 8. Member Login & Scoping Isolation
     login_mem_a = client.post("/api/v1/auth/login", json={
-        "email": "mem.alpha@test.com", "password": "+91 91000 00001"
+        "email": "mem.alpha@test.com", "password": "MemberPass123!"
     }).json()
     token_mem_a = login_mem_a["access_token"]
     headers_mem_a = {"Authorization": f"Bearer {token_mem_a}"}
