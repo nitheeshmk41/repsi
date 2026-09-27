@@ -1,20 +1,21 @@
 <div align="center">
-  <img src="app/web/public/logos/repsi_logo.png" alt="REPSI Logo" width="150" />
+  <img src="app/web/public/logos/repsi_logo.png" alt="REPSI Logo" width="180" />
   
-  <h3>The Operating System for Modern Gyms</h3>
+  <h3>The Operating System for Modern Gyms & Fitness Businesses</h3>
   
   <p>
-    REPSI is a production-quality Gym Management SaaS platform tailored for gym owners, trainers, staff, and members. Built with a premium design system, highly scalable architecture, and an exceptional user experience across all devices.
+    REPSI is a production-grade Gym Management SaaS platform tailored for gym owners, trainers, staff, and members. Built with a modern design system, highly scalable multi-tenant architecture, local payment processing, and high-performance native apps.
   </p>
 
   <p>
     <a href="https://repsi.app">Live Web App</a> •
-    <a href="#getting-started">Get Started</a> •
-    <a href="docs/architecture.md">Documentation</a>
+    <a href="#-getting-started">Get Started</a> •
+    <a href="docs/architecture.md">Architecture</a> •
+    <a href="https://github.com/nitheeshmk41/repsi/releases">Download Apps</a>
   </p>
   
   <p>
-    <img src="https://img.shields.io/badge/Version-1.0.0-84CC16?style=flat-square" alt="Version" />
+    <img src="https://img.shields.io/badge/Version-1.0.1-84CC16?style=flat-square" alt="Version 1.0.1" />
     <img src="https://img.shields.io/badge/Platform-Web%20%7C%20iOS%20%7C%20Android%20%7C%20Desktop-lightgrey?style=flat-square" alt="Platforms" />
     <img src="https://img.shields.io/badge/License-Proprietary-blue?style=flat-square" alt="License" />
   </p>
@@ -24,33 +25,37 @@
 
 ## 🌟 About REPSI
 
-Managing a fitness facility shouldn't mean juggling five different outdated software platforms. **REPSI** unifies your entire gym operation into a single, cohesive ecosystem. Whether you're a franchise owner analyzing multi-location revenue, a trainer checking your daily schedule, or a member booking your next HIIT class—REPSI delivers a specialized, native experience for every user on any device.
+Managing a fitness facility shouldn't mean juggling five different outdated software tools. **REPSI** unifies your entire gym operation into a single, cohesive platform:
 
-## ✨ Key Features
+- **Gym Owners**: Track real-time MRR, automated GST billing, multi-branch performance, and convert trial leads with built-in CRM.
+- **Trainers**: Manage PT client sessions, assign digital workout routines, monitor macro diets, and view commission payouts.
+- **Front Desk Staff**: Validate contactless QR check-ins in under a second and issue WhatsApp receipts instantly.
+- **Members**: Check in via smartphone QR pass, log workout sets, track nutrition, and pay membership dues with 1-tap UPI.
 
-- 🏢 **Multi-Tenancy & Workspace Isolation:** Securely manage multiple gym locations or distinct businesses under a single organizational account with robust data isolation.
-- 💳 **Automated Billing & Payments:** Seamlessly handle subscription renewals, one-off payments, failed transaction retries, and comprehensive invoice generation.
-- 📱 **True Cross-Platform Experience:** A beautiful, responsive Next.js web application paired with high-performance native iOS, Android, and Desktop (Tauri) apps sharing the same business logic.
-- 👥 **Comprehensive Member Management:** Effortlessly track attendance via QR codes, manage complex membership tiers, and view detailed, 360-degree member profiles.
-- 📅 **Scheduling & Class Management:** Streamlined class booking, capacity management, and trainer scheduling with calendar integrations.
-- 📊 **Actionable Analytics & Reports:** Intuitive, real-time dashboards tracking revenue, active memberships, churn rate, and attendance trends.
-- 🔒 **Role-Based Access Control (RBAC):** Granular, fine-tuned permissions ensuring owners, staff, trainers, and members only see what they need to see.
+---
+
+## ✨ Key Features in v1.0.1
+
+- 🏢 **Multi-Tenancy & Workspace Isolation**: Manage single or multi-branch gym networks under one organization with complete data isolation.
+- 💳 **UPI & Cashfree Payment Integration**: Instant fee collection via Google Pay, PhonePe, BHIM UPI, cards, and automatic WhatsApp invoice delivery.
+- 📲 **Contactless QR Attendance**: Sub-second smartphone QR scan check-in and biometric hardware integration.
+- 🌐 **Product-Led SEO Architecture**: Built-in SEO engine covering dedicated feature routes (`/features/*`), comparisons (`/compare/*`), regional city hubs (`/cities/*`), and automated Google `LocalBusiness` schema for gym websites.
+- 📱 **Native Mobile Apps (iOS & Android)**: Compiled Flutter applications with Riverpod state management and offline-resilient storage.
+- 💻 **Desktop Apps (Tauri & Rust)**: Lightweight, native desktop wrappers for Windows, macOS, and Linux.
+- 📊 **Real-time Analytics & CRM**: Sales pipeline tracking, trial lead follow-up drip sequences, churn analysis, and financial reporting.
 
 ---
 
 ## 🛠️ Technology Stack
 
-REPSI is built using a modern, scalable, and developer-friendly stack:
-
 | Layer | Technology | Description |
 |---|---|---|
-| **Web Frontend** | Next.js 16, React 19, Tailwind CSS v4 | Server-rendered, highly optimized web application. |
-| **UI/UX** | Radix UI, shadcn/ui, Lucide Icons | Accessible, unstyled primitives wrapped in a premium design system. |
-| **Mobile App** | Flutter 3.x, Dart | High-performance compiled native apps for iOS and Android. |
-| **Desktop App** | Tauri, Rust | Lightweight, secure desktop wrapper for the web frontend. |
-| **Backend API** | FastAPI, Python 3.12, Pydantic | Asynchronous, type-safe, and lightning-fast REST API. |
-| **Database** | PostgreSQL, SQLAlchemy, Alembic | Relational database modeling with reliable migrations (Neon-compatible). |
-| **Infrastructure** | Docker, GitHub Actions | Containerized deployments and automated multi-platform release pipelines. |
+| **Web Frontend** | Next.js 16, React 19, Tailwind CSS v4 | Server-rendered, SEO-optimized web application. |
+| **Mobile App** | Flutter 3.x, Dart, Riverpod, Dio | High-performance compiled native apps for iOS and Android. |
+| **Desktop App** | Tauri, Rust | Lightweight native desktop wrapper for Windows, Mac, and Linux. |
+| **Backend API** | FastAPI, Python 3.12, SQLAlchemy | Asynchronous, type-safe REST API with tenant context isolation. |
+| **Database** | PostgreSQL, SQLite | Relational database modeling with automated migrations. |
+| **Infrastructure** | Docker, GitHub Actions | Multi-platform CI/CD release automation for APKs and Desktop binaries. |
 
 ---
 
@@ -59,65 +64,44 @@ REPSI is built using a modern, scalable, and developer-friendly stack:
 ```text
 repsi/
 ├── app/
-│   ├── web/             # Next.js frontend application (Web)
-│   ├── api/             # FastAPI backend services (Core Logic)
-│   ├── mobile/          # Flutter application (iOS & Android)
-│   └── desktop/         # Tauri application wrapper (Windows, Mac, Linux)
+│   ├── web/             # Next.js frontend & Gym Website Builder engine
+│   ├── api/             # FastAPI backend microservices
+│   ├── mobile/          # Flutter cross-platform app (iOS & Android)
+│   └── desktop/         # Tauri Rust desktop app wrapper
 │
-├── packages/            # (Future) Shared utilities and configurations
-├── docker/              # Dockerfiles and container configurations
-├── docs/                # Architecture diagrams and API documentation
-├── .github/workflows/   # CI/CD pipelines for testing and releases
-├── .env.example         # Template for environment variables
-└── docker-compose.yml   # Local development orchestration
+├── docker/              # Container definitions
+├── docs/                # Architecture diagrams and system specs
+├── .github/workflows/   # CI/CD pipelines (Automated APK, AppImage, EXE releases)
+└── docker-compose.yml   # Multi-container orchestration
 ```
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these instructions to set up the REPSI environment on your local machine.
-
 ### Prerequisites
-
-Ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (v20+)
-- [Python](https://www.python.org/) (v3.12+) and `uv` package manager
+- [Python](https://www.python.org/) (v3.12+) and `uv`
 - [Flutter SDK](https://flutter.dev/) (v3.x)
-- [Docker & Docker Compose](https://www.docker.com/)
 - [Rust](https://www.rust-lang.org/) (for Desktop builds)
 
-### 1. Database & Backend API
-
-Set up your environment variables and start the FastAPI server:
-
+### 1. Backend API (FastAPI)
 ```bash
 cd app/api
-cp ../../.env.example .env
 uv venv .venv
 source .venv/bin/activate
 uv pip install -e ".[dev]"
-uvicorn app.main:app --reload
-# API running at: http://localhost:8000
-# Swagger Docs: http://localhost:8000/docs
+uvicorn app.main:app --reload --port 8000
 ```
 
-### 2. Web Frontend
-
-Start the Next.js development server:
-
+### 2. Web Frontend (Next.js)
 ```bash
 cd app/web
-cp ../../.env.example .env.local
 npm install
 npm run dev
-# Web app running at: http://localhost:3000
 ```
 
 ### 3. Mobile App (Flutter)
-
-Run the native mobile application on an emulator or connected device:
-
 ```bash
 cd app/mobile
 flutter pub get
@@ -125,66 +109,32 @@ flutter run
 ```
 
 ### 4. Desktop App (Tauri)
-
-Run the desktop application (requires the web frontend to be running):
-
 ```bash
 cd app/desktop
 npm install
 npm run dev
 ```
 
-### 🐋 Run Everything via Docker
+---
 
-For a frictionless quickstart, run the entire stack (Database, API, Web) using Docker:
+## 📦 Multi-Platform Releases (v1.0.1)
 
+REPSI uses automated GitHub Actions workflows to build release binaries upon pushing tag `v1.0.1`:
+
+- **Android**: Downloadable `.apk`
+- **Linux**: `.AppImage` & `.deb` packages
+- **Windows**: `.exe` & `.msi` installers
+- **macOS**: `.dmg` bundles
+
+To trigger a new build & release:
 ```bash
-cp .env.example .env
-docker compose up --build
+git tag -a v1.0.1 -m "Release v1.0.1"
+git push origin v1.0.1
 ```
-
----
-
-## 📦 Releases & CI/CD
-
-REPSI utilizes highly automated GitHub Actions workflows for continuous integration and deployment.
-
-- **CI Pipeline:** Automatically lints, tests, and verifies builds for all platforms (Web, API, Mobile, Desktop) on every PR and push to `main`.
-- **Automated Releases:** Pushing a semantic version tag automatically builds and attaches platform-specific binaries to a GitHub Release.
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-*This triggers the release workflow, generating `APK` (Android), `EXE/MSI` (Windows), `DEB/AppImage` (Linux), and `DMG` (macOS).*
-
----
-
-## 🎨 Brand & Design Guidelines
-
-REPSI prioritizes a premium, sleek, and high-contrast visual identity.
-
-- **Primary Accent:** `#84CC16` (Lime Green) — Used sparingly for primary actions and highlights.
-- **Typography:** **Inter** for clean, highly legible interfaces.
-- **Design Inspiration:** Stripe (developer-centric precision) + Linear (dark-mode elegance and micro-interactions).
-
----
-
-## 📚 Documentation Directory
-
-Deep dive into the technical details of the platform:
-
-| Document | Description |
-|---|---|
-| [**Architecture Overview**](docs/architecture.md) | High-level system architecture, deployment strategy, and design decisions. |
-| [**API Reference**](docs/api.md) | Detailed REST API endpoints, authentication flow, and payload schemas. |
-| [**Database Schema**](docs/database.md) | Entity relationship diagrams and core table structures. |
-| [**Design System**](docs/design-system.md) | UI components, design tokens, responsive guidelines, and accessibility. |
 
 ---
 
 ## 📄 License
 
 **Proprietary Software** — All rights reserved. 
-Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
-
+Unauthorized copying, modification, or distribution is strictly prohibited.
