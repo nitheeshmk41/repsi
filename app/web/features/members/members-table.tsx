@@ -109,7 +109,13 @@ function ColHeader({
 
 // ─── Row Actions ──────────────────────────────────────────────────────────────
 
-function RowActions({ member }: { member: Member }) {
+function RowActions({
+  member,
+  onDelete,
+}: {
+  member: Member;
+  onDelete?: (id: string, name: string) => void;
+}) {
   const pathname = usePathname();
   const workspace = getWorkspaceFromPath(pathname);
 
@@ -119,13 +125,13 @@ function RowActions({ member }: { member: Member }) {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="opacity-0 group-hover/row:opacity-100 transition-opacity"
+          className="opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer"
           aria-label={`Actions for ${member.name}`}
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel>Member actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -134,22 +140,25 @@ function RowActions({ member }: { member: Member }) {
             View profile
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit member
+        <DropdownMenuItem asChild>
+          <Link href={`/${workspace}/members/${member.id}`} className="cursor-pointer">
+            <Edit className="mr-2 h-4 w-4" />
+            Edit member
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          Renew membership
+        <DropdownMenuItem asChild>
+          <Link href={`/${workspace}/members/${member.id}?tab=membership`} className="cursor-pointer">
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Renew membership
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Ban className="mr-2 h-4 w-4" />
-          Suspend
-        </DropdownMenuItem>
-        <DropdownMenuItem className="text-[var(--error)]">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Archive member
+        <DropdownMenuItem
+          className="text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-950/40 focus:text-rose-700 cursor-pointer"
+          onClick={() => onDelete?.(member.id, member.name)}
+        >
+          <Trash2 className="mr-2 h-4 w-4 text-rose-600 dark:text-rose-400" />
+          Delete member & user
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -161,9 +170,10 @@ function RowActions({ member }: { member: Member }) {
 interface MembersTableProps {
   members: Member[];
   onAddMember: () => void;
+  onDeleteMember?: (id: string, name: string) => void;
 }
 
-export function MembersTable({ members, onAddMember }: MembersTableProps) {
+export function MembersTable({ members, onAddMember, onDeleteMember }: MembersTableProps) {
   const pathname = usePathname();
   const workspace = getWorkspaceFromPath(pathname);
   const [sortColumn, setSortColumn] = useState("name");
@@ -257,6 +267,11 @@ export function MembersTable({ members, onAddMember }: MembersTableProps) {
               />
               <th className="px-4 py-3 text-left">
                 <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  Repsi Access
+                </span>
+              </th>
+              <th className="px-4 py-3 text-left">
+                <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
                   Phone
                 </span>
               </th>
@@ -327,6 +342,19 @@ export function MembersTable({ members, onAddMember }: MembersTableProps) {
                   </Badge>
                 </td>
 
+                {/* Repsi Access */}
+                <td className="px-4 py-3">
+                  {member.repsiAccess === "Connected" || member.userId ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" /> Connected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" /> Not connected
+                    </span>
+                  )}
+                </td>
+
                 {/* Phone */}
                 <td className="px-4 py-3">
                   <span className="text-sm text-[var(--text-secondary)] tabular-nums">
@@ -366,7 +394,7 @@ export function MembersTable({ members, onAddMember }: MembersTableProps) {
 
                 {/* Actions */}
                 <td className="px-4 py-3">
-                  <RowActions member={member} />
+                  <RowActions member={member} onDelete={onDeleteMember} />
                 </td>
               </tr>
             ))}

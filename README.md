@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app/web/public/new logos/dark_logo_trans.png" alt="REPSI Logo" width="180" />
+  <img src="app/web/public/logos/dark_logo_trans.png" alt="REPSI Logo" width="180" />
   
   <h3>The Operating System for Modern Gyms & Fitness Businesses</h3>
   
@@ -85,13 +85,17 @@ repsi/
 - [Flutter SDK](https://flutter.dev/) (v3.x)
 - [Rust](https://www.rust-lang.org/) (for Desktop builds)
 
-### 1. Backend API (FastAPI)
+### 1. Backend API (FastAPI with uv)
 ```bash
 cd app/api
-uv venv .venv
-source .venv/bin/activate
-uv pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8000
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+
+# Run tests
+uv run pytest
+
+# Run seeds
+uv run python -m app.core.seed
 ```
 
 ### 2. Web Frontend (Next.js)

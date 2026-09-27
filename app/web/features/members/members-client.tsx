@@ -72,13 +72,26 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
       const matchesSearch =
         search === "" ||
         m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.email.toLowerCase().includes(search.toLowerCase()) ||
-        m.phone.includes(search);
+        (m.email?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (m.phone || "").includes(search);
       const matchesStatus = statusFilter === "all" || m.status === statusFilter;
       const matchesPlan = planFilter === "all" || m.plan === planFilter;
       return matchesSearch && matchesStatus && matchesPlan;
     });
   }, [members, search, statusFilter, planFilter]);
+
+  const handleDeleteMember = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This will permanently remove the member and their user account from this gym.`)) {
+      return;
+    }
+    try {
+      await repsiApi.deleteMember(id);
+      setMembers((prev) => prev.filter((m) => m.id !== id));
+      window.dispatchEvent(new CustomEvent("repsi_storage_update"));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete member");
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -104,6 +117,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
       <MembersTable
         members={filtered}
         onAddMember={() => setAddDialogOpen(true)}
+        onDeleteMember={handleDeleteMember}
       />
 
       <InviteDialog
@@ -121,6 +135,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
             name: data.name,
             email: data.email,
             phone: data.phone,
+            password: data.password,
             plan: data.plan,
           });
 
@@ -129,7 +144,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
             name: created.name,
             email: created.email,
             phone: created.phone,
-            plan: data.plan,
+            plan: (created.plan as MembershipPlanName) || data.plan,
             status: "active",
             joined: data.startDate,
             expiry: new Date(
@@ -150,6 +165,8 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
                 : 2500,
           };
           setMembers((prev) => [newMember, ...prev.filter((m) => m.id !== newMember.id)]);
+          // Also fetch full updated list from DB
+          fetchMembers();
         }}
       />
 

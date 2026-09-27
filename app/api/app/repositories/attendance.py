@@ -32,12 +32,45 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
             .count()
         )
 
+    def get_today_attendance(self) -> list[Attendance]:
+        today_start = datetime.combine(date.today(), datetime.min.time())
+        return (
+            self.db.query(Attendance)
+            .filter(
+                Attendance.workspace_id == self.workspace_id,
+                Attendance.check_in_time >= today_start
+            )
+            .order_by(Attendance.check_in_time.desc())
+            .all()
+        )
+
+    def get_multi(self, skip: int = 0, limit: int = 100) -> list[Attendance]:
+        return (
+            self.db.query(Attendance)
+            .filter(Attendance.workspace_id == self.workspace_id)
+            .order_by(Attendance.check_in_time.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def get_multi_by_member(self, member_id: str) -> list[Attendance]:
         return (
             self.db.query(Attendance)
             .filter(
                 Attendance.workspace_id == self.workspace_id,
                 Attendance.member_id == member_id
+            )
+            .order_by(Attendance.check_in_time.desc())
+            .all()
+        )
+
+    def get_multi_by_trainer(self, trainer_id: str) -> list[Attendance]:
+        return (
+            self.db.query(Attendance)
+            .filter(
+                Attendance.workspace_id == self.workspace_id,
+                Attendance.trainer_id == trainer_id
             )
             .order_by(Attendance.check_in_time.desc())
             .all()

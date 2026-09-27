@@ -247,24 +247,36 @@ def convert_lead_to_member(
             (func.lower(User.email) == clean_email) | (User.phone == clean_phone)
         ).first()
 
+        raw_password = data.password or lead.phone or "CrmPassword123!"
+
         if not user:
             user = User(
-                email=clean_email,
-                full_name=f"{lead.first_name} {lead.last_name}".strip(),
-                hashed_password=get_password_hash(clean_phone or "Password123!"),
+                email=clean_email or f"{clean_phone}@repsi.internal",
+                full_name=f"{lead.first_name} {lead.last_name or ''}".strip(),
+                hashed_password=get_password_hash(raw_password),
                 phone=clean_phone,
                 is_active=True,
             )
             db.add(user)
             db.flush()
+        elif data.password:
+            user.hashed_password = get_password_hash(data.password)
 
-        # Link to workspace
-        db.add(WorkspaceMember(
-            workspace_id=tenant.workspace_id,
-            user_id=user.id,
-            role=UserRole.USER,
-            is_active=True,
-        ))
+        new_member.user_id = user.id
+
+        # Link to workspace if not present
+        ws_mem = db.query(WorkspaceMember).filter(
+            WorkspaceMember.workspace_id == tenant.workspace_id,
+            WorkspaceMember.user_id == user.id
+        ).first()
+        if not ws_mem:
+            db.add(WorkspaceMember(
+                workspace_id=tenant.workspace_id,
+                user_id=user.id,
+                role=UserRole.USER,
+                is_active=True,
+            ))
+            db.flush()
 
     # Link lead
     lead.converted_member_id = member_id

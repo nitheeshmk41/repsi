@@ -15,7 +15,7 @@ export function MarketingFooter() {
           <div className="md:col-span-4 space-y-5">
             <Link href="/" className="inline-block group">
               <Image
-                src="/new logos/dark_logo_trans.png"
+                src="/logos/dark_logo_trans.png"
                 alt="REPSI"
                 width={200}
                 height={60}

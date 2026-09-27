@@ -135,3 +135,43 @@ def forgot_password(req: PasswordResetRequest):
 @router.post("/logout")
 def logout():
     return {"status": "success", "message": "Successfully logged out"}
+
+
+@router.get("/check-availability")
+def check_availability(
+    email: str = None,
+    phone: str = None,
+    db: Session = Depends(get_db)
+):
+    from app.models.member import Member
+    from app.models.trainer import Trainer
+
+    email_exists = False
+    phone_exists = False
+
+    if email and email.strip():
+        clean_email = email.strip().lower()
+        if (
+            db.query(User).filter(User.email == clean_email).first()
+            or db.query(Member).filter(Member.email == clean_email).first()
+            or db.query(Trainer).filter(Trainer.email == clean_email).first()
+        ):
+            email_exists = True
+
+    if phone and phone.strip():
+        clean_phone = phone.strip()
+        # strip common spaces or dashes
+        digits_phone = "".join(filter(str.isdigit, clean_phone))
+        if len(digits_phone) >= 7:
+            user_match = db.query(User).filter(User.phone.like(f"%{digits_phone[-10:]}%")).first()
+            member_match = db.query(Member).filter(Member.phone.like(f"%{digits_phone[-10:]}%")).first()
+            trainer_match = db.query(Trainer).filter(Trainer.phone.like(f"%{digits_phone[-10:]}%")).first()
+            if user_match or member_match or trainer_match:
+                phone_exists = True
+
+    return {
+        "email_exists": email_exists,
+        "phone_exists": phone_exists,
+        "email_message": "Email is already registered in database" if email_exists else None,
+        "phone_message": "Mobile number is already registered in database" if phone_exists else None,
+    }

@@ -27,7 +27,7 @@ export default function OnboardingCompletePage() {
         const parsed = JSON.parse(gymData);
         if (parsed.name) setGymName(parsed.name);
         if (parsed.city) setCity(parsed.city);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const plansData = localStorage.getItem("repsi_onboarding_plans");
@@ -35,7 +35,7 @@ export default function OnboardingCompletePage() {
       try {
         const parsed = JSON.parse(plansData);
         setPlansCount(parsed.length);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const teamData = localStorage.getItem("repsi_onboarding_team");
@@ -43,7 +43,7 @@ export default function OnboardingCompletePage() {
       try {
         const parsed = JSON.parse(teamData);
         setTeamCount(parsed.length);
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 

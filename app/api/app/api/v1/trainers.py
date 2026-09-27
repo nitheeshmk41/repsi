@@ -67,21 +67,68 @@ def create_trainer(
         )
 
     service = TrainerService(db, tenant)
+    clean_email = data.email.lower().strip() if data.email else None
+    clean_phone = data.phone.strip() if data.phone else None
+
     # Check if trainer with email already exists in workspace
-    if data.email:
+    if clean_email:
         existing = db.query(Trainer).filter(
             Trainer.workspace_id == tenant.workspace_id,
-            Trainer.email == data.email.lower().strip(),
+            Trainer.email == clean_email,
             Trainer.status != TrainerStatus.REMOVED
         ).first()
         if existing:
             raise HTTPException(status_code=400, detail="Trainer with this email already exists.")
 
+    # Option to provision user account if password or email is provided
+    linked_user_id = None
+    if clean_email or clean_phone:
+        from sqlalchemy import func, or_
+        from app.models.user import WorkspaceMember, UserRole
+        from app.core.security import get_password_hash
+
+        filters = []
+        if clean_email:
+            filters.append(func.lower(User.email) == clean_email)
+        if clean_phone:
+            filters.append(User.phone == clean_phone)
+
+        user = db.query(User).filter(or_(*filters)).first()
+        raw_pwd = data.password or "TrainerPass123!"
+        if not user:
+            user = User(
+                email=clean_email or f"{clean_phone}@repsi.internal",
+                full_name=data.name.strip(),
+                hashed_password=get_password_hash(raw_pwd),
+                phone=clean_phone,
+                is_active=True,
+            )
+            db.add(user)
+            db.flush()
+
+        linked_user_id = user.id
+
+        ws_member = db.query(WorkspaceMember).filter(
+            WorkspaceMember.workspace_id == tenant.workspace_id,
+            WorkspaceMember.user_id == user.id
+        ).first()
+        if not ws_member:
+            db.add(WorkspaceMember(
+                workspace_id=tenant.workspace_id,
+                user_id=user.id,
+                role=UserRole.TRAINER,
+                is_active=True
+            ))
+            db.flush()
+        else:
+            ws_member.role = UserRole.TRAINER
+
     trainer = Trainer(
         workspace_id=tenant.workspace_id,
+        user_id=linked_user_id,
         name=data.name.strip(),
-        phone=data.phone.strip(),
-        email=data.email.lower().strip() if data.email else None,
+        phone=clean_phone or "",
+        email=clean_email,
         specialization=data.specialization or "General Fitness",
         hourly_rate=data.hourly_rate,
         commission_percentage=data.commission_percentage,
@@ -98,7 +145,7 @@ def create_trainer(
     db.commit()
     db.refresh(trainer)
 
-    return service.list_trainers()[0] if False else {
+    return {
         **trainer.__dict__,
         "assigned_clients_count": 0,
         "today_sessions_count": 0,

@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { repsiApi } from "@/lib/api";
 
 interface InviteDialogProps {
@@ -52,6 +53,10 @@ export function InviteDialog({
   const [specialization, setSpecialization] = useState("General Fitness");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
     email: string;
@@ -68,10 +73,50 @@ export function InviteDialog({
     setPassword(pwd);
   };
 
+  const handleEmailBlur = async () => {
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+      setEmailError(email.trim() ? "Invalid email format" : "Email is required");
+      return;
+    }
+    setCheckingEmail(true);
+    setEmailError(null);
+    try {
+      const check = await repsiApi.checkAvailability({ email: email.trim() });
+      if (check.email_exists) {
+        setEmailError(check.email_message || "This email address is already registered.");
+      }
+    } catch {
+      // Ignore network failures gracefully
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const handlePhoneBlur = async () => {
+    if (!phone.trim() || phone.length < 8) return;
+    setCheckingPhone(true);
+    setPhoneError(null);
+    try {
+      const check = await repsiApi.checkAvailability({ phone: phone.trim() });
+      if (check.phone_exists) {
+        setPhoneError(check.phone_message || "This phone number is already registered.");
+      }
+    } catch {
+      // Ignore network failures gracefully
+    } finally {
+      setCheckingPhone(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      setError("Please fill in both Name and Email.");
+      setError("Please fill in all mandatory fields (*)");
+      return;
+    }
+
+    if (emailError || phoneError) {
+      setError("Please resolve form validation errors before submitting.");
       return;
     }
 
@@ -269,11 +314,18 @@ export function InviteDialog({
               </div>
             </div>
 
-            {/* Email Address */}
+            {/* Mandatory Email Address with onBlur DB Check */}
             <div className="space-y-1">
-              <Label htmlFor="inv-email" className="text-xs font-medium text-[var(--text)]">
-                Email Address <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="inv-email" className="text-xs font-medium text-[var(--text)]">
+                  Email Address <span className="text-red-500">*</span>
+                </Label>
+                {checkingEmail && (
+                  <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
                 <Input
@@ -281,11 +333,18 @@ export function InviteDialog({
                   type="email"
                   placeholder="recipient@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-9 bg-[var(--surface)] border-[var(--border)] text-[var(--text)] text-xs placeholder:text-[var(--text-muted)] rounded-xl focus-visible:ring-1 focus-visible:ring-[var(--ring)]"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError(null);
+                  }}
+                  onBlur={handleEmailBlur}
+                  className={`pl-9 h-9 bg-[var(--surface)] border-[var(--border)] text-[var(--text)] text-xs placeholder:text-[var(--text-muted)] rounded-xl focus-visible:ring-1 focus-visible:ring-[var(--ring)] ${
+                    emailError ? "border-red-500 focus-visible:ring-red-500" : ""
+                  }`}
                   required
                 />
               </div>
+              {emailError && <p className="text-[11px] text-red-500 font-medium">{emailError}</p>}
             </div>
 
             {/* Direct Add Password Field */}
@@ -325,21 +384,29 @@ export function InviteDialog({
               </div>
             )}
 
-            {/* Phone Number (Optional) */}
+            {/* Phone Number with Country Code Dropdown and onBlur DB Check */}
             <div className="space-y-1">
-              <Label htmlFor="inv-phone" className="text-xs font-medium text-[var(--text)]">
-                Phone Number <span className="text-[var(--text-muted)] font-normal">(Optional)</span>
-              </Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
-                <Input
-                  id="inv-phone"
-                  placeholder="+91 98450 12345"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="pl-9 h-9 bg-[var(--surface)] border-[var(--border)] text-[var(--text)] text-xs placeholder:text-[var(--text-muted)] rounded-xl focus-visible:ring-1 focus-visible:ring-[var(--ring)]"
-                />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="inv-phone" className="text-xs font-medium text-[var(--text)]">
+                  Mobile Number <span className="text-[var(--text-muted)] font-normal">(Optional)</span>
+                </Label>
+                {checkingPhone && (
+                  <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
+                  </span>
+                )}
               </div>
+              <PhoneInput
+                value={phone}
+                onChange={(val) => {
+                  setPhone(val);
+                  setPhoneError(null);
+                }}
+                onBlur={handlePhoneBlur}
+                placeholder="98450 12345"
+                error={!!phoneError}
+              />
+              {phoneError && <p className="text-[11px] text-red-500 font-medium">{phoneError}</p>}
             </div>
 
             {/* Trainer Specialization (if trainer) */}

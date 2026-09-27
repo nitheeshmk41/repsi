@@ -32,10 +32,11 @@ class Member(Base, TimestampMixin, TenantMixin):
     __tablename__ = "members"
 
     id = Column(String(64), primary_key=True, default=generate_uuid)
+    user_id = Column(String(64), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    email = Column(String(255), nullable=False, index=True)
-    phone = Column(String(50), nullable=False, index=True)
+    last_name = Column(String(100), nullable=True, default="")
+    email = Column(String(255), nullable=True, index=True)
+    phone = Column(String(50), nullable=True, index=True)
     avatar_url = Column(String(512), nullable=True)
     gender = Column(String(20), nullable=True)
     date_of_birth = Column(Date, nullable=True)
@@ -46,6 +47,20 @@ class Member(Base, TimestampMixin, TenantMixin):
 
     # Assigned Personal Trainer (optional)
     trainer_id = Column(String(64), nullable=True)
+
+    @property
+    def repsi_access(self) -> str:
+        return "Connected" if self.user_id else "Not connected"
+
+    @property
+    def plan_name(self) -> str:
+        if self.memberships:
+            active = [m for m in self.memberships if m.status == MemberStatus.ACTIVE]
+            if active and active[0].plan:
+                return active[0].plan.name
+            if self.memberships[0].plan:
+                return self.memberships[0].plan.name
+        return "Monthly"
 
     # Relationships
     memberships = relationship("Membership", back_populates="member", cascade="all, delete-orphan")

@@ -21,6 +21,10 @@ export default function OnboardingLayout({
   const pathname = usePathname();
   const router = useRouter();
 
+  if (pathname.includes("wizard")) {
+    return <>{children}</>;
+  }
+
   const currentStepIndex = steps.findIndex((s) => pathname.includes(s.id));
   const activeIndex = currentStepIndex === -1 ? 0 : currentStepIndex;
   const currentStep = steps[activeIndex] || steps[0];
@@ -63,13 +67,12 @@ export default function OnboardingLayout({
             return (
               <div key={step.id} className="flex items-center gap-2">
                 <div
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                    isCurrent
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${isCurrent
                       ? "bg-emerald-500/10 text-[#16A34A] border border-emerald-500/30"
                       : isDone
-                      ? "bg-emerald-50 text-[#16A34A] border border-emerald-200"
-                      : "text-zinc-400 bg-zinc-50 border border-zinc-200"
-                  }`}
+                        ? "bg-emerald-50 text-[#16A34A] border border-emerald-200"
+                        : "text-zinc-400 bg-zinc-50 border border-zinc-200"
+                    }`}
                 >
                   <span>{isDone ? "✓" : idx + 1}</span>
                   <span>{step.label}</span>

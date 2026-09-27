@@ -100,6 +100,7 @@ const trainerNavGroups: NavGroupDef[] = [
     title: "TRAINER PORTAL",
     items: [
       { label: "Dashboard", path: "/trainer/dashboard", icon: LayoutDashboard },
+      { label: "Attendance & QR Pass", path: "/trainer/attendance", icon: QrCode },
       { label: "Clients", path: "/trainer/clients", icon: Users },
       { label: "Workouts", path: "/trainer/workouts", icon: Dumbbell },
       { label: "Schedule", path: "/trainer/schedule", icon: Calendar },
@@ -153,17 +154,17 @@ function RepsiLogo({ collapsed, workspace }: { collapsed: boolean; workspace: st
   return (
     <Link 
       href={`/${workspace}/dashboard`} 
-      className="flex items-center gap-2.5 px-3 h-14 border-b border-[var(--border)] transition-opacity hover:opacity-90"
+      className="flex items-center gap-2.5 px-4 h-16 border-b border-[var(--border)] transition-opacity hover:opacity-90"
     >
       {collapsed ? (
         /* Collapsed: app icon only */
-        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+        <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center">
           <Image
-            src="/logos/logo_trans.png"
+            src="/logos/dark_logo_trans.png"
             alt="REPSI"
-            width={32}
-            height={32}
-            className="object-contain rounded-lg"
+            width={36}
+            height={36}
+            className="object-contain"
           />
         </div>
       ) : (
@@ -172,15 +173,15 @@ function RepsiLogo({ collapsed, workspace }: { collapsed: boolean; workspace: st
           <Image
             src="/logos/primary_logo.png"
             alt="REPSI"
-            width={150}
+            width={160}
             height={48}
             className="h-9 w-auto object-contain object-left dark:hidden"
             priority
           />
           <Image
-            src="/logos/white_logo.png"
+            src="/logos/dark_logo_trans.png"
             alt="REPSI"
-            width={150}
+            width={160}
             height={48}
             className="h-9 w-auto object-contain object-left hidden dark:block"
             priority
@@ -198,25 +199,25 @@ function GymSelector({ collapsed, workspace }: { collapsed: boolean; workspace: 
 
   if (collapsed) {
     return (
-      <div className="mx-3 my-2">
-        <button className="w-full flex items-center justify-center h-8 rounded-[8px] hover:bg-[var(--nav-hover-bg)] transition-colors">
-          <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
+      <div className="mx-3 my-2.5">
+        <button className="w-full flex items-center justify-center h-9 rounded-xl hover:bg-[var(--nav-hover-bg)] transition-colors">
+          <Building2 className="h-4 w-4 text-[#16A34A]" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mx-3 my-2">
-      <div className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] bg-[var(--surface)] border border-[var(--border)]">
-        <div className="w-6 h-6 rounded-[6px] bg-[var(--primary-soft)] flex items-center justify-center flex-shrink-0">
-          <Building2 className="h-3.5 w-3.5 text-[var(--primary-dark)] dark:text-[var(--primary-hover)]" />
+    <div className="mx-3 my-3">
+      <div className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#101b16] border border-[#E5E7EB] dark:border-[#263831] shadow-2xs hover:border-[#16A34A]/40 transition-all">
+        <div className="w-7 h-7 rounded-lg bg-[#ECFDF3] dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center justify-center flex-shrink-0">
+          <Building2 className="h-4 w-4 text-[#16A34A]" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-[var(--text)] truncate leading-tight">
+          <div className="text-xs font-bold text-[#172033] dark:text-white truncate leading-tight">
             {gymName}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)] truncate leading-tight">
+          <div className="text-[11px] font-medium text-[#15803D] dark:text-emerald-400 truncate leading-tight mt-0.5">
             repsi.app/{workspace}
           </div>
         </div>
@@ -244,23 +245,23 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "relative flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-sm font-medium transition-all duration-150",
+        "relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-150",
         isActive
-          ? "bg-[var(--nav-active-bg)] text-[var(--nav-active-text)]"
-          : "text-[var(--text-secondary)] hover:bg-[var(--nav-hover-bg)] hover:text-[var(--text)]",
+          ? "bg-[#E8F5EE] dark:bg-emerald-950/60 text-[#15803D] dark:text-emerald-400 font-bold shadow-2xs"
+          : "text-[#64748B] dark:text-[#94a3b8] hover:bg-[#F3F7F5] dark:hover:bg-[#16241e] hover:text-[#172033] dark:hover:text-white font-medium",
         collapsed && "justify-center px-0"
       )}
     >
       {/* Active indicator bar */}
       {isActive && !collapsed && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-[var(--nav-active-indicator)]" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-[#16A34A]" />
       )}
       <Icon
         className={cn(
           "flex-shrink-0 h-4 w-4",
           isActive
-            ? "text-[var(--nav-active-text)]"
-            : "text-[var(--text-muted)]"
+            ? "text-[#15803D] dark:text-emerald-400"
+            : "text-[#64748B] dark:text-zinc-400"
         )}
       />
       {!collapsed && <span>{item.label}</span>}
@@ -346,7 +347,7 @@ export function Sidebar() {
             <div key={group.title} className="mb-4">
               {!collapsed && (
                 <div className="px-3 mb-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
                     {group.title}
                   </span>
                 </div>

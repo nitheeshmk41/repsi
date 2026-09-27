@@ -314,6 +314,12 @@ export const GradientWaves: React.FC<GradientWavesProps> = ({
     };
     document.addEventListener('visibilitychange', onVisibility);
 
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
+      tryStop();
+    };
+    canvas.addEventListener('webglcontextlost', onContextLost);
+
     tryStart();
 
     return () => {
@@ -323,11 +329,13 @@ export const GradientWaves: React.FC<GradientWavesProps> = ({
       document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerleave', onPointerLeave);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
       ctxMap.delete(container);
       try {
-        container.removeChild(canvas);
+        if (canvas.parentNode === container) {
+          container.removeChild(canvas);
+        }
       } catch {}
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, []);
 

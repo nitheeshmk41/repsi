@@ -26,7 +26,7 @@ export default function OnboardingBusinessPage() {
     if (saved) {
       try {
         setForm(JSON.parse(saved));
-      } catch (e) {}
+      } catch (e) { }
     }
   }, []);
 

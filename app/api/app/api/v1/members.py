@@ -4,12 +4,12 @@ import csv
 import io
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Response, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.member import Member, MemberStatus, Membership, MembershipPlan
 from app.models.user import User, WorkspaceMember, UserRole
-from app.schemas.member import MemberCreate, MemberUpdate, MemberResponse, MemberListResponse
+from app.schemas.member import MemberCreate, MemberUpdate, MemberResponse, MemberListResponse, CheckContactRequest, CheckContactResponse
 from app.repositories.member import MemberRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
 
@@ -67,6 +67,37 @@ def export_members_csv(
     )
 
 
+@router.post("/check-contact", response_model=CheckContactResponse)
+def check_member_contact(
+    req: CheckContactRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    clean_email = req.email.strip().lower() if req.email else None
+    clean_phone = req.phone.strip() if req.phone else None
+
+    if not clean_email and not clean_phone:
+        return CheckContactResponse(exists=False)
+
+    filters = []
+    if clean_email:
+        filters.append(func.lower(User.email) == clean_email)
+    if clean_phone:
+        filters.append(User.phone == clean_phone)
+
+    existing_user = db.query(User).filter(or_(*filters)).first()
+    if existing_user:
+        return CheckContactResponse(
+            exists=True,
+            user_id=existing_user.id,
+            full_name=existing_user.full_name,
+            email=existing_user.email,
+            phone=existing_user.phone
+        )
+
+    return CheckContactResponse(exists=False)
+
+
 @router.get("/{id}", response_model=MemberResponse)
 def get_member(
     id: str,
@@ -87,47 +118,99 @@ def create_member(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
+    clean_email = data.email.strip().lower() if data.email else None
+    clean_phone = data.phone.strip() if data.phone else None
+
+    linked_user_id = None
+    if clean_email or clean_phone:
+        filters = []
+        if clean_email:
+            filters.append(func.lower(User.email) == clean_email)
+        if clean_phone:
+            filters.append(User.phone == clean_phone)
+
+        existing_user = db.query(User).filter(or_(*filters)).first()
+        if existing_user:
+            linked_user_id = existing_user.id
+        else:
+            raw_pwd = (data.password.strip() if data.password and data.password.strip() else None) or "MemberPass123!"
+            existing_user = User(
+                email=clean_email or f"{clean_phone}@repsi.internal",
+                full_name=f"{data.first_name} {data.last_name or ''}".strip(),
+                hashed_password=get_password_hash(raw_pwd),
+                phone=clean_phone,
+                is_active=True
+            )
+            db.add(existing_user)
+            db.flush()
+            linked_user_id = existing_user.id
+
+        if existing_user:
+            ws_member = db.query(WorkspaceMember).filter(
+                WorkspaceMember.workspace_id == tenant.workspace_id,
+                WorkspaceMember.user_id == existing_user.id
+            ).first()
+            if not ws_member:
+                db.add(WorkspaceMember(
+                    workspace_id=tenant.workspace_id,
+                    user_id=existing_user.id,
+                    role=UserRole.USER,
+                    is_active=True
+                ))
+                db.flush()
+
     repo = MemberRepository(db, tenant.workspace_id)
     member = repo.create(
+        user_id=linked_user_id,
         first_name=data.first_name,
-        last_name=data.last_name,
-        email=data.email,
-        phone=data.phone,
+        last_name=data.last_name or "",
+        email=clean_email,
+        phone=clean_phone,
         avatar_url=data.avatar_url,
         gender=data.gender,
         date_of_birth=data.date_of_birth,
         emergency_contact=data.emergency_contact,
         status=MemberStatus.ACTIVE,
-        joined_date=date.today(),
+        joined_date=data.start_date or date.today(),
         trainer_id=data.trainer_id,
         notes=data.notes
     )
 
-    # Check if a User already exists with this email or phone
-    clean_email = data.email.strip().lower()
-    clean_phone = data.phone.strip()
-    existing_user = db.query(User).filter(
-        (func.lower(User.email) == clean_email) | (User.phone == clean_phone)
-    ).first()
+    # Attach Membership Plan if provided by plan_id or plan_name
+    plan = None
+    if data.plan_id:
+        plan = db.query(MembershipPlan).filter(
+            MembershipPlan.id == data.plan_id,
+            MembershipPlan.workspace_id == tenant.workspace_id
+        ).first()
+    elif data.plan_name:
+        plan = db.query(MembershipPlan).filter(
+            MembershipPlan.workspace_id == tenant.workspace_id,
+            func.lower(MembershipPlan.name) == data.plan_name.strip().lower()
+        ).first()
+        if not plan and data.plan_name.lower() in ["annual", "yearly"]:
+            plan = db.query(MembershipPlan).filter(
+                MembershipPlan.workspace_id == tenant.workspace_id,
+                func.lower(MembershipPlan.name).in_(["yearly", "annual"])
+            ).first()
 
-    if not existing_user:
-        user = User(
-            email=clean_email,
-            full_name=f"{data.first_name} {data.last_name}".strip(),
-            hashed_password=get_password_hash(clean_phone or "Password123!"),
-            phone=clean_phone,
-            is_active=True,
-        )
-        db.add(user)
-        db.flush()
-        db.add(WorkspaceMember(
+    if plan:
+        start = data.start_date or date.today()
+        end = start + timedelta(days=plan.duration_months * 30)
+        membership = Membership(
             workspace_id=tenant.workspace_id,
-            user_id=user.id,
-            role=UserRole.USER,
-            is_active=True
-        ))
-        db.commit()
+            member_id=member.id,
+            plan_id=plan.id,
+            start_date=start,
+            end_date=end,
+            status=MemberStatus.ACTIVE,
+            price_paid=plan.price,
+            auto_renew=False
+        )
+        db.add(membership)
 
+    db.commit()
+    db.refresh(member)
     return member
 
 
@@ -153,10 +236,37 @@ def delete_member(
     db: Session = Depends(get_db)
 ):
     repo = MemberRepository(db, tenant.workspace_id)
-    member = repo.remove(id)
+    member = repo.get(id)
     if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-    return {"status": "success", "message": "Member archived successfully"}
+        raise HTTPException(status_code=404, detail="Member not found in this workspace")
+
+    linked_user_id = member.user_id
+
+    # If linked to a user account, clean up workspace association and user account
+    if linked_user_id:
+        ws_member = db.query(WorkspaceMember).filter(
+            WorkspaceMember.workspace_id == tenant.workspace_id,
+            WorkspaceMember.user_id == linked_user_id
+        ).first()
+        if ws_member:
+            db.delete(ws_member)
+            db.flush()
+
+        user = db.query(User).filter(User.id == linked_user_id).first()
+        if user and not user.is_superadmin:
+            # Check if this user belongs to any other workspaces
+            other_ws = db.query(WorkspaceMember).filter(
+                WorkspaceMember.user_id == user.id,
+                WorkspaceMember.workspace_id != tenant.workspace_id
+            ).first()
+            if not other_ws:
+                db.delete(user)
+                db.flush()
+
+    # Delete the member record (cascades to memberships, attendance, payments)
+    db.delete(member)
+    db.commit()
+    return {"status": "success", "message": "Member and user record removed successfully"}
 
 
 def _process_imported_rows(rows: List[Dict[str, Any]], tenant: TenantContext, db: Session) -> Dict[str, Any]:

@@ -8,6 +8,7 @@ from app.core.email import send_registration_otp
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.auth import PendingRegistration
 from app.models.member import Member
+from app.models.trainer import Trainer
 from app.models.user import User, UserRole, Workspace, WorkspaceMember
 from app.schemas.auth import (
     LoginRequest,
@@ -17,7 +18,7 @@ from app.schemas.auth import (
     VerifyRegisterOtpRequest,
 )
 from fastapi import HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 
@@ -348,6 +349,9 @@ class AuthService:
                 detail="User account is deactivated.",
             )
 
+        self._link_unlinked_member_records(user)
+        self._link_unlinked_trainer_records(user)
+
         # Find user's primary workspace
         ws_member = (
             self.db.query(WorkspaceMember)
@@ -366,6 +370,82 @@ class AuthService:
             subject=user.id, workspace_id=workspace.id if workspace else None, role=role
         )
         return user, workspace, token
+
+    def _link_unlinked_member_records(self, user: User) -> None:
+        filters = []
+        if user.email:
+            filters.append(func.lower(Member.email) == user.email.lower())
+        if user.phone:
+            filters.append(Member.phone == user.phone)
+        if not filters:
+            return
+
+        unlinked_members = (
+            self.db.query(Member)
+            .filter(Member.user_id.is_(None), or_(*filters))
+            .all()
+        )
+
+        for m in unlinked_members:
+            m.user_id = user.id
+            ws_mem = (
+                self.db.query(WorkspaceMember)
+                .filter(
+                    WorkspaceMember.workspace_id == m.workspace_id,
+                    WorkspaceMember.user_id == user.id,
+                )
+                .first()
+            )
+            if not ws_mem:
+                self.db.add(
+                    WorkspaceMember(
+                        workspace_id=m.workspace_id,
+                        user_id=user.id,
+                        role=UserRole.USER,
+                        is_active=True,
+                    )
+                )
+        if unlinked_members:
+            self.db.commit()
+
+    def _link_unlinked_trainer_records(self, user: User) -> None:
+        filters = []
+        if user.email:
+            filters.append(func.lower(Trainer.email) == user.email.lower())
+        if user.phone:
+            filters.append(Trainer.phone == user.phone)
+        if not filters:
+            return
+
+        unlinked_trainers = (
+            self.db.query(Trainer)
+            .filter(Trainer.user_id.is_(None), or_(*filters))
+            .all()
+        )
+
+        for t in unlinked_trainers:
+            t.user_id = user.id
+            ws_mem = (
+                self.db.query(WorkspaceMember)
+                .filter(
+                    WorkspaceMember.workspace_id == t.workspace_id,
+                    WorkspaceMember.user_id == user.id,
+                )
+                .first()
+            )
+            if not ws_mem:
+                self.db.add(
+                    WorkspaceMember(
+                        workspace_id=t.workspace_id,
+                        user_id=user.id,
+                        role=UserRole.TRAINER,
+                        is_active=True,
+                    )
+                )
+            else:
+                ws_mem.role = UserRole.TRAINER
+        if unlinked_trainers:
+            self.db.commit()
 
     def google_authenticate(self, req: GoogleLoginRequest) -> tuple[User, Workspace | None, str]:
         try:

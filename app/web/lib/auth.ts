@@ -5,7 +5,7 @@
  * Integrated with Next.js middleware and FastAPI backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
 
 export interface AuthUser {
   id: string;

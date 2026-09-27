@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "repsi-super-secret-key-change-in-production-min-32-chars-long"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    FRONTEND_URL: str = "http://localhost:3000"
 
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -43,18 +44,33 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
         "https://repsi.app",
         "https://www.repsi.app",
         "https://repsi.vercel.app",
+        "https://repsi.fastapicloud.dev",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
-            return v
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    parsed = json.loads(v)
+                    if isinstance(parsed, list):
+                        return [str(i).strip() for i in parsed]
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [str(i).strip() for i in v]
         raise ValueError(v)
 
     model_config = SettingsConfigDict(

@@ -168,6 +168,7 @@ class LeadConvertRequest(BaseModel):
     price_paid: Optional[float] = None
     amount_paid: Optional[float] = None
     payment_method: Optional[str] = "upi"
+    password: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod

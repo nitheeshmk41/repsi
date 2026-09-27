@@ -15,7 +15,7 @@ from app.middleware.tenant import get_current_tenant, TenantContext
 from app.models.invitation import GymInvitation, InvitationRole, InvitationStatus
 from app.models.user import User, Workspace, WorkspaceMember, UserRole
 from app.models.member import Member, MemberStatus
-from app.models.trainer import Trainer
+from app.models.trainer import Trainer, TrainerStatus
 
 router = APIRouter(prefix="/invitations", tags=["Invitations"])
 
@@ -398,6 +398,7 @@ def direct_add_user(
 
             member = Member(
                 workspace_id=workspace.id,
+                user_id=user.id,
                 first_name=first_name,
                 last_name=last_name,
                 email=normalized_email,
@@ -407,6 +408,7 @@ def direct_add_user(
             )
             db.add(member)
         else:
+            existing_member.user_id = user.id
             existing_member.status = MemberStatus.ACTIVE
 
     elif data.role == InvitationRole.TRAINER:
@@ -422,13 +424,13 @@ def direct_add_user(
                 email=normalized_email,
                 phone=data.phone or "",
                 specialization=data.specialization or "General Fitness",
-                status="ACTIVE",
+                status=TrainerStatus.ACTIVE,
                 is_active=True
             )
             db.add(trainer)
         else:
             existing_trainer.user_id = user.id
-            existing_trainer.status = "ACTIVE"
+            existing_trainer.status = TrainerStatus.ACTIVE
             existing_trainer.is_active = True
             if data.specialization:
                 existing_trainer.specialization = data.specialization

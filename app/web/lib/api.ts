@@ -5,7 +5,7 @@
  * Uses Bearer JWT authentication for all protected workspace queries.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
 
 export interface ApiMember {
   id: string;
@@ -23,12 +23,29 @@ export interface ApiMember {
 export interface ApiAttendance {
   id: string;
   name: string;
-  memberId: string;
+  memberId?: string;
+  trainerId?: string;
+  personType: "member" | "trainer";
   checkInTime: string;
   checkOutTime?: string;
   status: "in" | "out";
   method: "qr" | "biometric" | "manual";
+  terminalId?: string;
 }
+
+export interface ApiTrainer {
+  id: string;
+  name: string;
+  email?: string;
+  phone: string;
+  specialization?: string;
+  hourly_rate?: number;
+  commission_percentage?: number;
+  bio?: string;
+  status?: string;
+  is_active?: boolean;
+}
+
 
 export interface ApiPayment {
   id: string;
@@ -72,13 +89,14 @@ export const repsiApi = {
       });
       if (res.ok) {
         const data = await res.json();
-        return (data || []).map((m: any) => ({
+        const list = Array.isArray(data) ? data : (data?.items || []);
+        return list.map((m: any) => ({
           id: m.id,
           name: `${m.first_name || ""} ${m.last_name || ""}`.trim(),
           email: m.email,
           phone: m.phone || "",
           status: m.status || "active",
-          plan: "Standard",
+          plan: m.plan_name || "Monthly",
           joinedDate: m.joined_date || new Date().toLocaleDateString("en-GB"),
           avatarUrl: undefined,
           gender: m.gender,
@@ -87,7 +105,8 @@ export const repsiApi = {
       }
       checkAuthResponse(res);
       return [];
-    } catch {
+    } catch (err) {
+      console.warn("Failed to fetch members", err);
       return [];
     }
   },
@@ -96,6 +115,7 @@ export const repsiApi = {
     name: string;
     email: string;
     phone: string;
+    password?: string;
     plan?: string;
     gender?: string;
     emergencyContact?: string;
@@ -115,6 +135,8 @@ export const repsiApi = {
         last_name: lastName,
         email: member.email,
         phone: member.phone,
+        password: member.password,
+        plan_name: member.plan,
         gender: member.gender,
         emergency_contact: member.emergencyContact,
       }),
@@ -133,11 +155,28 @@ export const repsiApi = {
       email: m.email,
       phone: m.phone || "",
       status: m.status || "active",
-      plan: member.plan || "Standard",
+      plan: m.plan_name || member.plan || "Monthly",
       joinedDate: m.joined_date || new Date().toLocaleDateString("en-GB"),
       gender: m.gender,
       emergencyContact: m.emergency_contact,
     };
+  },
+
+  async deleteMember(id: string): Promise<{ status: string; message: string }> {
+    const res = await fetch(`${API_BASE}/members/${id}`, {
+      method: "DELETE",
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (!res.ok) {
+      checkAuthResponse(res);
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete member");
+    }
+
+    return await res.json();
   },
 
   // Attendance
@@ -147,7 +186,7 @@ export const repsiApi = {
 
   async getAttendance(): Promise<ApiAttendance[]> {
     try {
-      const res = await fetch(`${API_BASE}/attendance/check-in`, {
+      const res = await fetch(`${API_BASE}/attendance/`, {
         headers: { ...getAuthHeader() },
         cache: "no-store",
       });
@@ -156,12 +195,19 @@ export const repsiApi = {
         if (Array.isArray(data)) {
           return data.map((a: any) => ({
             id: a.id,
-            name: a.member_name || "Member",
-            memberId: a.member_id,
-            checkInTime: a.check_in_time ? new Date(a.check_in_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
-            checkOutTime: a.check_out_time ? new Date(a.check_out_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
-            status: a.check_out_time ? "out" : "in",
-            method: a.method || "qr",
+            name: a.person_name || a.member?.first_name || a.trainer?.name || (a.trainer_id ? "Trainer" : "Member"),
+            memberId: a.member_id || undefined,
+            trainerId: a.trainer_id || undefined,
+            personType: (a.person_type || (a.trainer_id ? "trainer" : "member")) as "member" | "trainer",
+            checkInTime: a.check_in_time
+              ? new Date(a.check_in_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "",
+            checkOutTime: a.check_out_time
+              ? new Date(a.check_out_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : undefined,
+            status: (a.attendance_status || (a.check_out_time ? "out" : "in")) as "in" | "out",
+            method: (a.method || "qr") as "qr" | "biometric" | "manual",
+            terminalId: a.terminal_id,
           }));
         }
       }
@@ -171,34 +217,84 @@ export const repsiApi = {
     return [];
   },
 
-  async checkInMember(memberId: string, memberName: string): Promise<ApiAttendance> {
+  async getAttendanceSummary(): Promise<{
+    today_total: number;
+    currently_inside: number;
+    peak_hour: string;
+    average_dwell_minutes: number;
+  }> {
+    try {
+      const res = await fetch(`${API_BASE}/attendance/summary`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch attendance summary", err);
+    }
+    return { today_total: 0, currently_inside: 0, peak_hour: "06:00 – 08:30 AM", average_dwell_minutes: 60 };
+  },
+
+  async checkIn(data: {
+    memberId?: string;
+    trainerId?: string;
+    identifier?: string;
+    method?: string;
+    terminalId?: string;
+  }): Promise<any> {
     const res = await fetch(`${API_BASE}/attendance/check-in`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
       },
-      body: JSON.stringify({ member_id: memberId, method: "qr" }),
+      body: JSON.stringify({
+        member_id: data.memberId,
+        trainer_id: data.trainerId,
+        identifier: data.identifier,
+        method: data.method || "manual",
+        terminal_id: data.terminalId || "MAIN_DOOR",
+      }),
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || "Failed to check in member");
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to process check-in");
     }
 
-    const a = await res.json();
+    return await res.json();
+  },
+
+  async checkInMember(memberId: string, memberName?: string): Promise<ApiAttendance> {
+    const res = await this.checkIn({ memberId, method: "manual" });
     return {
-      id: a.id,
-      memberId: a.member_id,
-      name: memberName,
+      id: res.id,
+      memberId: res.member_id,
+      name: memberName || res.person_name || "Member",
+      personType: "member",
       checkInTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "in",
-      method: "qr",
+      method: "manual",
     };
   },
 
-  async checkOutMember(attendanceId: string): Promise<void> {
-    await fetch(`${API_BASE}/attendance/check-out`, {
+  async checkInTrainer(trainerId: string, trainerName?: string): Promise<ApiAttendance> {
+    const res = await this.checkIn({ trainerId, method: "manual" });
+    return {
+      id: res.id,
+      trainerId: res.trainer_id,
+      name: trainerName || res.person_name || "Trainer",
+      personType: "trainer",
+      checkInTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "in",
+      method: "manual",
+    };
+  },
+
+  async checkOut(attendanceId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/attendance/check-out`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -206,6 +302,39 @@ export const repsiApi = {
       },
       body: JSON.stringify({ attendance_id: attendanceId }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to check out");
+    }
+  },
+
+  async checkOutMember(attendanceId: string): Promise<void> {
+    return this.checkOut(attendanceId);
+  },
+
+  async scanQr(identifier: string): Promise<{
+    status: string;
+    action: "check_in" | "check_out";
+    person_name: string;
+    person_type: string;
+    message: string;
+    record: any;
+  }> {
+    const res = await fetch(`${API_BASE}/attendance/scan-qr`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ identifier, method: "qr" }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Invalid or unrecognized QR pass");
+    }
+
+    return await res.json();
   },
 
   // Payments
@@ -790,7 +919,7 @@ export const repsiApi = {
     return await res.json();
   },
 
-  async convertLeadToMember(id: string, data?: { plan_id?: string; plan_name?: string; start_date?: string; amount_paid?: number; payment_method?: string }): Promise<any> {
+  async convertLeadToMember(id: string, data?: { plan_id?: string; plan_name?: string; start_date?: string; amount_paid?: number; payment_method?: string; password?: string }): Promise<any> {
     const res = await fetch(`${API_BASE}/crm/leads/${id}/convert`, {
       method: "POST",
       headers: {
@@ -804,6 +933,20 @@ export const repsiApi = {
       throw new Error(err.detail || "Failed to convert lead to member");
     }
     return await res.json();
+  },
+
+  async checkAvailability(params: { email?: string; phone?: string }): Promise<{ email_exists: boolean; phone_exists: boolean; email_message?: string; phone_message?: string }> {
+    const query = new URLSearchParams();
+    if (params.email) query.append("email", params.email);
+    if (params.phone) query.append("phone", params.phone);
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/check-availability?${query.toString()}`);
+      if (!res.ok) return { email_exists: false, phone_exists: false };
+      return await res.json();
+    } catch {
+      return { email_exists: false, phone_exists: false };
+    }
   },
 
   async getCrmPipeline(): Promise<any[]> {

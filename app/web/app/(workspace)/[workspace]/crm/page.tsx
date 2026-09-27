@@ -123,6 +123,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
     plan_name: "Annual Elite",
     amount_paid: 12000,
     payment_method: "upi",
+    password: "",
   });
 
   // Follow-up Form State
@@ -202,6 +203,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
         plan_name: convertData.plan_name,
         amount_paid: Number(convertData.amount_paid),
         payment_method: convertData.payment_method,
+        password: convertData.password || undefined,
       });
       setSelectedLeadForConvert(null);
       loadData();
@@ -1246,6 +1248,17 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                     <option value="cash">Cash</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-text-secondary block mb-1">Set Member Login Password (Optional)</label>
+                <input
+                  type="password"
+                  placeholder="Min. 6 chars (Auto-generated if blank)"
+                  value={convertData.password}
+                  onChange={(e) => setConvertData({ ...convertData, password: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-surface-elevated border border-border text-sm text-text outline-none"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">

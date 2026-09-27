@@ -18,7 +18,8 @@ export default function VerifyEmailPage() {
     setResending(true);
     setError("");
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/register/resend-otp`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+      const response = await fetch(`${apiBase}/auth/register/resend-otp`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userEmail }),
       });
       const body = await response.json().catch(() => ({}));
@@ -41,7 +42,8 @@ export default function VerifyEmailPage() {
     setVerifying(true);
     setError("");
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/register/verify-otp`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+      const response = await fetch(`${apiBase}/auth/register/verify-otp`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userEmail, otp }),
       });
       const body = await response.json().catch(() => ({}));

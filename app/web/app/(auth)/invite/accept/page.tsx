@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Dumbbell, CheckCircle2, Lock, AlertCircle, Loader2, UserCheck, ShieldCheck, ArrowRight } from "lucide-react";
+import { Dumbbell, CheckCircle2, Lock, AlertCircle, Loader2, UserCheck, ShieldCheck, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ function AcceptInvitationContent() {
   // Form State
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [acceptedSuccess, setAcceptedSuccess] = useState(false);
@@ -201,13 +202,20 @@ function AcceptInvitationContent() {
             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
             <Input
               id="inv-pass"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pl-9"
+              className="pl-9 pr-10"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
         </div>
 
@@ -219,13 +227,20 @@ function AcceptInvitationContent() {
             <Lock className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
             <Input
               id="inv-conf-pass"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Re-enter your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-9"
+              className="pl-9 pr-10"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
         </div>
 

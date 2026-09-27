@@ -177,6 +177,23 @@ def get_workspace(
     return ws
 
 
+@router.put("/{id}", response_model=WorkspaceResponse)
+def update_workspace(
+    id: str,
+    data: WorkspaceUpdate,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found.")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(ws, key, value)
+    db.commit()
+    db.refresh(ws)
+    return ws
+
+
 @router.post("/seed-demo-data")
 def seed_workspace_demo_data(
     tenant: TenantContext = Depends(get_current_tenant),
@@ -247,6 +264,24 @@ def complete_onboarding(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
+    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if ws:
+        if "business_types" in payload:
+            ws.business_types = str(payload["business_types"])
+        if "business_size" in payload:
+            ws.business_size = str(payload["business_size"])
+        if "managed_features" in payload:
+            ws.managed_features = str(payload["managed_features"])
+        if "management_method" in payload:
+            ws.management_method = str(payload["management_method"])
+        if "checkin_method" in payload:
+            ws.checkin_method = str(payload["checkin_method"])
+        if "brand_color" in payload:
+            ws.brand_color = str(payload["brand_color"])
+        ws.onboarding_completed = True
+        ws.onboarding_step = payload.get("step", 14)
+        db.commit()
+
     return {
         "status": "success",
         "message": "Workspace initialized successfully",

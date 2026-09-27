@@ -9,6 +9,7 @@ class TrainerCreate(BaseModel):
     name: str
     phone: str
     email: Optional[EmailStr] = None
+    password: Optional[str] = None
     specialization: Optional[str] = "General Fitness"
     hourly_rate: float = 0.0
     commission_percentage: float = 0.0

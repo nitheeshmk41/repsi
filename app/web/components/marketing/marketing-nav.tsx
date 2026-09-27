@@ -73,7 +73,7 @@ export function MarketingNav() {
     : "relative z-50 w-full bg-white border-b border-[#E5EAE6] text-[#111714]";
 
   const logoSrc = isHome
-    ? "/new logos/dark_logo_trans.png"
+    ? "/logos/dark_logo_trans.png"
     : "/logos/primary_logo.png";
 
   const linkTextClass = isHome

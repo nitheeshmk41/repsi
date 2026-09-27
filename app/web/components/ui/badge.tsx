@@ -20,6 +20,8 @@ const badgeVariants = cva(
           "bg-[var(--surface-elevated)] text-[var(--text-muted)] border border-[var(--border)]",
         lime:
           "bg-[var(--primary-soft)] text-[var(--primary-dark)] border border-[var(--primary)]/20 dark:text-[var(--primary-hover)]",
+        outline:
+          "bg-transparent text-[var(--text-secondary)] border border-[var(--border)]",
       },
     },
     defaultVariants: {

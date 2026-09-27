@@ -43,7 +43,8 @@ export default function TrainerClassesPage(props: { params: Promise<{ workspace:
 
   const fetchParticipants = async (classId: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/classes/${classId}/participants`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+      const res = await fetch(`${apiBase}/classes/${classId}/participants`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("repsi_auth_token")}`,
         },
@@ -67,7 +68,8 @@ export default function TrainerClassesPage(props: { params: Promise<{ workspace:
     if (!selectedClass || !selectedMemberId) return;
     setMarking(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/classes/${selectedClass.id}/attendance`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+      const res = await fetch(`${apiBase}/classes/${selectedClass.id}/attendance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

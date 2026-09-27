@@ -189,7 +189,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
       setLoading(true);
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("repsi_auth_token") : null;
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
         const res = await fetch(`${apiBase}/workspaces/billing`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });

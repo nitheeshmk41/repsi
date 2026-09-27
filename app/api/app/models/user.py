@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -30,6 +30,14 @@ class Workspace(Base, TimestampMixin):
     city = Column(String(100), nullable=True)
     country = Column(String(100), default="India")
     gym_type = Column(String(100), default="Commercial Fitness")
+    business_types = Column(Text, nullable=True)  # JSON or comma-separated: Gym, Yoga Studio, Pool, PT Studio
+    business_size = Column(String(100), nullable=True)  # Just starting, Under 100, 100-500, etc.
+    managed_features = Column(Text, nullable=True)  # JSON array of selected features
+    management_method = Column(String(100), nullable=True)  # Notebook, Excel, Another software, etc.
+    checkin_method = Column(String(100), default="QR Code")  # QR Code, Receptionist, Kiosk, Manual
+    brand_color = Column(String(50), default="#000000")
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
+    onboarding_step = Column(Integer, default=1, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relationships

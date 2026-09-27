@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Caveat:wght@600;700&display=swap");
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 .font-handwriting {
   font-family: "Caveat", cursive;
 }
@@ -11,63 +13,64 @@
 /* ─────────────────────────────────────────────────────────────────── */
 :root {
   /* Font */
-  --font-sans: "Sora", sans-serif;
+  --font-sans: "Outfit", sans-serif;
 
   /* Backgrounds */
-  --background: #f7faf8;
-  --surface: #ffffff;
-  --surface-secondary: #f2f7f4;
-  --surface-elevated: #ffffff;
-  --sidebar: #ffffff;
-  --sidebar-border: #dde6e1;
+  --background: #F7FAF8;
+  --surface: #FFFFFF;
+  --surface-secondary: #ECFDF3;
+  --surface-elevated: #FFFFFF;
+  --sidebar: #FFFFFF;
+  --sidebar-border: #E5E7EB;
 
   /* Primary (Repsi Green) */
-  --primary: #18b968;
-  --primary-hover: #15a85e;
-  --primary-dark: #0e8f50;
-  --primary-soft: #e8f8ef;
-  --primary-foreground: #ffffff;
+  --primary: #16A34A;
+  --primary-hover: #15803D;
+  --primary-dark: #15803D;
+  --primary-soft: #ECFDF3;
+  --primary-foreground: #FFFFFF;
 
-  /* Text */
-  --text: #101918;
-  --text-secondary: #66736e;
-  --text-muted: #8a9691;
-  --text-inverse: #ffffff;
+  /* Text Hierarchy */
+  --text: #172033;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-disabled: #94A3B8;
+  --text-inverse: #FFFFFF;
 
   /* Borders & Dividers */
-  --border: #dde6e1;
-  --border-strong: #cbd5d0;
-  --divider: #e8eeeb;
+  --border: #E5E7EB;
+  --border-strong: #D1D5DB;
+  --divider: #E5E7EB;
 
   /* Semantic */
-  --success: #18b968;
-  --success-soft: #e8f8ef;
-  --success-foreground: #0e8f50;
-  --warning: #f59e0b;
-  --warning-soft: #fef3c7;
-  --warning-foreground: #b45309;
-  --error: #e5484d;
-  --error-soft: #fee2e2;
-  --error-foreground: #b91c1c;
-  --info: #3b82f6;
-  --info-soft: #eff6ff;
-  --info-foreground: #1d4ed8;
+  --success: #16A34A;
+  --success-soft: #DCFCE7;
+  --success-foreground: #15803D;
+  --warning: #D97706;
+  --warning-soft: #FEF3C7;
+  --warning-foreground: #B45309;
+  --error: #DC2626;
+  --error-soft: #FEE2E2;
+  --error-foreground: #B91C1C;
+  --info: #2563EB;
+  --info-soft: #EFF6FF;
+  --info-foreground: #2563EB;
 
   /* Interactive */
-  --ring: #18b968;
-  --ring-offset: #f7faf8;
+  --ring: #16A34A;
+  --ring-offset: #F7FAF8;
 
   /* Sidebar nav active state */
-  --nav-active-bg: #e8f8ef;
-  --nav-active-text: #0e8f50;
-  --nav-active-indicator: #18b968;
-  --nav-hover-bg: #f2f7f4;
+  --nav-active-bg: #E8F5EE;
+  --nav-active-text: #15803D;
+  --nav-active-indicator: #16A34A;
+  --nav-hover-bg: #F3F7F5;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 
   /* Radius */
   --radius-sm: 6px;

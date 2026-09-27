@@ -9,10 +9,12 @@ export type MembershipPlanName = "Monthly" | "Quarterly" | "Annual" | "Day Pass"
 export interface Member {
   id: string;
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   plan: MembershipPlanName;
   status: MemberStatus;
+  repsiAccess?: "Connected" | "Not connected";
+  userId?: string | null;
   joined: string; // ISO date string
   expiry: string; // ISO date string
   lastPayment: number; // INR amount
