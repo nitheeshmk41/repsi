@@ -145,8 +145,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                                 colors: [
                                   AppColors.background,
                                   AppColors.background.withValues(alpha: 0.90),
-                                  Colors.transparent,
-                                  AppColors.background.withValues(alpha: 0.35),
+                                  AppColors.background.withValues(alpha: 0.0),
+                                  AppColors.background.withValues(alpha: 0.20),
                                 ],
                               ),
                             ),

@@ -44,9 +44,9 @@ class RepsiScreenBackground extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
+                  AppColors.background.withValues(alpha: 0.95),
                   AppColors.background.withValues(alpha: 0.85),
-                  AppColors.background.withValues(alpha: 0.60),
-                  AppColors.background.withValues(alpha: 0.90),
+                  AppColors.background.withValues(alpha: 0.98),
                 ],
               ),
             ),

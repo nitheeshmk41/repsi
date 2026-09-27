@@ -176,13 +176,17 @@ class _RepsiButtonState extends State<RepsiButton> with SingleTickerProviderStat
           widget.leadingIcon!,
           const SizedBox(width: AppSpacing.sm),
         ],
-        Text(
-          widget.text,
-          style: textStyle.copyWith(
-            color: isDisabled && !widget.isLoading
-                ? (isDark ? AppColors.darkTextMuted : AppColors.textMuted)
-                : fgColor,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            widget.text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textStyle.copyWith(
+              color: isDisabled && !widget.isLoading
+                  ? (isDark ? AppColors.darkTextMuted : AppColors.textMuted)
+                  : fgColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         if (widget.trailingIcon != null && !widget.isLoading) ...[

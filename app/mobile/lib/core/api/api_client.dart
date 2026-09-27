@@ -13,6 +13,9 @@ class ApiClient {
         baseUrl: AppConfig.baseUrl,
         connectTimeout: AppConfig.connectTimeout,
         receiveTimeout: AppConfig.receiveTimeout,
+        followRedirects: true,
+        maxRedirects: 5,
+        validateStatus: (status) => status != null && status < 400,
       ),
     );
 

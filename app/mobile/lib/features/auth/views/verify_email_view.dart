@@ -30,60 +30,63 @@ class VerifyEmailView extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      LucideIcons.mailCheck,
+                      size: 36,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  child: const Icon(
-                    LucideIcons.mailCheck,
-                    size: 36,
-                    color: AppColors.primary,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  'Verify your email',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.headingLarge.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'Verify your email',
-                textAlign: TextAlign.center,
-                style: AppTypography.headingLarge.copyWith(
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'We have sent a verification link to\n${email ?? 'your email address'}. Please check your inbox.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'We have sent a verification link to\n${email ?? 'your email address'}. Please check your inbox.',
-                textAlign: TextAlign.center,
-                style: AppTypography.bodySmall.copyWith(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                const SizedBox(height: AppSpacing.xxl),
+                RepsiButton(
+                  text: 'Continue to Onboarding',
+                  onPressed: () => context.go(RouteNames.onboarding),
+                  size: RepsiButtonSize.large,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              RepsiButton(
-                text: 'Continue to Onboarding',
-                onPressed: () => context.go(RouteNames.onboarding),
-                size: RepsiButtonSize.large,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              RepsiButton(
-                text: 'Resend Email',
-                variant: RepsiButtonVariant.outline,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Verification email resent!')),
-                  );
-                },
-              ),
-            ],
+                const SizedBox(height: AppSpacing.md),
+                RepsiButton(
+                  text: 'Resend Email',
+                  variant: RepsiButtonVariant.outline,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Verification email resent!')),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

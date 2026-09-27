@@ -32,121 +32,120 @@ class RoleSelectionView extends ConsumerWidget {
       ),
       body: RepsiScreenBackground(
         imagePath: 'assets/images/ownerscreen.png',
-        imageOpacity: 0.06,
+        imageOpacity: 0.04,
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.pageHorizontalPadding,
               vertical: 12,
             ),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 12),
-              // Heading (Mockup Screen 8)
-              RepsiStaggerItem(
-                index: 0,
-                child: Text(
-                  'Select Your Role',
-                  style: AppTypography.heading.copyWith(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 8),
+                // Heading: Choose your workspace
+                RepsiStaggerItem(
+                  index: 0,
+                  child: Text(
+                    'Choose your workspace',
+                    style: AppTypography.heading.copyWith(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              RepsiStaggerItem(
-                index: 1,
-                child: Text(
-                  "Choose how you'll use Repsi",
-                  style: AppTypography.body.copyWith(
-                    fontSize: 15,
-                    color: AppColors.textSecondary,
+                const SizedBox(height: 6),
+                RepsiStaggerItem(
+                  index: 1,
+                  child: Text(
+                    "Select the organization and workspace you'd like to access",
+                    style: AppTypography.body.copyWith(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-              // Role 1: Gym Owner
-              RepsiStaggerItem(
-                index: 2,
-                child: _RoleCard(
-                  title: 'Gym Owner',
-                  subtitle: 'Manage your gym, members, trainers and finances',
-                  icon: Icons.storefront_rounded,
-                  iconBgColor: AppColors.primarySoft,
-                  iconColor: AppColors.primary,
-                  onTap: () => _selectRole(context, ref, 'OWNER'),
+                // Workspace 1: Repsi Fitness — Owner
+                RepsiStaggerItem(
+                  index: 2,
+                  child: _RoleCard(
+                    emoji: '🏢',
+                    title: 'Repsi Fitness — Owner',
+                    subtitle: 'Business command center: revenue, members, attendance & ops',
+                    tag: 'Indiranagar Hub',
+                    iconBgColor: AppColors.primarySoft,
+                    onTap: () => _selectRole(context, ref, 'OWNER'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-              // Role 2: Trainer
-              RepsiStaggerItem(
-                index: 3,
-                child: _RoleCard(
-                  title: 'Trainer',
-                  subtitle: 'Coach clients and create workouts',
-                  icon: Icons.fitness_center_rounded,
-                  iconBgColor: const Color(0xFFEBF5FF),
-                  iconColor: const Color(0xFF2563EB),
-                  onTap: () => _selectRole(context, ref, 'TRAINER'),
+                // Workspace 2: Repsi Fitness — Trainer
+                RepsiStaggerItem(
+                  index: 3,
+                  child: _RoleCard(
+                    emoji: '🏋️',
+                    title: 'Repsi Fitness — Trainer',
+                    subtitle: 'Coaching workspace: client training, workout & diet builder, chat',
+                    tag: 'Active Coach',
+                    iconBgColor: const Color(0xFFEBF5FF),
+                    onTap: () => _selectRole(context, ref, 'TRAINER'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-              // Role 3: Member
-              RepsiStaggerItem(
-                index: 4,
-                child: _RoleCard(
-                  title: 'Member',
-                  subtitle: 'Follow workouts and track your progress',
-                  icon: Icons.person_rounded,
-                  iconBgColor: AppColors.primarySoft,
-                  iconColor: AppColors.primary,
-                  onTap: () => _selectRole(context, ref, 'USER'),
+                // Workspace 3: Repsi Fitness — Member
+                RepsiStaggerItem(
+                  index: 4,
+                  child: _RoleCard(
+                    emoji: '👤',
+                    title: 'Repsi Fitness — Member',
+                    subtitle: 'Personal fitness companion: streak, workouts, QR check-in & progress',
+                    tag: 'Gold Member',
+                    iconBgColor: const Color(0xFFF0FDF4),
+                    onTap: () => _selectRole(context, ref, 'USER'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-              // Role 4: System Admin
-              RepsiStaggerItem(
-                index: 5,
-                child: _RoleCard(
-                  title: 'System Admin',
-                  subtitle: 'Platform-level gym management, users and analytics',
-                  icon: Icons.admin_panel_settings_rounded,
-                  iconBgColor: const Color(0xFFF3E8FF),
-                  iconColor: const Color(0xFF9333EA),
-                  onTap: () => _selectRole(context, ref, 'ADMIN'),
+                // Workspace 4: Platform Admin
+                RepsiStaggerItem(
+                  index: 5,
+                  child: _RoleCard(
+                    emoji: '🛡️',
+                    title: 'Repsi Platform — Admin',
+                    subtitle: 'Internal administration: gym tenants, accounts & system metrics',
+                    tag: 'Superadmin',
+                    iconBgColor: const Color(0xFFF3E8FF),
+                    onTap: () => _selectRole(context, ref, 'ADMIN'),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
 
 class _RoleCard extends StatelessWidget {
+  final String emoji;
   final String title;
   final String subtitle;
-  final IconData icon;
+  final String? tag;
   final Color iconBgColor;
-  final Color iconColor;
   final VoidCallback onTap;
 
   const _RoleCard({
+    required this.emoji,
     required this.title,
     required this.subtitle,
-    required this.icon,
+    this.tag,
     required this.iconBgColor,
-    required this.iconColor,
     required this.onTap,
   });
 
@@ -154,48 +153,79 @@ class _RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepsiCard(
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: iconBgColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 24,
-              color: iconColor,
+            alignment: Alignment.center,
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 22),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTypography.headingSmall.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.text,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppTypography.headingSmall.copyWith(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (tag != null) ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            tag!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: AppTypography.caption.copyWith(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: AppColors.textSecondary,
-                    height: 1.35,
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           const Icon(
             Icons.chevron_right_rounded,
             size: 20,

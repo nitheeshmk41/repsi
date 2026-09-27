@@ -7,6 +7,7 @@ import 'repsi_skeleton.dart';
 class RepsiCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final Color? backgroundColor;
   final BorderSide? borderSide;
@@ -19,6 +20,7 @@ class RepsiCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding,
+    this.margin,
     this.onTap,
     this.backgroundColor,
     this.borderSide,
@@ -55,6 +57,7 @@ class RepsiCard extends StatelessWidget {
     }
 
     Widget cardContent = Container(
+      margin: margin,
       padding: padding ?? AppSpacing.cardPadding,
       decoration: BoxDecoration(
         color: bg,

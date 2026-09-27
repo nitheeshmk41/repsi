@@ -75,6 +75,8 @@ class MemberProfileView extends ConsumerWidget {
                           children: [
                             Text(
                               'Rahul Kumar',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: AppTypography.headingSmall.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -84,6 +86,8 @@ class MemberProfileView extends ConsumerWidget {
                             const SizedBox(height: 2),
                             Text(
                               'rahul@gmail.com',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: AppTypography.caption.copyWith(
                                 color: AppColors.textSecondary,
                                 fontSize: 13,
@@ -92,13 +96,21 @@ class MemberProfileView extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: () => context.push(RouteNames.selectRole),
-                        child: Text(
-                          'Switch Role',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: TextButton(
+                          onPressed: () => context.push(RouteNames.selectRole),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'Switch Role',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),

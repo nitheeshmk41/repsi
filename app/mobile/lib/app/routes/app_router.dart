@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/admin/views/admin_shell_view.dart';
-import '../../features/attendance/views/attendance_view.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/views/forgot_password_view.dart';
 import '../../features/auth/views/login_view.dart';
@@ -17,9 +16,11 @@ import '../../features/members/views/add_member_view.dart';
 import '../../features/members/views/members_list_view.dart';
 import '../../features/more/views/more_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
+import '../../features/operations/views/operations_view.dart';
 import '../../features/shell/views/app_shell_view.dart';
 import '../../features/splash/views/splash_view.dart';
 import '../../features/trainer/views/trainer_shell_view.dart';
+import '../../features/workspaces/views/workspace_selection_view.dart';
 import '../../shared/animations/repsi_page_transition.dart';
 import 'route_names.dart';
 
@@ -111,6 +112,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const RoleSelectionView(),
         ),
       ),
+      GoRoute(
+        path: RouteNames.selectWorkspace,
+        pageBuilder: (context, state) => buildRepsiPageTransition(
+          context: context,
+          state: state,
+          child: const WorkspaceSelectionView(),
+        ),
+      ),
 
       // Direct Role Shell Routes
       GoRoute(
@@ -181,8 +190,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: RouteNames.attendance,
-                builder: (_, __) => const AttendanceView(),
+                path: RouteNames.operations,
+                builder: (_, __) => const OperationsView(),
               ),
             ],
           ),

@@ -16,7 +16,8 @@ from app.middleware.tenant import get_current_tenant, TenantContext
 router = APIRouter(prefix="/members", tags=["Members"])
 
 
-@router.get("/", response_model=MemberListResponse)
+@router.get("", response_model=MemberListResponse)
+@router.get("/", response_model=MemberListResponse, include_in_schema=False)
 def list_members(
     query: Optional[str] = None,
     status: Optional[str] = None,
@@ -79,7 +80,8 @@ def get_member(
     return member
 
 
-@router.post("/", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=MemberResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_member(
     data: MemberCreate,
     tenant: TenantContext = Depends(get_current_tenant),

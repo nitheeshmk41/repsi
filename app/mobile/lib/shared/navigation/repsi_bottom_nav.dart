@@ -45,9 +45,9 @@ class RepsiBottomNav extends StatelessWidget {
         return const [
           RepsiNavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
           RepsiNavItem(icon: Icons.group_outlined, activeIcon: Icons.group_rounded, label: 'Members'),
-          RepsiNavItem(icon: Icons.qr_code_scanner_rounded, activeIcon: Icons.qr_code_scanner_rounded, label: 'Attendance'),
-          RepsiNavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded, label: 'Finance'),
-          RepsiNavItem(icon: Icons.grid_view_rounded, activeIcon: Icons.grid_view_rounded, label: 'More'),
+          RepsiNavItem(icon: Icons.tune_rounded, activeIcon: Icons.tune_rounded, label: 'Operations'),
+          RepsiNavItem(icon: Icons.currency_rupee_rounded, activeIcon: Icons.currency_rupee_rounded, label: 'Finance'),
+          RepsiNavItem(icon: Icons.more_horiz_rounded, activeIcon: Icons.more_horiz_rounded, label: 'More'),
         ];
       case UserRole.admin:
       case UserRole.superAdmin:

@@ -61,109 +61,111 @@ class _SetNewPasswordViewState extends State<SetNewPasswordView> {
         imagePath: 'assets/images/main_splash1.png',
         imageOpacity: 0.06,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.pageHorizontalPadding,
-              vertical: 16,
-            ),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              // Circular Lock Badge (Mockup Screen 7)
-              RepsiStaggerItem(
-                index: 0,
-                child: Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primarySoft,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_rounded,
-                      size: 34,
-                      color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.pageHorizontalPadding,
+                vertical: 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
+                  // Circular Lock Badge (Mockup Screen 7)
+                  RepsiStaggerItem(
+                    index: 0,
+                    child: Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primarySoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          size: 34,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 28),
+                  const SizedBox(height: 28),
 
-              // Title and Subtitle
-              RepsiStaggerItem(
-                index: 1,
-                child: Column(
-                  children: [
-                    Text(
-                      'Set New Password',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.heading.copyWith(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
+                  // Title and Subtitle
+                  RepsiStaggerItem(
+                    index: 1,
+                    child: Column(
+                      children: [
+                        Text(
+                          'Set New Password',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.heading.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Create a new password for your account',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.body.copyWith(
+                            fontSize: 15,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create a new password for your account',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.body.copyWith(
-                        fontSize: 15,
-                        color: AppColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(height: 36),
+
+                  // Password input field
+                  RepsiStaggerItem(
+                    index: 2,
+                    child: RepsiTextField(
+                      label: 'New password',
+                      hintText: '••••••••',
+                      controller: _passwordController,
+                      isPassword: true,
+                      onChanged: (_) => setState(() {}),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 36),
+                  ),
+                  const SizedBox(height: 20),
 
-              // Password input field
-              RepsiStaggerItem(
-                index: 2,
-                child: RepsiTextField(
-                  label: 'New password',
-                  hintText: '••••••••',
-                  controller: _passwordController,
-                  isPassword: true,
-                  onChanged: (_) => setState(() {}),
-                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                ),
-              ),
-              const SizedBox(height: 20),
+                  // Checklist with green checkmarks
+                  RepsiStaggerItem(
+                    index: 3,
+                    child: Column(
+                      children: [
+                        _buildCheckItem('Minimum 8 characters', _hasMin8Chars),
+                        const SizedBox(height: 10),
+                        _buildCheckItem('At least one number', _hasNumber),
+                        const SizedBox(height: 10),
+                        _buildCheckItem('At least one uppercase letter', _hasUppercase),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 36),
 
-              // Checklist with green checkmarks
-              RepsiStaggerItem(
-                index: 3,
-                child: Column(
-                  children: [
-                    _buildCheckItem('Minimum 8 characters', _hasMin8Chars),
-                    const SizedBox(height: 10),
-                    _buildCheckItem('At least one number', _hasNumber),
-                    const SizedBox(height: 10),
-                    _buildCheckItem('At least one uppercase letter', _hasUppercase),
-                  ],
-                ),
+                  // Update Password button
+                  RepsiStaggerItem(
+                    index: 4,
+                    child: RepsiButton(
+                      text: 'Update Password',
+                      isLoading: _isLoading,
+                      onPressed: (_hasMin8Chars && _hasNumber && _hasUppercase) ? _handleUpdate : null,
+                      isFullWidth: true,
+                      size: RepsiButtonSize.large,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 36),
-
-              // Update Password button
-              RepsiStaggerItem(
-                index: 4,
-                child: RepsiButton(
-                  text: 'Update Password',
-                  isLoading: _isLoading,
-                  onPressed: (_hasMin8Chars && _hasNumber && _hasUppercase) ? _handleUpdate : null,
-                  isFullWidth: true,
-                  size: RepsiButtonSize.large,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
     ),
   );
 }

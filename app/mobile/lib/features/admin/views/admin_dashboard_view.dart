@@ -29,26 +29,30 @@ class AdminDashboardView extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'System Admin',
-                          style: AppTypography.heading.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.text,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'System Admin',
+                            style: AppTypography.heading.copyWith(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Platform-wide metrics & telemetry',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Platform-wide metrics & telemetry',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     GestureDetector(
                       onTap: () => context.push(RouteNames.selectRole),

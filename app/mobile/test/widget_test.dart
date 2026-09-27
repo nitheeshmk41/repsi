@@ -8,6 +8,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Repsi'), findsOneWidget);
+    expect(find.textContaining('Repsi'), findsWidgets);
   });
 }

@@ -8,6 +8,7 @@ class RouteNames {
   static const String verifyOtp = '/auth/verify-otp';
   static const String setNewPassword = '/auth/set-new-password';
   static const String selectRole = '/auth/select-role';
+  static const String selectWorkspace = '/auth/select-workspace';
 
   // Role dashboards
   static const String userDashboard = '/member/dashboard';
@@ -34,6 +35,7 @@ class RouteNames {
   // Owner / Standard tabs
   static const String dashboard = '/dashboard';
   static const String members = '/members';
+  static const String operations = '/operations';
   static const String attendance = '/attendance';
   static const String finance = '/finance';
   static const String more = '/more';

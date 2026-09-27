@@ -8,7 +8,10 @@ import '../../../../shared/animations/repsi_stagger.dart';
 import '../../../../shared/widgets/repsi_button.dart';
 import '../../../../shared/widgets/repsi_card.dart';
 import 'active_workout_view.dart';
+import 'member_classes_view.dart';
+import 'member_membership_view.dart';
 import 'qr_attendance_view.dart';
+import 'trainer_chat_view.dart';
 
 class MemberHomeView extends StatelessWidget {
   const MemberHomeView({super.key});
@@ -26,194 +29,37 @@ class MemberHomeView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Header: Good morning, Rahul 👋 + User Avatar (Mockup Screen 1)
+              // 1. Header: Greeting + Streak + Profile Switcher
               RepsiStaggerItem(
                 index: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Good morning,',
-                          style: AppTypography.body.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Text(
-                              'Rahul',
-                              style: AppTypography.heading.copyWith(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text('👋', style: TextStyle(fontSize: 20)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    GestureDetector(
-                      onTap: () => context.push(RouteNames.selectRole),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.border, width: 1.5),
-                          color: Colors.white,
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.person_rounded,
-                            color: AppColors.primary,
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 2. Membership Card: Premium Plan, 28 days remaining, chevron (Mockup Screen 1)
-              RepsiStaggerItem(
-                index: 1,
-                child: RepsiCard(
-                  onTap: () {
-                    // Navigate to membership details
-                  },
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySoft,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.fitness_center_rounded,
-                          size: 20,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Premium Plan',
-                              style: AppTypography.headingSmall.copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '28 days remaining',
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.textMuted,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 3. Primary Button: Check In (Big bold green button)
-              RepsiStaggerItem(
-                index: 2,
-                child: RepsiButton(
-                  text: 'Check In',
-                  leadingIcon: const Icon(Icons.qr_code_scanner_rounded, size: 22),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const QrAttendanceView()),
-                    );
-                  },
-                  isFullWidth: true,
-                  size: RepsiButtonSize.large,
-                  height: 56,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 4. Today's Workout Card
-              RepsiStaggerItem(
-                index: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Today's Workout",
-                      style: AppTypography.sectionHeading.copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    RepsiCard(
-                      padding: const EdgeInsets.all(16),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               Container(
-                                width: 44,
-                                height: 44,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primarySoft,
+                                  color: const Color(0xFFFEF3C7),
                                   borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFFDE68A)),
                                 ),
-                                child: const Icon(
-                                  Icons.fitness_center_rounded,
-                                  size: 22,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Text('🔥', style: TextStyle(fontSize: 12)),
+                                    SizedBox(width: 4),
                                     Text(
-                                      'Chest + Triceps',
-                                      style: AppTypography.headingSmall.copyWith(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.text,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '4 exercises · 45 min',
-                                      style: AppTypography.caption.copyWith(
-                                        fontSize: 13,
-                                        color: AppColors.textSecondary,
+                                      '4 DAY STREAK',
+                                      style: TextStyle(
+                                        color: Color(0xFFB45309),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 11,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ],
@@ -221,90 +67,295 @@ class MemberHomeView extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          RepsiButton(
-                            text: 'Start Workout',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const ActiveWorkoutView()),
-                              );
-                            },
-                            isFullWidth: true,
-                            size: RepsiButtonSize.medium,
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Good morning, Rahul',
+                                  style: AppTypography.heading.copyWith(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.text,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text('👋', style: TextStyle(fontSize: 20)),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 5. Trainer Card: Arun Kumar (Certified Trainer)
-              RepsiStaggerItem(
-                index: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Trainer',
-                      style: AppTypography.sectionHeading.copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    RepsiCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: AppColors.primarySoft,
-                            child: const Text(
-                              'AK',
-                              style: TextStyle(
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const QrAttendanceView()),
+                            );
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.qr_code_scanner_rounded,
                                 color: AppColors.primaryDark,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
+                                size: 22,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 14),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => context.push(RouteNames.selectRole),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.border, width: 1.5),
+                              color: Colors.white,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.person_rounded,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // 2. Today's Goal Card (Upper Body A · 6 exercises · 45 min)
+              RepsiStaggerItem(
+                index: 1,
+                child: RepsiCard(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               children: [
-                                Text(
-                                  'Arun Kumar',
-                                  style: AppTypography.headingSmall.copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.text,
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySoft,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.fitness_center_rounded,
+                                    color: AppColors.primaryDark,
+                                    size: 22,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Certified Trainer',
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Today's Goal",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Upper Body A',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.headingSmall.copyWith(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          RepsiButton(
-                            text: 'View Trainer',
-                            variant: RepsiButtonVariant.outline,
-                            size: RepsiButtonSize.small,
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Next PT session with Arun: Today at 6:00 PM')),
-                              );
-                            },
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceSubtle,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '6 exercises · 45 min',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      RepsiButton(
+                        text: 'Start Workout',
+                        leadingIcon: const Icon(Icons.play_arrow_rounded, size: 22),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ActiveWorkoutView()),
+                          );
+                        },
+                        isFullWidth: true,
+                        size: RepsiButtonSize.large,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Today's Activity (Google Fit / Health Connect Integration Layer)
+              RepsiStaggerItem(
+                index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Today's Activity",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.sectionHeading.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF3B82F6),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Health Connect Synced',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    RepsiCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildActivityMetric('8,420', 'Steps', '6.2 km', Icons.directions_walk_rounded, const Color(0xFF3B82F6)),
+                              _buildVerticalLine(),
+                              _buildActivityMetric('412', 'Active kcal', 'Target 500', Icons.local_fire_department_rounded, const Color(0xFFEF4444)),
+                              _buildVerticalLine(),
+                              _buildActivityMetric('72', 'Active min', 'Goal 60m', Icons.timer_outlined, const Color(0xFF10B981)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: AppColors.border),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.monitor_weight_outlined, size: 16, color: AppColors.textSecondary),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Weight: 78.4 kg (↓ 4.8 kg)',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.text,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.primary),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Attendance: 18 / 20 visits',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.primaryDark,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -312,34 +363,221 @@ class MemberHomeView extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // 6. Weekly Attendance: Mon ✓, Tue ✓, Wed —, Thu ✓, Fri —
+              // 4. My Gym Status Card (Repsi Fitness Indiranagar · Open · 72% occupancy)
               RepsiStaggerItem(
-                index: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                index: 3,
+                child: RepsiCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySoft,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.storefront_rounded, color: AppColors.primaryDark, size: 20),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Repsi Fitness',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.headingSmall.copyWith(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.text,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Indiranagar Hub',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySoft,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Flexible(
+                                    child: Text(
+                                      'Open · 72% Occupancy',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: AppColors.primaryDark, fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.sports_gymnastics_rounded, size: 16, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Next class: 6:00 PM Strength Training with Alex',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RepsiButton(
+                              text: 'Check In QR',
+                              leadingIcon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                              size: RepsiButtonSize.medium,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const QrAttendanceView()),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: RepsiButton(
+                              text: 'View Schedule',
+                              variant: RepsiButtonVariant.outline,
+                              leadingIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                              size: RepsiButtonSize.medium,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const MemberClassesView()),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 5. Member's Coach Card & Membership Snapshot
+              RepsiStaggerItem(
+                index: 4,
+                child: Row(
                   children: [
-                    Text(
-                      'Weekly Attendance',
-                      style: AppTypography.sectionHeading.copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
+                    Expanded(
+                      child: RepsiCard(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TrainerChatView()),
+                          );
+                        },
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: AppColors.primarySoft,
+                                  child: const Text('AL', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 13)),
+                                ),
+                                const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: AppColors.primary),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text('Alex Vance', style: AppTypography.headingSmall.copyWith(fontSize: 14, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text('Assigned Coach', style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontSize: 11)),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    RepsiCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: const [
-                          _AttendanceDayItem(day: 'Mon', isPresent: true),
-                          _AttendanceDayItem(day: 'Tue', isPresent: true),
-                          _AttendanceDayItem(day: 'Wed', isPresent: false),
-                          _AttendanceDayItem(day: 'Thu', isPresent: true),
-                          _AttendanceDayItem(day: 'Fri', isPresent: false),
-                        ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: RepsiCard(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MemberMembershipView()),
+                          );
+                        },
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.workspace_premium_rounded, size: 18, color: Color(0xFFD97706)),
+                                ),
+                                const Text('23d left', style: TextStyle(color: AppColors.primaryDark, fontSize: 11, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text('Gold Member', style: AppTypography.headingSmall.copyWith(fontSize: 14, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text('Expires 24 Oct 2026', style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontSize: 11)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -352,58 +590,52 @@ class MemberHomeView extends StatelessWidget {
       ),
     );
   }
-}
 
-class _AttendanceDayItem extends StatelessWidget {
-  final String day;
-  final bool isPresent;
-
-  const _AttendanceDayItem({
-    required this.day,
-    required this.isPresent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          day,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isPresent ? AppColors.primarySoft : AppColors.surfaceSubtle,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isPresent ? AppColors.primary : AppColors.border,
-              width: 1,
+  Widget _buildActivityMetric(String value, String label, String sublabel, IconData icon, Color iconColor) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: AppTypography.headingSmall.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.text,
             ),
           ),
-          child: Center(
-            child: isPresent
-                ? const Icon(
-                    Icons.check_rounded,
-                    size: 16,
-                    color: AppColors.primaryDark,
-                  )
-                : const Text(
-                    '—',
-                    style: TextStyle(
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+          Text(
+            sublabel,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalLine() {
+    return Container(
+      width: 1,
+      height: 36,
+      color: AppColors.border,
     );
   }
 }
