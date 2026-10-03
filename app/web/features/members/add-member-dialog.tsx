@@ -92,7 +92,7 @@ export function AddMemberDialog({
     try {
       const res = await repsiApi.checkAvailability({ email: form.email.trim() });
       if (res.email_exists) {
-        setErrors((prev) => ({ ...prev, email: "⚠️ Email address is already registered in database" }));
+        setErrors((prev) => ({ ...prev, email: "⚠️ Email address is already registered" }));
       } else {
         setErrors((prev) => {
           const updated = { ...prev };
@@ -114,7 +114,7 @@ export function AddMemberDialog({
     try {
       const res = await repsiApi.checkAvailability({ phone: form.phone.trim() });
       if (res.phone_exists) {
-        setErrors((prev) => ({ ...prev, phone: "⚠️ Mobile number is already registered in database" }));
+        setErrors((prev) => ({ ...prev, phone: "⚠️ Mobile number is already registered" }));
       } else {
         setErrors((prev) => {
           const updated = { ...prev };
@@ -156,7 +156,7 @@ export function AddMemberDialog({
       setLoading(false);
       setErrors((prev) => ({
         ...prev,
-        email: err?.message || "Failed to create member in database",
+        email: err?.message || "Failed to create member",
       }));
     }
   }

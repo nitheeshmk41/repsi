@@ -172,6 +172,6 @@ def check_availability(
     return {
         "email_exists": email_exists,
         "phone_exists": phone_exists,
-        "email_message": "Email is already registered in database" if email_exists else None,
-        "phone_message": "Mobile number is already registered in database" if phone_exists else None,
+        "email_message": "Email is already registered" if email_exists else None,
+        "phone_message": "Mobile number is already registered" if phone_exists else None,
     }
