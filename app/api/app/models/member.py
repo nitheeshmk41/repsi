@@ -11,6 +11,7 @@ class MemberStatus(str, enum.Enum):
     EXPIRED = "expired"
     FROZEN = "frozen"
     CANCELLED = "cancelled"
+    SUSPENDED = "suspended"
 
 
 class MembershipPlan(Base, TimestampMixin, TenantMixin):

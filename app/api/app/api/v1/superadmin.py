@@ -620,10 +620,14 @@ def get_global_members(
 
     if q:
         query_str = f"%{q.strip().lower()}%"
+        first_safe = func.coalesce(Member.first_name, "")
+        last_safe = func.coalesce(Member.last_name, "")
+        full_safe = func.concat(first_safe, " ", last_safe)
         query = query.filter(
             or_(
                 func.lower(Member.first_name).like(query_str),
                 func.lower(Member.last_name).like(query_str),
+                func.lower(full_safe).like(query_str),
                 func.lower(Member.email).like(query_str),
                 Member.phone.like(query_str)
             )
@@ -633,7 +637,13 @@ def get_global_members(
         query = query.filter(Member.workspace_id == gym_filter)
 
     if status_filter and status_filter.lower() != "all":
-        query = query.filter(Member.status == status_filter.lower())
+        s_target = status_filter.lower()
+        query = query.filter(
+            or_(
+                Member.status == s_target,
+                func.lower(func.cast(Member.status, String)) == s_target
+            )
+        )
 
     offset = (page - 1) * limit
     members = query.order_by(Member.created_at.desc()).offset(offset).limit(limit).all()
@@ -653,11 +663,13 @@ def get_global_members(
         ).first()
         t_name = assigned_tc.trainer.name if (assigned_tc and assigned_tc.trainer) else "Unassigned"
 
+        member_full_name = f"{m.first_name or ''} {m.last_name or ''}".strip() or "Unnamed Member"
+
         results.append(GlobalMemberItem(
             id=m.id,
-            name=f"{m.first_name} {m.last_name}".strip(),
-            email=m.email,
-            phone=m.phone,
+            name=member_full_name,
+            email=m.email or "",
+            phone=m.phone or "",
             workspace_id=m.workspace_id,
             gym_name=ws.name if ws else "Unknown Gym",
             gym_slug=ws.slug if ws else m.workspace_id,
@@ -691,14 +703,15 @@ def update_global_member_status(
     try:
         new_status = MemberStatus[req.status.upper()]
     except KeyError:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {req.status}")
+        # Fallback enum string assignment
+        new_status = req.status.lower()
 
     member.status = new_status
     db.commit()
 
     log_audit_event(
         db, admin_user.id, f"UPDATE_MEMBER_STATUS_{req.status.upper()}",
-        f"Member {member.first_name} {member.last_name} ({member.phone}). Reason: {req.reason or 'Admin action'}",
+        f"Member {member.first_name or ''} {member.last_name or ''} ({member.phone or ''}). Reason: {req.reason or 'Admin action'}",
         member.workspace_id
     )
 
