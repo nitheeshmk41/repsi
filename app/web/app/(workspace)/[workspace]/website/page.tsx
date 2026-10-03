@@ -585,27 +585,27 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] bg-[#090D14] text-white -m-4 sm:-m-6 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] bg-[var(--background)] text-[var(--text)] -m-4 sm:-m-6 overflow-hidden">
       {/* ─────────────────────────────────────────────────────────────────────────────
           TOP HEADER CONTROLS (Publish, Save, Viewports, Slug)
       ───────────────────────────────────────────────────────────────────────────── */}
-      <header className="flex h-14 items-center justify-between px-4 border-b border-zinc-800 bg-[#0D121F] shrink-0 z-30">
+      <header className="flex h-14 items-center justify-between px-4 border-b border-[var(--border)] bg-[var(--surface)] shrink-0 z-30">
         {/* Left: Website Slug & Live Badge */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            <div className="h-8 w-8 rounded-lg bg-[var(--primary-soft)] border border-[var(--primary)]/20 text-[var(--primary)] flex items-center justify-center font-bold">
               <Globe className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
+                <span className="text-xs font-bold text-[var(--text)] truncate max-w-[140px] sm:max-w-[200px]">
                   {site?.title || "My Gym Website"}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]/20">
                   LIVE
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
+              <p className="text-[10px] text-[var(--text-muted)] font-mono flex items-center gap-1">
                 repsi.app/{site?.subdomain || workspace}
               </p>
             </div>
@@ -613,11 +613,11 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
         </div>
 
         {/* Center: Device Viewport Switcher */}
-        <div className="hidden md:flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
+        <div className="hidden md:flex items-center gap-1 bg-[var(--background)] border border-[var(--border)] p-1 rounded-xl">
           <button
             onClick={() => setViewport("desktop")}
             className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-              viewport === "desktop" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
+              viewport === "desktop" ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
             title="Desktop View (1200px)"
           >
@@ -627,7 +627,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           <button
             onClick={() => setViewport("tablet")}
             className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-              viewport === "tablet" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
+              viewport === "tablet" ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
             title="Tablet View (768px)"
           >
@@ -637,7 +637,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           <button
             onClick={() => setViewport("mobile")}
             className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-              viewport === "mobile" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
+              viewport === "mobile" ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-semibold" : "text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
             title="Mobile View (375px)"
           >
@@ -652,9 +652,9 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             variant="outline"
             size="sm"
             onClick={() => setShowTemplateModal(true)}
-            className="border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white rounded-xl text-xs gap-1.5"
+            className="border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--background)] rounded-xl text-xs gap-1.5 font-medium"
           >
-            <Palette className="h-3.5 w-3.5 text-purple-400" />
+            <Palette className="h-3.5 w-3.5 text-[var(--primary)]" />
             <span>Templates</span>
           </Button>
 
@@ -662,7 +662,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             href={publicWebsiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-xs text-zinc-300 hover:text-white transition-colors"
+            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--background)] transition-colors font-medium"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             <span>View Live</span>
@@ -672,7 +672,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs gap-1.5 shadow-md"
+            className="bg-[var(--primary)] hover:opacity-90 text-white font-bold rounded-xl text-xs gap-1.5 shadow-md"
           >
             {saving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             <span>Save & Publish</span>
@@ -685,10 +685,10 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
       ───────────────────────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
         {/* ── LEFT PANEL: PAGES & SECTIONS MANAGER ──────────────────────────────── */}
-        <aside className="w-64 border-r border-zinc-800 bg-[#0C1017] flex flex-col shrink-0">
+        <aside className="w-64 border-r border-[var(--border)] bg-[var(--surface)] flex flex-col shrink-0">
           {/* Top Pages List */}
-          <div className="p-3 border-b border-zinc-800/80">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2 px-1">
+          <div className="p-3 border-b border-[var(--border)]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2 px-1">
               Pages
             </div>
             <div className="space-y-0.5">
@@ -704,25 +704,25 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                   onClick={() => setActivePage(p.id)}
                   className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     activePage === p.id
-                      ? "bg-zinc-800 text-white border border-zinc-700"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                      ? "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]/20 font-bold"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--background)]"
                   }`}
                 >
                   <span>{p.name}</span>
-                  {activePage === p.id && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                  {activePage === p.id && <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Sections Manager Header */}
-          <div className="p-3 border-b border-zinc-800/80 flex items-center justify-between">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="p-3 border-b border-[var(--border)] flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Page Sections ({sections.length})
             </div>
             <button
               onClick={() => setShowAddSectionModal(true)}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+              className="text-xs text-[var(--primary)] hover:opacity-80 font-bold flex items-center gap-1"
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
@@ -738,12 +738,12 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                   onClick={() => setActiveSectionId(sec.id)}
                   className={`group flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium cursor-pointer transition-all border ${
                     isActive
-                      ? "bg-zinc-800 text-white border-zinc-700 shadow-sm"
-                      : "bg-zinc-900/50 text-zinc-400 border-zinc-800/50 hover:bg-zinc-900 hover:text-zinc-200"
+                      ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]/30 font-semibold shadow-sm"
+                      : "bg-[var(--background)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)]"
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <Layers className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                    <Layers className="h-3.5 w-3.5 text-[var(--text-muted)] shrink-0" />
                     <span className="truncate">{sec.title}</span>
                   </div>
 
@@ -755,7 +755,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                         handleMoveSection(idx, "up");
                       }}
                       disabled={idx === 0}
-                      className="p-1 hover:text-white disabled:opacity-30"
+                      className="p-1 hover:text-[var(--text)] disabled:opacity-30"
                       title="Move Up"
                     >
                       <MoveUp className="h-3 w-3" />
@@ -766,7 +766,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                         handleMoveSection(idx, "down");
                       }}
                       disabled={idx === sections.length - 1}
-                      className="p-1 hover:text-white disabled:opacity-30"
+                      className="p-1 hover:text-[var(--text)] disabled:opacity-30"
                       title="Move Down"
                     >
                       <MoveDown className="h-3 w-3" />
@@ -776,10 +776,10 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                         e.stopPropagation();
                         handleToggleSectionVisibility(sec.id);
                       }}
-                      className="p-1 hover:text-white"
+                      className="p-1 hover:text-[var(--text)]"
                       title={sec.enabled ? "Hide Section" : "Show Section"}
                     >
-                      {sec.enabled ? <Eye className="h-3 w-3 text-emerald-400" /> : <EyeOff className="h-3 w-3 text-zinc-600" />}
+                      {sec.enabled ? <Eye className="h-3 w-3 text-[var(--primary)]" /> : <EyeOff className="h-3 w-3 text-[var(--text-muted)]" />}
                     </button>
                   </div>
                 </div>
@@ -788,25 +788,25 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           </div>
 
           {/* Quick Brand Kit Target */}
-          <div className="p-3 border-t border-zinc-800 bg-[#090D14]">
+          <div className="p-3 border-t border-[var(--border)] bg-[var(--background)]">
             <button
               onClick={() => setInspectorTab("design")}
-              className="w-full p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 flex items-center justify-between transition-colors"
+              className="w-full p-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-elevated)] text-xs font-semibold text-[var(--text)] flex items-center justify-between transition-colors"
             >
               <span className="flex items-center gap-2">
-                <Palette className="h-4 w-4 text-purple-400" />
+                <Palette className="h-4 w-4 text-[var(--primary)]" />
                 <span>Brand Kit & Styling</span>
               </span>
-              <ChevronLeft className="h-4 w-4 rotate-180 text-zinc-500" />
+              <ChevronLeft className="h-4 w-4 rotate-180 text-[var(--text-muted)]" />
             </button>
           </div>
         </aside>
 
         {/* ── CENTER CANVAS: LIVE INTERACTIVE WEBSITE PREVIEW ──────────────────── */}
-        <main className="flex-1 bg-[#05070B] overflow-y-auto p-4 flex flex-col items-center relative">
+        <main className="flex-1 bg-[var(--background)] overflow-y-auto p-4 sm:p-6 flex flex-col items-center relative">
           {/* Canvas Viewport Frame */}
           <div
-            className={`transition-all duration-300 rounded-2xl border border-zinc-800 shadow-2xl overflow-hidden my-auto ${
+            className={`transition-all duration-300 rounded-2xl border border-[var(--border)] shadow-2xl overflow-hidden my-auto ${
               site?.theme_mode === "light" ? "bg-white text-slate-900" : "bg-[#0B0F19] text-white"
             } ${
               viewport === "desktop"
@@ -858,12 +858,12 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                     key={sec.id}
                     onClick={() => setActiveSectionId(sec.id)}
                     className={`relative group transition-all ${
-                      isActiveSec ? "ring-2 ring-emerald-500/80 ring-offset-2 ring-offset-black" : ""
+                      isActiveSec ? "ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)]" : ""
                     }`}
                   >
                     {/* Hover Overlay Controls */}
-                    <div className="absolute inset-0 bg-emerald-500/5 border-2 border-emerald-500/40 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 flex items-start justify-end p-3">
-                      <div className="pointer-events-auto flex items-center gap-1.5 bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-zinc-800 text-xs font-bold text-white shadow-xl">
+                    <div className="absolute inset-0 bg-[var(--primary)]/5 border-2 border-[var(--primary)]/40 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 flex items-start justify-end p-3">
+                      <div className="pointer-events-auto flex items-center gap-1.5 bg-[var(--surface)]/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[var(--border)] text-xs font-bold text-[var(--text)] shadow-xl">
                         <span>Section: {sec.title}</span>
                         <button
                           onClick={(e) => {
@@ -871,7 +871,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                             setActiveSectionId(sec.id);
                             setInspectorTab("content");
                           }}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[10px]"
+                          className="px-2 py-1 bg-[var(--primary)] hover:opacity-90 rounded-lg text-[10px] text-white font-bold"
                         >
                           Edit Content
                         </button>
@@ -880,7 +880,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                             e.stopPropagation();
                             handleDeleteSection(sec.id);
                           }}
-                          className="p-1 text-zinc-400 hover:text-rose-400"
+                          className="p-1 text-[var(--text-muted)] hover:text-rose-500"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1125,9 +1125,9 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
         </main>
 
         {/* ── RIGHT INSPECTOR PANEL: CONTENT | LAYOUT | STYLE | DESIGN | SEO | SETTINGS ──── */}
-        <aside className="w-80 border-l border-zinc-800 bg-[#0C1017] flex flex-col shrink-0">
+        <aside className="w-80 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col shrink-0">
           {/* Inspector Tabs Bar */}
-          <div className="flex items-center border-b border-zinc-800 bg-zinc-900/60 p-1 text-[11px] font-semibold">
+          <div className="flex items-center border-b border-[var(--border)] bg-[var(--background)] p-1 text-[11px] font-semibold">
             {[
               { id: "content", label: "Content" },
               { id: "layout", label: "Layout" },
@@ -1141,8 +1141,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 onClick={() => setInspectorTab(tab.id as any)}
                 className={`flex-1 py-1.5 text-center rounded-lg transition-colors ${
                   inspectorTab === tab.id
-                    ? "bg-zinc-800 text-white font-bold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[var(--surface)] text-[var(--text)] shadow-sm font-bold"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
               >
                 {tab.label}
@@ -1155,47 +1155,47 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             {/* ── TAB: CONTENT ──────────────────────────────────────────────────── */}
             {inspectorTab === "content" && (
               <div className="space-y-5 text-xs">
-                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
-                  <span className="font-bold text-white">Editing: {activeSectionObj.title}</span>
-                  <span className="text-[10px] text-emerald-400 font-mono">ID: {activeSectionObj.id}</span>
+                <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between">
+                  <span className="font-bold text-[var(--text)]">Editing: {activeSectionObj.title}</span>
+                  <span className="text-[10px] text-[var(--primary)] font-mono">ID: {activeSectionObj.id}</span>
                 </div>
 
                 {/* Section Specific Content Form Controls */}
                 {activeSectionObj.type === "hero" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Headline</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Headline</label>
                       <textarea
                         rows={2}
                         value={activeSectionObj.content?.headline || ""}
                         onChange={(e) => handleUpdateSectionContent("headline", e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-[var(--background)] border border-[var(--border)] text-[var(--text)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Subheadline</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Subheadline</label>
                       <textarea
                         rows={3}
                         value={activeSectionObj.content?.subheadline || ""}
                         onChange={(e) => handleUpdateSectionContent("subheadline", e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-[var(--background)] border border-[var(--border)] text-[var(--text)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-zinc-400 font-semibold mb-1">Primary Button</label>
+                        <label className="block text-[var(--text-secondary)] font-semibold mb-1">Primary Button</label>
                         <Input
                           value={activeSectionObj.content?.primaryBtnText || ""}
                           onChange={(e) => handleUpdateSectionContent("primaryBtnText", e.target.value)}
-                          className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                          className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                         />
                       </div>
                       <div>
-                        <label className="block text-zinc-400 font-semibold mb-1">Secondary Button</label>
+                        <label className="block text-[var(--text-secondary)] font-semibold mb-1">Secondary Button</label>
                         <Input
                           value={activeSectionObj.content?.secondaryBtnText || ""}
                           onChange={(e) => handleUpdateSectionContent("secondaryBtnText", e.target.value)}
-                          className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                          className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                         />
                       </div>
                     </div>
@@ -1205,20 +1205,20 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 {activeSectionObj.type === "about" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Section Title</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Section Title</label>
                       <Input
                         value={activeSectionObj.content?.title || ""}
                         onChange={(e) => handleUpdateSectionContent("title", e.target.value)}
-                        className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                        className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Facility Description</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Facility Description</label>
                       <textarea
                         rows={4}
                         value={activeSectionObj.content?.description || ""}
                         onChange={(e) => handleUpdateSectionContent("description", e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-[var(--background)] border border-[var(--border)] text-[var(--text)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                       />
                     </div>
                   </div>
@@ -1227,26 +1227,26 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 {(activeSectionObj.type === "memberships" || activeSectionObj.type === "trainers") && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Section Header Title</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Section Header Title</label>
                       <Input
                         value={activeSectionObj.content?.title || ""}
                         onChange={(e) => handleUpdateSectionContent("title", e.target.value)}
-                        className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                        className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                       />
                     </div>
                     <div>
-                      <label className="block text-zinc-400 font-semibold mb-1">Subtitle</label>
+                      <label className="block text-[var(--text-secondary)] font-semibold mb-1">Subtitle</label>
                       <Input
                         value={activeSectionObj.content?.subtitle || ""}
                         onChange={(e) => handleUpdateSectionContent("subtitle", e.target.value)}
-                        className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                        className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                       />
                     </div>
-                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+                    <div className="p-3 rounded-xl bg-[var(--primary-soft)] border border-[var(--primary)]/20 text-xs text-[var(--primary)] space-y-1">
                       <p className="font-bold flex items-center gap-1.5">
                         <Sparkles className="h-3.5 w-3.5" /> Live Repsi DB Synced
                       </p>
-                      <p className="text-[11px] opacity-80 leading-relaxed">
+                      <p className="text-[11px] opacity-80 leading-relaxed text-[var(--text-secondary)]">
                         Cards for this section automatically reflect your live membership plans and trainer profiles.
                       </p>
                     </div>
@@ -1258,8 +1258,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             {/* ── TAB: LAYOUT ───────────────────────────────────────────────────── */}
             {inspectorTab === "layout" && (
               <div className="space-y-5 text-xs">
-                <h3 className="font-bold text-white">Section Layout Variations</h3>
-                <p className="text-[11px] text-zinc-400">
+                <h3 className="font-bold text-[var(--text)]">Section Layout Variations</h3>
+                <p className="text-[11px] text-[var(--text-muted)]">
                   Select a layout structure for <strong>{activeSectionObj.title}</strong>.
                 </p>
 
@@ -1279,8 +1279,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                       }
                       className={`p-3 rounded-xl border text-left space-y-1 transition-all ${
                         activeSectionObj.layout === lay.id
-                          ? "bg-purple-600/20 border-purple-500 ring-1 ring-purple-500 text-white"
-                          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                          ? "bg-[var(--primary-soft)] border-[var(--primary)] ring-1 ring-[var(--primary)] text-[var(--text)] font-semibold"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
                       }`}
                     >
                       <div className="font-bold text-xs">{lay.name}</div>
@@ -1294,17 +1294,17 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             {/* ── TAB: STYLE & MEDIA ─────────────────────────────────────────────── */}
             {inspectorTab === "style" && (
               <div className="space-y-5 text-xs">
-                <h3 className="font-bold text-white">Section Background & Images</h3>
+                <h3 className="font-bold text-[var(--text)]">Section Background & Images</h3>
 
                 <div>
-                  <label className="block text-zinc-400 font-semibold mb-2">Background Image</label>
+                  <label className="block text-[var(--text-secondary)] font-semibold mb-2">Background Image</label>
                   {activeSectionObj.bgImage ? (
-                    <div className="relative rounded-xl overflow-hidden border border-zinc-800 h-32 group">
+                    <div className="relative rounded-xl overflow-hidden border border-[var(--border)] h-32 group">
                       <img src={activeSectionObj.bgImage} alt="Section BG" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                         <button
                           onClick={() => openMediaPicker(activeSectionId, "bgImage")}
-                          className="px-3 py-1.5 bg-purple-600 rounded-lg text-white font-bold text-[11px]"
+                          className="px-3 py-1.5 bg-[var(--primary)] rounded-lg text-white font-bold text-[11px] hover:opacity-90"
                         >
                           Replace Image
                         </button>
@@ -1313,7 +1313,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                   ) : (
                     <button
                       onClick={() => openMediaPicker(activeSectionId, "bgImage")}
-                      className="w-full h-24 rounded-xl border-2 border-dashed border-zinc-800 hover:border-zinc-700 flex flex-col items-center justify-center text-zinc-500 hover:text-zinc-300 gap-1.5"
+                      className="w-full h-24 rounded-xl border-2 border-dashed border-[var(--border)] hover:border-[var(--primary)] flex flex-col items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] gap-1.5 bg-[var(--background)]"
                     >
                       <ImageIcon className="h-5 w-5" />
                       <span>Choose Background Image</span>
@@ -1323,8 +1323,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-zinc-400 font-semibold">Overlay Opacity</label>
-                    <span className="font-mono text-zinc-300">{activeSectionObj.overlayOpacity}%</span>
+                    <label className="text-[var(--text-secondary)] font-semibold">Overlay Opacity</label>
+                    <span className="font-mono text-[var(--text)]">{activeSectionObj.overlayOpacity}%</span>
                   </div>
                   <input
                     type="range"
@@ -1338,7 +1338,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                         )
                       )
                     }
-                    className="w-full accent-emerald-500"
+                    className="w-full accent-[var(--primary)]"
                   />
                 </div>
               </div>
@@ -1349,27 +1349,27 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
               <div className="space-y-6 text-xs">
                 {/* Gym Logo & Brand Kit */}
                 <div>
-                  <h3 className="font-bold text-white mb-2">Gym Logo & Brand Kit</h3>
-                  <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
+                  <h3 className="font-bold text-[var(--text)] mb-2">Gym Logo & Brand Kit</h3>
+                  <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-3">
                     {site?.logo_url ? (
                       <div className="flex items-center justify-between">
                         <img src={site.logo_url} alt="Logo" className="h-8 object-contain max-w-[120px]" />
                         <button
                           onClick={() => setSite({ ...site, logo_url: "" })}
-                          className="text-xs text-rose-400 hover:underline"
+                          className="text-xs text-rose-500 hover:underline font-medium"
                         >
                           Remove
                         </button>
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed border-zinc-800 rounded-xl p-4 text-center space-y-2">
-                        <Upload className="h-6 w-6 text-zinc-500 mx-auto" />
-                        <p className="text-[11px] text-zinc-400">Drag & drop gym logo (PNG / SVG / JPG)</p>
+                      <div className="border-2 border-dashed border-[var(--border)] rounded-xl p-4 text-center space-y-2">
+                        <Upload className="h-6 w-6 text-[var(--text-muted)] mx-auto" />
+                        <p className="text-[11px] text-[var(--text-muted)]">Drag & drop gym logo (PNG / SVG / JPG)</p>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={(e) => handleCustomFileUpload(e, "logo_url")}
-                          className="text-[10px] text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-zinc-800 file:text-zinc-300"
+                          className="text-[10px] text-[var(--text-muted)] file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-[var(--surface-elevated)] file:text-[var(--text)]"
                         />
                       </div>
                     )}
@@ -1378,7 +1378,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
 
                 {/* Theme Mode */}
                 <div>
-                  <h3 className="font-bold text-white mb-2">Theme Mode</h3>
+                  <h3 className="font-bold text-[var(--text)] mb-2">Theme Mode</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { id: "dark", label: "Dark", icon: Moon },
@@ -1391,8 +1391,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                           onClick={() => setSite({ ...site, theme_mode: mode.id })}
                           className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 font-semibold transition-all ${
                             site?.theme_mode === mode.id
-                              ? "bg-emerald-600/20 border-emerald-500 text-white"
-                              : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                              ? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] font-bold"
+                              : "bg-[var(--background)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
                           }`}
                         >
                           <IconComp className="h-4 w-4" />
@@ -1405,7 +1405,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
 
                 {/* Color Palettes */}
                 <div>
-                  <h3 className="font-bold text-white mb-2">Brand Color Palettes</h3>
+                  <h3 className="font-bold text-[var(--text)] mb-2">Brand Color Palettes</h3>
                   <div className="space-y-2">
                     {COLOR_PALETTES.map((pal) => (
                       <button
@@ -1419,13 +1419,13 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                             text_color: pal.text,
                           })
                         }
-                        className="w-full p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-between transition-colors"
+                        className="w-full p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] hover:border-[var(--border-strong)] flex items-center justify-between transition-colors"
                       >
-                        <span className="font-semibold text-zinc-200">{pal.name}</span>
+                        <span className="font-semibold text-[var(--text)]">{pal.name}</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: pal.primary }} />
-                          <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: pal.secondary }} />
-                          <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: pal.bg }} />
+                          <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pal.primary }} />
+                          <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pal.secondary }} />
+                          <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pal.bg }} />
                         </div>
                       </button>
                     ))}
@@ -1437,24 +1437,24 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             {/* ── TAB: SEO ──────────────────────────────────────────────────────── */}
             {inspectorTab === "seo" && (
               <div className="space-y-4 text-xs">
-                <h3 className="font-bold text-white">Search Engine Optimization</h3>
+                <h3 className="font-bold text-[var(--text)]">Search Engine Optimization</h3>
 
                 <div>
-                  <label className="block text-zinc-400 font-semibold mb-1">SEO Title Tag</label>
+                  <label className="block text-[var(--text-secondary)] font-semibold mb-1">SEO Title Tag</label>
                   <Input
                     value={site?.seo_title || ""}
                     onChange={(e) => setSite({ ...site, seo_title: e.target.value })}
-                    className="bg-zinc-900 border-zinc-800 text-xs text-white"
+                    className="bg-[var(--background)] border-[var(--border)] text-xs text-[var(--text)] focus:border-[var(--primary)]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-zinc-400 font-semibold mb-1">Meta Description</label>
+                  <label className="block text-[var(--text-secondary)] font-semibold mb-1">Meta Description</label>
                   <textarea
                     rows={4}
                     value={site?.seo_description || ""}
                     onChange={(e) => setSite({ ...site, seo_description: e.target.value })}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-[var(--background)] border border-[var(--border)] text-[var(--text)] rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--primary)]"
                   />
                 </div>
               </div>
@@ -1463,27 +1463,27 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             {/* ── TAB: SETTINGS ─────────────────────────────────────────────────── */}
             {inspectorTab === "settings" && (
               <div className="space-y-5 text-xs">
-                <h3 className="font-bold text-white">Website Domain & Address</h3>
+                <h3 className="font-bold text-[var(--text)]">Website Domain & Address</h3>
 
                 {/* Slug Address Customizer */}
-                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
-                  <label className="block text-zinc-400 font-semibold">Public Gym Slug Address</label>
+                <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-3">
+                  <label className="block text-[var(--text-secondary)] font-semibold">Public Gym Slug Address</label>
 
                   {isEditingSlug ? (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1 bg-black border border-zinc-800 rounded-xl px-3 py-2">
-                        <span className="text-zinc-500 font-mono">repsi.app/</span>
+                      <div className="flex items-center gap-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl px-3 py-2">
+                        <span className="text-[var(--text-muted)] font-mono">repsi.app/</span>
                         <input
                           type="text"
                           value={slugInput}
                           onChange={(e) => setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                          className="bg-transparent font-mono text-white text-xs focus:outline-none flex-1"
+                          className="bg-transparent font-mono text-[var(--text)] text-xs focus:outline-none flex-1"
                           autoFocus
                         />
                       </div>
 
                       {slugMessage && (
-                        <p className={`text-[11px] font-medium ${slugStatus === "available" ? "text-emerald-400" : "text-rose-400"}`}>
+                        <p className={`text-[11px] font-medium ${slugStatus === "available" ? "text-[var(--primary)]" : "text-rose-500"}`}>
                           {slugMessage}
                         </p>
                       )}
@@ -1493,7 +1493,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                           size="sm"
                           onClick={handleSaveSlug}
                           disabled={slugStatus !== "available" || savingSlug}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                          className="bg-[var(--primary)] hover:opacity-90 text-white font-bold text-xs"
                         >
                           Save Address
                         </Button>
@@ -1504,10 +1504,10 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-emerald-400">repsi.app/{site?.subdomain || workspace}</span>
+                      <span className="font-mono text-[var(--primary)] font-bold">repsi.app/{site?.subdomain || workspace}</span>
                       <button
                         onClick={() => setIsEditingSlug(true)}
-                        className="text-xs text-purple-400 hover:underline font-bold"
+                        className="text-xs text-[var(--primary)] hover:underline font-bold"
                       >
                         Change
                       </button>
@@ -1524,16 +1524,16 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           MODAL: CHANGE TEMPLATE (With Visual Previews & Content Preservation Warning)
       ───────────────────────────────────────────────────────────────────────────── */}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-[#0E131C] border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 space-y-6 max-h-[90vh] overflow-y-auto text-[var(--text)]">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
               <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Choose a Template</h2>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Select a visual structure for your website. <strong className="text-emerald-400">Your content, plans, and photos will remain unchanged.</strong>
+                <h2 className="text-xl font-bold text-[var(--text)] tracking-tight">Choose a Template</h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Select a visual structure for your website. <strong className="text-[var(--primary)]">Your content, plans, and photos will remain unchanged.</strong>
                 </p>
               </div>
-              <button onClick={() => setShowTemplateModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowTemplateModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1548,8 +1548,8 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                     onClick={() => setPendingTemplateId(tmpl.id)}
                     className={`rounded-2xl border p-4 space-y-3 cursor-pointer transition-all ${
                       isSelected
-                        ? "bg-zinc-800/90 border-purple-500 ring-2 ring-purple-500/80 shadow-xl"
-                        : "bg-zinc-900/60 border-zinc-800 hover:border-zinc-700"
+                        ? "bg-[var(--primary-soft)] border-[var(--primary)] ring-2 ring-[var(--primary)]/80 shadow-xl"
+                        : "bg-[var(--background)] border-[var(--border)] hover:border-[var(--border-strong)]"
                     }`}
                   >
                     {/* Visual Card Banner */}
@@ -1561,9 +1561,9 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                     </div>
 
                     <div>
-                      <h3 className="font-bold text-sm text-white">{tmpl.name}</h3>
-                      <p className="text-[11px] text-purple-400 font-medium">{tmpl.tagline}</p>
-                      <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{tmpl.description}</p>
+                      <h3 className="font-bold text-sm text-[var(--text)]">{tmpl.name}</h3>
+                      <p className="text-[11px] text-[var(--primary)] font-semibold">{tmpl.tagline}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">{tmpl.description}</p>
                     </div>
                   </div>
                 );
@@ -1571,9 +1571,9 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
-              <div className="text-xs text-zinc-400 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-emerald-400" />
+            <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
+              <div className="text-xs text-[var(--text-muted)] flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-[var(--primary)]" />
                 <span>Your site content, plans, trainers, and contact info will be preserved automatically.</span>
               </div>
               <div className="flex items-center gap-3">
@@ -1582,7 +1582,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 </Button>
                 <Button
                   onClick={() => handleApplyTemplate(pendingTemplateId)}
-                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold"
+                  className="bg-[var(--primary)] hover:opacity-90 text-white font-bold"
                 >
                   Apply Template
                 </Button>
@@ -1596,14 +1596,14 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           MODAL: MEDIA LIBRARY (Image Upload & Selection)
       ───────────────────────────────────────────────────────────────────────────── */}
       {showMediaModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-3xl bg-[#0E131C] border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 space-y-5 text-[var(--text)]">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
               <div className="flex items-center gap-2">
-                <FolderOpen className="h-5 w-5 text-purple-400" />
-                <h2 className="text-lg font-bold text-white">Media Library</h2>
+                <FolderOpen className="h-5 w-5 text-[var(--primary)]" />
+                <h2 className="text-lg font-bold text-[var(--text)]">Media Library</h2>
               </div>
-              <button onClick={() => setShowMediaModal(false)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setShowMediaModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1614,11 +1614,11 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 <div
                   key={item.id}
                   onClick={() => handleSelectMediaImage(item.url)}
-                  className="group relative rounded-xl overflow-hidden border border-zinc-800 hover:border-emerald-500 cursor-pointer h-32"
+                  className="group relative rounded-xl overflow-hidden border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer h-32"
                 >
                   <img src={item.url} alt={item.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="px-3 py-1 bg-emerald-600 text-white font-bold text-xs rounded-lg">
+                    <span className="px-3 py-1 bg-[var(--primary)] text-white font-bold text-xs rounded-lg">
                       Select Image
                     </span>
                   </div>
@@ -1626,7 +1626,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
               ))}
             </div>
 
-            <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
+            <div className="flex items-center justify-between border-t border-[var(--border)] pt-4">
               <input
                 type="file"
                 accept="image/*"
@@ -1636,7 +1636,7 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                     handleSelectMediaImage(URL.createObjectURL(file));
                   }
                 }}
-                className="text-xs text-zinc-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-zinc-800 file:text-white"
+                className="text-xs text-[var(--text-muted)] file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-[var(--surface-elevated)] file:text-[var(--text)]"
               />
               <Button variant="outline" size="sm" onClick={() => setShowMediaModal(false)}>
                 Close
@@ -1650,11 +1650,11 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
           MODAL: ADD SECTION
       ───────────────────────────────────────────────────────────────────────────── */}
       {showAddSectionModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#0E131C] border border-zinc-800 rounded-2xl shadow-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <h2 className="text-lg font-bold text-white">Add Section to Page</h2>
-              <button onClick={() => setShowAddSectionModal(false)} className="text-zinc-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 space-y-5 text-[var(--text)]">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
+              <h2 className="text-lg font-bold text-[var(--text)]">Add Section to Page</h2>
+              <button onClick={() => setShowAddSectionModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1671,10 +1671,10 @@ export default function WebsiteBuilderPage(props: { params: Promise<{ workspace:
                 <button
                   key={s.type}
                   onClick={() => handleAddSection(s.type, s.title)}
-                  className="p-3 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-emerald-500 text-left space-y-1 transition-all"
+                  className="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-[var(--primary)] hover:bg-[var(--surface-elevated)] text-left space-y-1 transition-all"
                 >
-                  <div className="font-bold text-xs text-white">{s.title}</div>
-                  <div className="text-[10px] text-zinc-400">{s.desc}</div>
+                  <div className="font-bold text-xs text-[var(--text)]">{s.title}</div>
+                  <div className="text-[10px] text-[var(--text-muted)]">{s.desc}</div>
                 </button>
               ))}
             </div>
