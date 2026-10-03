@@ -170,10 +170,11 @@ function RowActions({
 interface MembersTableProps {
   members: Member[];
   onAddMember: () => void;
+  onImportCsv?: () => void;
   onDeleteMember?: (id: string, name: string) => void;
 }
 
-export function MembersTable({ members, onAddMember, onDeleteMember }: MembersTableProps) {
+export function MembersTable({ members, onAddMember, onImportCsv, onDeleteMember }: MembersTableProps) {
   const pathname = usePathname();
   const workspace = getWorkspaceFromPath(pathname);
   const [sortColumn, setSortColumn] = useState("name");
@@ -225,12 +226,32 @@ export function MembersTable({ members, onAddMember, onDeleteMember }: MembersTa
 
   if (members.length === 0) {
     return (
-      <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <EmptyState
-          icon={<Users className="h-5 w-5" />}
-          title="No members found"
-          description="Try adjusting your search or filters, or add your first member."
-          action={{ label: "Add Member", onClick: onAddMember }}
+          mascotPose="members"
+          speechBubble="Ready to add your members?"
+          title="No members yet"
+          description="Start building your member list. Your members will appear here once you add them."
+          action={{
+            label: "+ Add your first member",
+            onClick: onAddMember,
+          }}
+          secondaryAction={
+            onImportCsv
+              ? {
+                  label: "Import existing members (CSV)",
+                  onClick: onImportCsv,
+                }
+              : undefined
+          }
+          guideTitle="How to add members"
+          guideSteps={[
+            "Click Add member or Import CSV",
+            "Enter member contact & basic details",
+            "Select their membership plan (Monthly, Annual, etc.)",
+            "Save and generate instant mobile QR access",
+          ]}
+          guideLinkText="View 30-second guide →"
         />
       </div>
     );

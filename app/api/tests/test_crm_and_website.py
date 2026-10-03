@@ -227,3 +227,58 @@ def test_razorpay_and_crm_and_website_builder():
     beta_site = client.get("/api/v1/websites/my-website", headers=headers_2).json()
     assert beta_site["workspace_id"] == ws_2
     assert beta_site["subdomain"] != subdomain
+
+    # 7. Test Slug Availability Check
+    chk_reserved = client.get("/api/v1/websites/check-slug/dashboard")
+    assert chk_reserved.status_code == 200
+    assert chk_reserved.json()["available"] is False
+    assert "reserved" in chk_reserved.json()["reason"].lower()
+
+    chk_taken = client.get(f"/api/v1/websites/check-slug/{subdomain}")
+    assert chk_taken.status_code == 200
+    assert chk_taken.json()["available"] is False
+
+    chk_available = client.get("/api/v1/websites/check-slug/ironhouse-supergym")
+    assert chk_available.status_code == 200
+    assert chk_available.json()["available"] is True
+
+    # 8. Test Slug Customization and Assistant Config
+    update_slug_res = client.patch(
+        "/api/v1/websites/my-website",
+        headers=headers_1,
+        json={
+            "subdomain": "ironhouse-supergym",
+            "assistant_enabled": True,
+            "assistant_name": "Iron Assistant",
+            "assistant_welcome": "Welcome to Ironhouse! Ready to crush your goals?",
+            "assistant_whatsapp": "+919876543210",
+        },
+    )
+    assert update_slug_res.status_code == 200
+    updated_data = update_slug_res.json()
+    assert updated_data["subdomain"] == "ironhouse-supergym"
+    assert updated_data["assistant_name"] == "Iron Assistant"
+    assert updated_data["assistant_whatsapp"] == "+919876543210"
+
+    # 9. Test Floating Assistant Free Trial Booking Flow
+    trial_booking_res = client.post(
+        "/api/v1/websites/public/ironhouse-supergym/lead",
+        json={
+            "name": "Priya Sharma",
+            "phone": "+91 98888 55555",
+            "booking_type": "free_trial",
+            "preferred_date": "Tomorrow",
+            "preferred_time": "5:00 PM",
+            "message": "Interested in strength training trial.",
+        },
+    )
+    assert trial_booking_res.status_code in (200, 201)
+    assert "booked" in trial_booking_res.json()["message"].lower()
+
+    # Verify trial lead landed in Alpha's CRM with "Trial Booking" source and urgent priority
+    alpha_leads_2 = client.get("/api/v1/crm/leads", headers=headers_1).json()["items"]
+    trial_lead = next((l for l in alpha_leads_2 if l["phone"] == "+91 98888 55555"), None)
+    assert trial_lead is not None
+    assert trial_lead["lead_source"] == "Trial Booking"
+    assert "Tomorrow" in trial_lead["notes"]
+    assert "5:00 PM" in trial_lead["notes"]

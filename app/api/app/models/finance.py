@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime, date, timezone
-from sqlalchemy import Column, String, Float, DateTime, Date, Enum, ForeignKey, Text
+from sqlalchemy import Column, String, Float, DateTime, Date, Enum, ForeignKey, Text, Index
 from app.core.database import Base
 from app.models.base import TimestampMixin, TenantMixin, generate_uuid
 
@@ -33,6 +33,10 @@ class Payment(Base, TimestampMixin, TenantMixin):
     transaction_ref = Column(String(100), nullable=True)
     invoice_id = Column(String(64), nullable=True)
     paid_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("ix_payments_ws_status_paid", "workspace_id", "status", "paid_at"),
+    )
 
 
 class Invoice(Base, TimestampMixin, TenantMixin):

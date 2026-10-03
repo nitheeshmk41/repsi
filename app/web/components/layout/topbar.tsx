@@ -2,8 +2,9 @@
 
 import { useTheme } from "next-themes";
 import { useState, useEffect, useCallback } from "react";
-import { Sun, Moon, Monitor, Bell, Search, ChevronRight } from "lucide-react";
+import { Sun, Moon, Monitor, Bell, Search, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GettingStartedDialog } from "@/components/layout/getting-started-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,9 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { logoutSession, getAuthUser } from "@/lib/auth";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/api";
 
 // ─── Theme Toggle ─────────────────────────────────────────────────────────────
 
@@ -56,7 +60,7 @@ function ThemeToggle() {
 
 // ─── User Menu ────────────────────────────────────────────────────────────────
 
-function UserMenu() {
+function UserMenu({ workspace }: { workspace?: string }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string; role?: string } | null>(null);
 
@@ -66,6 +70,11 @@ function UserMenu() {
       setUser(authUser);
     }
   }, []);
+
+  const currentWorkspace =
+    workspace ||
+    (typeof window !== "undefined" ? localStorage.getItem("repsi_workspace_slug") : null) ||
+    "apex-fitness";
 
   const handleSignOut = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -93,7 +102,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button 
-          className="flex items-center gap-2 rounded-[8px] p-1 pr-2 hover:bg-[var(--nav-hover-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          className="flex items-center gap-2 rounded-[8px] p-1 pr-2 hover:bg-[var(--nav-hover-bg)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] cursor-pointer"
           aria-label="Open user menu"
         >
           <Avatar className="h-7 w-7">
@@ -114,9 +123,21 @@ function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">Account</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">Help</DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href={`/${currentWorkspace}/settings`} className="w-full">
+            Account
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href={`/${currentWorkspace}/settings`} className="w-full">
+            Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link href="/help" className="w-full">
+            Help Center
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={handleSignOut}
@@ -131,98 +152,7 @@ function UserMenu() {
   );
 }
 
-// ─── Global Search / Command Palette ─────────────────────────────────────────
-
-function GlobalSearch() {
-  const [open, setOpen] = useState(false);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-      e.preventDefault();
-      setOpen((prev) => !prev);
-    }
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className={cn(
-          "flex items-center gap-2 h-9 px-3 rounded-[8px] border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] transition-all duration-150 w-full max-w-xs"
-        )}
-        aria-label="Open command palette"
-      >
-        <Search className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-left">Search...</span>
-        <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] font-medium text-[var(--text-muted)] bg-[var(--background)] border border-[var(--border)] rounded px-1 py-0.5">
-          <span>⌘</span>
-          <span>K</span>
-        </kbd>
-      </button>
-
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search members, payments, settings..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Navigation">
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Search className="mr-2 h-4 w-4" />
-              Dashboard
-              <ChevronRight className="ml-auto h-4 w-4 opacity-40" />
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Search className="mr-2 h-4 w-4" />
-              Members
-              <ChevronRight className="ml-auto h-4 w-4 opacity-40" />
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Search className="mr-2 h-4 w-4" />
-              Payments
-              <ChevronRight className="ml-auto h-4 w-4 opacity-40" />
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              <Search className="mr-2 h-4 w-4" />
-              Attendance
-              <ChevronRight className="ml-auto h-4 w-4 opacity-40" />
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Members">
-            <CommandItem onSelect={() => setOpen(false)}>
-              Arjun Nair
-              <span className="ml-2 text-[var(--text-muted)] text-xs">Active · Monthly</span>
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              Priya Venkat
-              <span className="ml-2 text-[var(--text-muted)] text-xs">Active · Annual</span>
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              Kavya Ramesh
-              <span className="ml-2 text-[var(--text-muted)] text-xs">Active · Monthly</span>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Actions">
-            <CommandItem onSelect={() => setOpen(false)}>
-              Add new member
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              Record payment
-            </CommandItem>
-            <CommandItem onSelect={() => setOpen(false)}>
-              Mark attendance
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
-    </>
-  );
-}
+import { GlobalSearch } from "@/components/layout/global-search";
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
@@ -233,6 +163,29 @@ interface TopbarProps {
 }
 
 export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
+  const params = useParams();
+  const workspace = params?.workspace as string | undefined;
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showGettingStarted, setShowGettingStarted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await api.getNotifications(1, 1);
+        if (active) setUnreadCount(res.unread_count || 0);
+      } catch {
+        // silent fallback if offline/unauthenticated
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <header className="flex h-14 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 sm:px-6">
       {/* Mobile menu trigger */}
@@ -271,6 +224,19 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1">
+        {/* Getting Started Guide */}
+        {workspace && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGettingStarted(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#16A34A] border-[#16A34A]/30 bg-[#16A34A]/5 hover:bg-[#16A34A]/15 rounded-xl px-2.5 h-8 mr-1 shadow-2xs cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Getting Started</span>
+          </Button>
+        )}
+
         {/* Mobile search */}
         <Button
           variant="ghost"
@@ -282,13 +248,17 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
         </Button>
 
         {/* Notifications */}
-        <div className="relative">
-          <Button variant="ghost" size="icon" aria-label="Notifications">
-            <Bell className="h-4 w-4" />
-          </Button>
-          {/* Unread indicator */}
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />
-        </div>
+        <Link href={workspace ? `/${workspace}/notifications` : "/notifications"}>
+          <div className="relative">
+            <Button variant="ghost" size="icon" aria-label="Notifications">
+              <Bell className="h-4 w-4" />
+            </Button>
+            {/* Unread indicator */}
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 min-w-[8px] h-2 px-0.5 rounded-full bg-[var(--primary)] text-[9px] font-bold text-white flex items-center justify-center animate-pulse" />
+            )}
+          </div>
+        </Link>
 
         {/* Theme */}
         <ThemeToggle />
@@ -297,8 +267,16 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
         <div className="w-px h-5 bg-[var(--border)] mx-1" />
 
         {/* User */}
-        <UserMenu />
+        <UserMenu workspace={workspace} />
       </div>
+
+      {workspace && (
+        <GettingStartedDialog
+          workspace={workspace}
+          isOpen={showGettingStarted}
+          onClose={() => setShowGettingStarted(false)}
+        />
+      )}
     </header>
   );
 }

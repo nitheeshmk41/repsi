@@ -16,7 +16,7 @@ from app.middleware.tenant import get_current_tenant, TenantContext
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 
-def _resolve_person(identifier: str, workspace_id: str, db: Session):
+def _resolve_person(identifier: str, workspace_id: str, db: Session, user_id: Optional[str] = None):
     clean = identifier.strip()
 
     # Try parsing JSON QR payload
@@ -35,6 +35,15 @@ def _resolve_person(identifier: str, workspace_id: str, db: Session):
                 clean = parsed["id"]
         except Exception:
             pass
+
+    # Support gym entrance QR scanned by authenticated member mobile app
+    if clean.startswith("repsi://gym/") and user_id:
+        m = db.query(Member).filter(
+            Member.workspace_id == workspace_id,
+            Member.user_id == user_id
+        ).first()
+        if m:
+            return {"type": "member", "obj": m}
 
     # Strip prefixes like repsi://member/ or repsi://trainer/
     if clean.startswith("repsi://member/"):
@@ -71,6 +80,24 @@ def _resolve_person(identifier: str, workspace_id: str, db: Session):
     return None
 
 
+def _validate_eligibility(person: dict):
+    if person["type"] == "member":
+        m: Member = person["obj"]
+        if m.status in [MemberStatus.FROZEN, MemberStatus.CANCELLED, MemberStatus.EXPIRED]:
+            status_desc = "suspended" if m.status == MemberStatus.FROZEN else m.status.value
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Check-in blocked: Member is {status_desc.upper()}. Please settle dues or reactivate membership."
+            )
+    elif person["type"] == "trainer":
+        t: Trainer = person["obj"]
+        if t.status in [TrainerStatus.SUSPENDED, TrainerStatus.INACTIVE]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Check-in blocked: Trainer account is suspended or inactive."
+            )
+
+
 @router.post("/check-in", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
 def check_in(
     req: CheckInRequest,
@@ -83,9 +110,10 @@ def check_in(
 
     # If identifier provided, resolve person
     if req.identifier:
-        person = _resolve_person(req.identifier, tenant.workspace_id, db)
+        person = _resolve_person(req.identifier, tenant.workspace_id, db, user_id=tenant.user_id)
         if not person:
             raise HTTPException(status_code=404, detail="No matching member or trainer found in this gym workspace")
+        _validate_eligibility(person)
         if person["type"] == "member":
             member_id = person["obj"].id
         else:
@@ -94,15 +122,29 @@ def check_in(
     if not member_id and not trainer_id:
         raise HTTPException(status_code=400, detail="Must specify member_id, trainer_id, or valid identifier")
 
-    # Verify entity exists in workspace
+    # Verify entity exists and is eligible in workspace
     if member_id:
         m = db.query(Member).filter(Member.id == member_id, Member.workspace_id == tenant.workspace_id).first()
         if not m:
             raise HTTPException(status_code=404, detail="Member not found in this gym workspace")
+        _validate_eligibility({"type": "member", "obj": m})
     elif trainer_id:
         t = db.query(Trainer).filter(Trainer.id == trainer_id, Trainer.workspace_id == tenant.workspace_id).first()
         if not t:
             raise HTTPException(status_code=404, detail="Trainer not found in this gym workspace")
+        _validate_eligibility({"type": "trainer", "obj": t})
+
+    # Prevent duplicate active check-ins
+    active = db.query(Attendance).filter(
+        Attendance.workspace_id == tenant.workspace_id,
+        (Attendance.member_id == member_id) if member_id else (Attendance.trainer_id == trainer_id),
+        Attendance.check_out_time.is_(None)
+    ).first()
+    if active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Person is already checked in. Please check out before checking in again."
+        )
 
     record = repo.create(
         member_id=member_id,
@@ -128,7 +170,7 @@ def scan_qr_checkin(
     if not target:
         raise HTTPException(status_code=400, detail="QR code payload is required")
 
-    person = _resolve_person(target, tenant.workspace_id, db)
+    person = _resolve_person(target, tenant.workspace_id, db, user_id=tenant.user_id)
     if not person:
         raise HTTPException(status_code=404, detail="Unrecognized or invalid QR pass")
 
@@ -136,7 +178,7 @@ def scan_qr_checkin(
     now = datetime.now(timezone.utc)
 
     # Check if person is currently inside today
-    today_start = datetime.combine(datetime.now().date(), datetime.min.time())
+    today_start = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time()).replace(tzinfo=timezone.utc)
     query = db.query(Attendance).filter(
         Attendance.workspace_id == tenant.workspace_id,
         Attendance.check_in_time >= today_start,
@@ -165,7 +207,9 @@ def scan_qr_checkin(
             }
         }
     else:
-        # Check in
+        # Check eligibility before new check in
+        _validate_eligibility(person)
+
         member_id = person["obj"].id if person["type"] == "member" else None
         trainer_id = person["obj"].id if person["type"] == "trainer" else None
         record = repo.create(

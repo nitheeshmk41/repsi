@@ -5,6 +5,7 @@ import io
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import get_password_hash
 from app.models.member import Member, MemberStatus, Membership, MembershipPlan
@@ -16,6 +17,30 @@ from app.middleware.tenant import get_current_tenant, TenantContext
 router = APIRouter(prefix="/members", tags=["Members"])
 
 
+class MemberRenewRequest(BaseModel):
+    plan_id: Optional[str] = None
+    plan_name: Optional[str] = None
+    duration_months: Optional[int] = None
+    price_paid: Optional[float] = None
+    start_date: Optional[date] = None
+
+
+def require_member_manage_access(tenant: TenantContext = Depends(get_current_tenant)) -> TenantContext:
+    allowed = {UserRole.OWNER.value, UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.MANAGER.value, UserRole.STAFF.value, UserRole.TRAINER.value}
+    role_str = tenant.role.value if hasattr(tenant.role, "value") else str(tenant.role)
+    if role_str not in allowed:
+        raise HTTPException(status_code=403, detail="Access denied. Only gym staff, trainers, and owners can view members.")
+    return tenant
+
+
+def require_member_mutation_access(tenant: TenantContext = Depends(get_current_tenant)) -> TenantContext:
+    allowed = {UserRole.OWNER.value, UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.MANAGER.value, UserRole.STAFF.value}
+    role_str = tenant.role.value if hasattr(tenant.role, "value") else str(tenant.role)
+    if role_str not in allowed:
+        raise HTTPException(status_code=403, detail="Forbidden. Only gym staff, managers, and owners can create or modify members.")
+    return tenant
+
+
 @router.get("", response_model=MemberListResponse)
 @router.get("/", response_model=MemberListResponse, include_in_schema=False)
 def list_members(
@@ -23,7 +48,7 @@ def list_members(
     status: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_member_manage_access),
     db: Session = Depends(get_db)
 ):
     repo = MemberRepository(db, tenant.workspace_id)
@@ -115,11 +140,30 @@ def get_member(
 @router.post("/", response_model=MemberResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_member(
     data: MemberCreate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_member_mutation_access),
     db: Session = Depends(get_db)
 ):
     clean_email = data.email.strip().lower() if data.email else None
-    clean_phone = data.phone.strip() if data.phone else None
+    clean_phone = "".join(c for c in (data.phone or "") if c.isdigit() or c == "+")
+
+    # 1. Prevent duplicate member creation within this gym
+    dup_filters = []
+    if clean_phone:
+        dup_filters.append(Member.phone == clean_phone)
+    if clean_email:
+        dup_filters.append(func.lower(Member.email) == clean_email)
+
+    if dup_filters:
+        existing_member = db.query(Member).filter(
+            Member.workspace_id == tenant.workspace_id,
+            or_(*dup_filters)
+        ).first()
+        if existing_member:
+            matched = "phone number" if existing_member.phone == clean_phone else "email"
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A member with this {matched} is already registered in your gym."
+            )
 
     linked_user_id = None
     if clean_email or clean_phone:
@@ -218,21 +262,132 @@ def create_member(
 def update_member(
     id: str,
     data: MemberUpdate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_member_mutation_access),
     db: Session = Depends(get_db)
 ):
     repo = MemberRepository(db, tenant.workspace_id)
     member = repo.get(id)
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
-    updated = repo.update(member, **data.model_dump(exclude_unset=True))
+
+    update_dict = data.model_dump(exclude_unset=True)
+    updated = repo.update(member, **update_dict)
+
+    # If status changed to suspended / frozen / cancelled / expired, propagate to workspace membership access
+    if "status" in update_dict and update_dict["status"]:
+        new_status = update_dict["status"]
+        if new_status in [MemberStatus.FROZEN, MemberStatus.CANCELLED, MemberStatus.EXPIRED]:
+            if member.user_id:
+                ws_mem = db.query(WorkspaceMember).filter(
+                    WorkspaceMember.workspace_id == tenant.workspace_id,
+                    WorkspaceMember.user_id == member.user_id
+                ).first()
+                if ws_mem:
+                    ws_mem.is_active = False
+                    db.commit()
+        elif new_status == MemberStatus.ACTIVE:
+            if member.user_id:
+                ws_mem = db.query(WorkspaceMember).filter(
+                    WorkspaceMember.workspace_id == tenant.workspace_id,
+                    WorkspaceMember.user_id == member.user_id
+                ).first()
+                if ws_mem:
+                    ws_mem.is_active = True
+                    db.commit()
+
     return updated
+
+
+@router.post("/{id}/renew")
+def renew_member_membership(
+    id: str,
+    data: Optional[MemberRenewRequest] = None,
+    tenant: TenantContext = Depends(require_member_mutation_access),
+    db: Session = Depends(get_db)
+):
+    repo = MemberRepository(db, tenant.workspace_id)
+    member = repo.get(id)
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    plan = None
+    if data and data.plan_id:
+        plan = db.query(MembershipPlan).filter(
+            MembershipPlan.id == data.plan_id,
+            MembershipPlan.workspace_id == tenant.workspace_id
+        ).first()
+    elif data and data.plan_name:
+        plan = db.query(MembershipPlan).filter(
+            MembershipPlan.workspace_id == tenant.workspace_id,
+            func.lower(MembershipPlan.name) == data.plan_name.strip().lower()
+        ).first()
+
+    if not plan:
+        plan = db.query(MembershipPlan).filter(
+            MembershipPlan.workspace_id == tenant.workspace_id,
+            MembershipPlan.is_active == True
+        ).first()
+        if not plan:
+            plan = MembershipPlan(
+                workspace_id=tenant.workspace_id,
+                name="Standard Membership",
+                price=1500.0,
+                duration_months=1,
+                is_active=True
+            )
+            db.add(plan)
+            db.flush()
+
+    months = (data and data.duration_months) or plan.duration_months or 1
+    price = (data and data.price_paid) if (data and data.price_paid is not None) else plan.price
+    start = (data and data.start_date) or date.today()
+    end = start + timedelta(days=months * 30)
+
+    # Deactivate existing memberships for this member
+    db.query(Membership).filter(
+        Membership.workspace_id == tenant.workspace_id,
+        Membership.member_id == member.id
+    ).update({Membership.status: MemberStatus.EXPIRED}, synchronize_session=False)
+
+    new_membership = Membership(
+        workspace_id=tenant.workspace_id,
+        member_id=member.id,
+        plan_id=plan.id,
+        start_date=start,
+        end_date=end,
+        status=MemberStatus.ACTIVE,
+        price_paid=price,
+        auto_renew=False
+    )
+    db.add(new_membership)
+
+    member.status = MemberStatus.ACTIVE
+    if member.user_id:
+        ws_mem = db.query(WorkspaceMember).filter(
+            WorkspaceMember.workspace_id == tenant.workspace_id,
+            WorkspaceMember.user_id == member.user_id
+        ).first()
+        if ws_mem:
+            ws_mem.is_active = True
+
+    db.commit()
+    db.refresh(member)
+
+    return {
+        "status": "success",
+        "message": f"Membership renewed successfully until {end.strftime('%d %b %Y')}",
+        "member_id": member.id,
+        "membership_id": new_membership.id,
+        "plan_name": plan.name,
+        "end_date": end.isoformat(),
+        "member_status": member.status.value
+    }
 
 
 @router.delete("/{id}")
 def delete_member(
     id: str,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_member_mutation_access),
     db: Session = Depends(get_db)
 ):
     repo = MemberRepository(db, tenant.workspace_id)

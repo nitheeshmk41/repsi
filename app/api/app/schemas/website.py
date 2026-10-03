@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class WebsiteUpdate(BaseModel):
+    slug: Optional[str] = None
+    subdomain: Optional[str] = None
     title: Optional[str] = None
     tagline: Optional[str] = None
     headline: Optional[str] = None
@@ -25,11 +27,20 @@ class WebsiteUpdate(BaseModel):
     sections: Optional[Any] = None
     seo_title: Optional[str] = None
     seo_description: Optional[str] = None
+    # Gym Assistant
+    assistant_enabled: Optional[bool] = None
+    assistant_name: Optional[str] = None
+    assistant_welcome: Optional[str] = None
+    assistant_whatsapp: Optional[str] = None
+    assistant_character: Optional[str] = None
+    assistant_actions: Optional[Any] = None
 
     @model_validator(mode="before")
     @classmethod
     def normalize_website_update(cls, data: Any) -> Any:
         if isinstance(data, dict):
+            if "slug" in data and not data.get("subdomain"):
+                data["subdomain"] = data["slug"]
             if "headline" in data and not data.get("tagline"):
                 data["tagline"] = data["headline"]
             if "template" in data and not data.get("template_id"):
@@ -37,6 +48,8 @@ class WebsiteUpdate(BaseModel):
             if "sections" in data and not data.get("sections_config"):
                 sec = data["sections"]
                 data["sections_config"] = json.dumps(sec) if not isinstance(sec, str) else sec
+            if "assistant_actions" in data and not isinstance(data.get("assistant_actions"), str):
+                data["assistant_actions"] = json.dumps(data["assistant_actions"])
         return data
 
 
@@ -51,6 +64,10 @@ class PublicLeadSubmit(BaseModel):
     message: Optional[str] = None
     interested_plan: Optional[str] = None
     source_page: Optional[str] = "Home"
+    booking_type: Optional[str] = None
+    preferred_date: Optional[str] = None
+    preferred_time: Optional[str] = None
+    source: Optional[str] = "Website"
 
 
 class WebsiteResponse(BaseModel):
@@ -88,6 +105,14 @@ class WebsiteResponse(BaseModel):
 
     views_count: int
     leads_count: int
+
+    # Gym Assistant
+    assistant_enabled: bool = True
+    assistant_name: Optional[str] = "Gym Assistant"
+    assistant_welcome: Optional[str] = "Hi! I'm your gym assistant 👋 How can I help you today?"
+    assistant_whatsapp: Optional[str] = None
+    assistant_character: Optional[str] = "welcome"
+    assistant_actions: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

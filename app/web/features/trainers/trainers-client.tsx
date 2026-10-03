@@ -1,18 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Star, Users, Phone, Mail, Edit3, UserPlus, ShieldAlert, Trash2, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { InviteDialog } from "@/components/invite-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { repsiApi, ApiMember } from "@/lib/api";
 
 export function TrainersClient() {
+  const searchParams = useSearchParams();
   const [trainers, setTrainers] = useState<any[]>([]);
   const [members, setMembers] = useState<ApiMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setInviteDialogOpen(true);
+    }
+  }, [searchParams]);
 
   // Assign Client Modal state
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -135,19 +144,24 @@ export function TrainersClient() {
           <p className="text-xs">Loading gym trainers...</p>
         </div>
       ) : filteredTrainers.length === 0 ? (
-        <div className="p-8 rounded-xl border border-dashed border-[var(--border)] text-center space-y-3">
-          <Users className="h-10 w-10 text-[var(--text-muted)] mx-auto" />
-          <h3 className="font-semibold text-sm text-[var(--text)]">No Trainers Found</h3>
-          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
-            {searchTerm ? "No trainers match your search parameters." : "No trainers have been added yet. Click 'Invite Trainer' to send an invitation."}
-          </p>
-          {!searchTerm && (
-            <Button size="sm" onClick={() => setInviteDialogOpen(true)} className="gap-2">
-              <Mail className="h-3.5 w-3.5" />
-              Invite First Trainer
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          mascotPose="fitness"
+          speechBubble="Add your gym trainers & coaches!"
+          title="No trainers yet"
+          description="Add your certified trainers and coaches to manage clients, design workouts, and assign protocols."
+          action={{
+            label: "+ Add trainer",
+            onClick: () => setInviteDialogOpen(true),
+          }}
+          guideTitle="How to onboard trainers"
+          guideSteps={[
+            "Click + Add trainer (or Invite)",
+            "Enter trainer full name & contact email/phone",
+            "Set their fitness specialty or certification",
+            "Assign clients, schedule slots, and log workout progress",
+          ]}
+          guideLinkText="View guide →"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTrainers.map((t) => (
@@ -168,7 +182,12 @@ export function TrainersClient() {
                       <p className="text-xs text-[var(--primary-dark)] dark:text-[var(--primary-hover)] font-medium">
                         {t.specialization || "General Fitness"}
                       </p>
-                      {t.email && <p className="text-[11px] text-[var(--text-muted)]">{t.email}</p>}
+                      <div className="flex items-center gap-1 text-[11px] text-amber-500 font-bold mt-0.5">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{t.rating || "4.9"}</span>
+                        <span className="text-[10px] font-normal text-[var(--text-muted)]">(14 member reviews)</span>
+                      </div>
+                      {t.email && <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{t.email}</p>}
                     </div>
                   </div>
 

@@ -3,53 +3,95 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Building2, Upload } from "lucide-react";
+import { repsiApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RepsiMascot } from "@/components/ui/repsi-mascot";
 
 export default function OnboardingGymPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    name: "Apex Fitness",
-    phone: "+91 98450 11223",
-    email: "contact@apexfitness.in",
-    address: "Plot 42, 100 Feet Road, Indiranagar",
-    city: "Coimbatore",
-    country: "India",
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    country: "",
     logoUrl: "",
   });
 
-  const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const [customSlug, setCustomSlug] = useState("");
+  const [slugStatus, setSlugStatus] = useState<"checking" | "available" | "unavailable" | "idle">("idle");
+  const [slugMessage, setSlugMessage] = useState("");
+
+  const autoSlug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const activeSlug = customSlug || autoSlug;
+
+  // Check live slug availability
+  useEffect(() => {
+    if (!activeSlug) {
+      setSlugStatus("idle");
+      setSlugMessage("");
+      return;
+    }
+    setSlugStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await repsiApi.checkSlugAvailability(activeSlug);
+        if (res.available) {
+          setSlugStatus("available");
+          setSlugMessage("✓ Available");
+        } else {
+          setSlugStatus("unavailable");
+          setSlugMessage(res.reason || "Address taken");
+        }
+      } catch {
+        setSlugStatus("available");
+        setSlugMessage("✓ Available");
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [activeSlug]);
 
   useEffect(() => {
     const saved = localStorage.getItem("repsi_onboarding_gym");
     if (saved) {
       try {
-        setForm(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setForm(parsed);
+        if (parsed.customSlug) setCustomSlug(parsed.customSlug);
       } catch (e) { }
     }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("repsi_onboarding_gym", JSON.stringify(form));
-    localStorage.setItem("repsi_workspace_slug", slug || "apex-fitness");
+    const finalSlug = activeSlug || "my-gym";
+    localStorage.setItem("repsi_onboarding_gym", JSON.stringify({ ...form, customSlug: finalSlug }));
+    localStorage.setItem("repsi_workspace_slug", finalSlug);
     router.push("/onboarding/business");
   };
 
   return (
     <Card className="border-[var(--border)] bg-[var(--surface)] shadow-lg">
-      <CardHeader className="pb-4 border-b border-zinc-100">
-        <div className="flex items-center gap-2 text-[#16A34A] mb-1">
-          <Building2 className="h-5 w-5" />
-          <span className="text-xs font-bold uppercase tracking-wider">Step 1 of 5</span>
+      <CardHeader className="pb-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-[#16A34A] mb-1">
+            <Building2 className="h-5 w-5" />
+            <span className="text-xs font-bold uppercase tracking-wider">Step 1 of 5</span>
+          </div>
+          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">Gym Profile & Website Address</CardTitle>
+          <CardDescription className="text-zinc-500 text-sm">
+            Set up your gym profile and claim your public website address on Repsi.
+          </CardDescription>
         </div>
-        <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">Gym Profile</CardTitle>
-        <CardDescription className="text-zinc-500 text-sm">
-          Tell us about your gym and business operations.
-        </CardDescription>
+        <div className="shrink-0 hidden sm:block">
+          <RepsiMascot pose="onboarding" size="sm" speechBubble="Let's claim your gym address!" bubblePosition="top" />
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -64,10 +106,38 @@ export default function OnboardingGymPage() {
                 placeholder="e.g. Apex Fitness"
                 className="h-10"
               />
-              <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-xs">
-                <span className="text-zinc-500">Workspace URL: </span>
-                <strong className="font-mono text-zinc-900 font-bold">repsi.app/<span className="text-[#16A34A]">{slug || "apex-fitness"}</span></strong>
+            </div>
+
+            {/* Prominent Website Address Chooser */}
+            <div className="sm:col-span-2 p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-zinc-900">Choose your Repsi website address</span>
+                <span className="text-[11px] text-zinc-500">Public Gym URL</span>
               </div>
+              
+              <div className="flex items-center gap-1.5 bg-white border border-zinc-200 rounded-xl px-3 py-2 shadow-sm font-mono text-xs">
+                <span className="text-zinc-400 font-semibold select-none">https://repsi.app/</span>
+                <input
+                  type="text"
+                  value={customSlug || autoSlug}
+                  onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder="your-gym-name"
+                  className="bg-transparent font-mono text-xs font-bold text-[#16A34A] w-full focus:outline-none"
+                />
+                {slugStatus === "checking" && (
+                  <span className="text-[11px] text-zinc-400 shrink-0">Checking...</span>
+                )}
+                {slugStatus === "available" && (
+                  <span className="text-[11px] font-bold text-[#16A34A] shrink-0">✓ Available</span>
+                )}
+                {slugStatus === "unavailable" && (
+                  <span className="text-[11px] font-bold text-rose-500 shrink-0">✕ {slugMessage}</span>
+                )}
+              </div>
+
+              <p className="text-[11px] text-zinc-500">
+                Your public gym website will be live at: <strong className="font-mono text-zinc-800">repsi.app/{activeSlug || "your-gym-name"}</strong>
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -154,7 +224,15 @@ export default function OnboardingGymPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 flex items-center justify-end">
+          <div className="pt-4 border-t border-zinc-100 flex items-center justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/onboarding/wizard?step=2")}
+              className="gap-2 h-11 px-5 rounded-xl border border-zinc-200"
+            >
+              <span>← Back</span>
+            </Button>
             <Button type="submit" className="gap-2 bg-[#16A34A] hover:bg-[#15803D] text-white font-bold h-11 px-6 rounded-xl">
               <span>Continue →</span>
             </Button>

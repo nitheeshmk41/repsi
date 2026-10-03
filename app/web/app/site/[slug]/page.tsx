@@ -18,6 +18,7 @@ import {
   Flame,
   Send,
 } from "lucide-react";
+import { GymAssistantWidget } from "@/components/public-site/gym-assistant-widget";
 
 export default function PublicGymWebsitePage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
@@ -456,6 +457,16 @@ export default function PublicGymWebsitePage(props: { params: Promise<{ slug: st
           </div>
         </div>
       </footer>
+
+      {/* Floating Gym Assistant Mascot Widget */}
+      <GymAssistantWidget
+        website={website}
+        gymName={gym_name || website.title}
+        plans={plans || []}
+        trainers={trainers || []}
+        classes={classes || []}
+        slug={slug}
+      />
     </div>
   );
 }

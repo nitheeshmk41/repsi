@@ -36,30 +36,25 @@ def get_current_tenant(
         jwt_workspace_id = payload.get("workspace_id")
         role = payload.get("role")
 
-        workspace_id = jwt_workspace_id
-        if role == "SUPER_ADMIN" and x_workspace_id:
-            workspace_id = x_workspace_id
+        workspace_id = x_workspace_id or jwt_workspace_id
+
+        if role == "SUPER_ADMIN":
+            return TenantContext(workspace_id=workspace_id or "platform", user_id=user_id, role="SUPER_ADMIN")
 
         if workspace_id:
-            return TenantContext(workspace_id=workspace_id, user_id=user_id, role=role)
-
-    # In dev mode, if an authorization header is present but token is invalid/expired, fall back to local active workspace
-    if (settings.DEBUG or settings.ENVIRONMENT == "development") and authorization:
-        from app.models.user import Workspace, WorkspaceMember
-        ws = None
-        if x_workspace_id:
-            ws = db.query(Workspace).filter((Workspace.id == x_workspace_id) | (Workspace.slug == x_workspace_id)).first()
-        if not ws:
-            ws = db.query(Workspace).first()
-
-        if ws:
+            # Strictly verify tenant isolation and active membership in the workspace
+            from app.models.user import WorkspaceMember
             member = db.query(WorkspaceMember).filter(
-                WorkspaceMember.workspace_id == ws.id,
-                WorkspaceMember.is_active == True
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.user_id == user_id,
             ).first()
-            user_id = member.user_id if member else "usr_owner_demo"
-            role = member.role.value if member else "OWNER"
-            return TenantContext(workspace_id=ws.id, user_id=user_id, role=role)
+            if not member or not member.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied. You do not have an active account in this gym workspace.",
+                )
+            role = member.role.value if hasattr(member.role, "value") else str(member.role)
+            return TenantContext(workspace_id=workspace_id, user_id=user_id, role=role)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

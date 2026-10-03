@@ -49,3 +49,11 @@ class Website(Base, TimestampMixin, TenantMixin):
     # Analytics counters
     views_count = Column(Integer, default=0, nullable=False)
     leads_count = Column(Integer, default=0, nullable=False)
+
+    # Floating Gym Assistant
+    assistant_enabled = Column(Boolean, default=True, nullable=False)
+    assistant_name = Column(String(100), default="Gym Assistant", nullable=True)
+    assistant_welcome = Column(String(255), default="Hi! I'm your gym assistant 👋 How can I help you today?", nullable=True)
+    assistant_whatsapp = Column(String(50), nullable=True)
+    assistant_character = Column(String(50), default="welcome", nullable=True)
+    assistant_actions = Column(Text, nullable=True)  # JSON array string e.g. ["memberships", "trial", "visit", "trainers", "timings", "faq", "whatsapp"]

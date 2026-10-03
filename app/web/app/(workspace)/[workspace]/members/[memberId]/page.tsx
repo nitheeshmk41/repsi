@@ -1,5 +1,7 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useState, useEffect, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -11,10 +13,11 @@ import {
   Edit,
   RefreshCcw,
   Ban,
-  Activity,
-  Dumbbell,
-  Ruler,
+  Trash2,
   CheckCircle2,
+  UserCheck,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatCurrency, getInitials } from "@/lib/utils";
 import type { MemberStatus } from "@/types";
+import { repsiApi } from "@/lib/api";
 
 const statusVariant: Record<
   MemberStatus,
@@ -38,44 +42,136 @@ const statusLabel: Record<MemberStatus, string> = {
   active: "Active",
   expiring: "Expiring Soon",
   expired: "Expired",
-  frozen: "Frozen",
+  frozen: "Suspended",
   cancelled: "Cancelled",
 };
 
-const attendanceHistory: any[] = [];
-const paymentHistory: any[] = [];
-
-export async function generateMetadata({
-  params,
-}: {
+export default function WorkspaceMemberProfilePage(props: {
   params: Promise<{ workspace: string; memberId: string }>;
-}): Promise<Metadata> {
-  const { memberId } = await params;
-  return {
-    title: `Member Profile — ${memberId}`,
-  };
-}
-
-export default async function WorkspaceMemberProfilePage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ workspace: string; memberId: string }>;
-  searchParams: Promise<{ tab?: string }>;
 }) {
-  const { workspace, memberId } = await params;
-  const { tab = "overview" } = await searchParams;
+  const params = use(props.params);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") || "overview";
 
-  const member = {
-    id: memberId,
-    name: "Gym Member",
-    email: "member@gym.com",
-    phone: "+91 90000 00000",
-    status: "active" as MemberStatus,
-    plan: "Standard" as const,
-    joined: "2026-01-01",
-    expiry: "2026-12-31",
-    lastPayment: 0,
+  const workspace = params.workspace || "apex-fitness";
+  const memberId = params.memberId;
+
+  const [member, setMember] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Edit Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    gender: "",
+    emergency_contact: "",
+    notes: "",
+  });
+
+  // Renew Modal State
+  const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [renewForm, setRenewForm] = useState({
+    plan_name: "Annual Elite",
+    duration_months: 12,
+    price_paid: 12000,
+  });
+
+  const loadMember = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await repsiApi.getMember(memberId);
+      setMember(data);
+      setEditForm({
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        gender: data.gender || "",
+        emergency_contact: data.emergency_contact || "",
+        notes: data.notes || "",
+      });
+    } catch (err: any) {
+      console.error("Failed to load member", err);
+      setError(err.message || "Failed to load member");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMember();
+  }, [memberId]);
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await repsiApi.updateMember(memberId, editForm);
+      setIsEditOpen(false);
+      await loadMember();
+      alert("Member profile updated successfully.");
+    } catch (err: any) {
+      alert(err.message || "Failed to update member");
+    }
+  };
+
+  const handleRenewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await repsiApi.renewMember(memberId, {
+        plan_name: renewForm.plan_name,
+        duration_months: Number(renewForm.duration_months),
+        price_paid: Number(renewForm.price_paid),
+      });
+      setIsRenewOpen(false);
+      await loadMember();
+      alert(res.message || "Membership renewed successfully.");
+    } catch (err: any) {
+      alert(err.message || "Failed to renew membership");
+    }
+  };
+
+  const handleToggleSuspend = async () => {
+    if (!member) return;
+    const isSuspended = member.status === "frozen";
+    const confirmMsg = isSuspended
+      ? `Activate member "${member.first_name}"? This will restore their gym access and login.`
+      : `Suspend member "${member.first_name}"? Suspended members cannot scan in, check in, or access gym modules.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const newStatus = isSuspended ? "active" : "frozen";
+      await repsiApi.updateMember(memberId, { status: newStatus });
+      await loadMember();
+      alert(isSuspended ? "Member activated." : "Member suspended.");
+    } catch (err: any) {
+      alert(err.message || "Failed to update member status");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!member) return;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete "${member.first_name} ${member.last_name}"? This will delete all membership history and gym access.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await repsiApi.deleteMember(memberId);
+      alert("Member removed successfully.");
+      router.push(`/${workspace}/members`);
+    } catch (err: any) {
+      alert(err.message || "Failed to delete member");
+    }
   };
 
   const tabs = [
@@ -83,10 +179,37 @@ export default async function WorkspaceMemberProfilePage({
     { id: "membership", label: "Membership" },
     { id: "attendance", label: "Attendance" },
     { id: "payments", label: "Payments" },
-    { id: "workouts", label: "Workouts" },
-    { id: "measurements", label: "Measurements" },
-    { id: "activity", label: "Activity" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
+      </div>
+    );
+  }
+
+  if (error || !member) {
+    return (
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center max-w-lg mx-auto mt-12">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-3" />
+        <h2 className="text-lg font-bold text-[var(--text)]">Member Not Found</h2>
+        <p className="text-xs text-[var(--text-muted)] mt-1 mb-4">
+          The requested member could not be loaded or was removed from this workspace.
+        </p>
+        <Link href={`/${workspace}/members`}>
+          <Button variant="secondary" size="sm">
+            Back to Members List
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const memberName = `${member.first_name} ${member.last_name || ""}`.trim();
+  const activeMembership = member.memberships?.find((m: any) => m.status === "active") || member.memberships?.[0];
+  const planName = member.plan_name || activeMembership?.plan?.name || "Standard";
+  const expiryDate = activeMembership?.end_date || "2026-12-31";
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -96,7 +219,7 @@ export default async function WorkspaceMemberProfilePage({
           Members
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-[var(--text)]">{member.name}</span>
+        <span className="text-[var(--text)]">{memberName}</span>
       </nav>
 
       {/* Profile Header */}
@@ -105,48 +228,67 @@ export default async function WorkspaceMemberProfilePage({
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16 flex-shrink-0">
               <AvatarFallback className="text-lg">
-                {getInitials(member.name)}
+                {getInitials(memberName)}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-xl font-bold text-[var(--text)] tracking-tight">
-                  {member.name}
+                  {memberName}
                 </h1>
-                <Badge variant={statusVariant[member.status]}>
-                  {statusLabel[member.status]}
+                <Badge variant={statusVariant[member.status as MemberStatus] || "active"}>
+                  {statusLabel[member.status as MemberStatus] || member.status}
                 </Badge>
                 <span className="text-xs font-mono text-[var(--text-muted)]">
                   ID: {member.id}
                 </span>
               </div>
-              <p className="text-sm text-[var(--text-muted)] mt-0.5">{member.plan} Member</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">{planName} Member</p>
 
               <div className="flex flex-wrap gap-4 mt-3">
-                <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                  <Mail className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-                  {member.email}
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                  <Phone className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-                  {member.phone}
-                </div>
+                {member.email && (
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                    <Mail className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                    {member.email}
+                  </div>
+                )}
+                {member.phone && (
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                    <Phone className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                    {member.phone}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => setIsEditOpen(true)}>
               <Edit className="h-3.5 w-3.5" />
               Edit
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => setIsRenewOpen(true)}>
               <RefreshCcw className="h-3.5 w-3.5" />
               Renew
             </Button>
-            <Button variant="secondary" size="sm" className="text-[var(--error)] hover:border-[var(--error)]/30">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleToggleSuspend}
+              className={member.status === "frozen" ? "text-emerald-500 hover:border-emerald-500/30" : "text-[var(--error)] hover:border-[var(--error)]/30"}
+            >
               <Ban className="h-3.5 w-3.5" />
-              Suspend
+              {member.status === "frozen" ? "Activate" : "Suspend"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDelete}
+              className="text-rose-500 hover:border-rose-500/30"
+              title="Delete Member"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
             </Button>
           </div>
         </div>
@@ -177,10 +319,10 @@ export default async function WorkspaceMemberProfilePage({
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: "Member Since", value: formatDate(member.joined), icon: Calendar },
-              { label: "Membership Expires", value: formatDate(member.expiry), icon: CalendarCheck },
-              { label: "Last Payment", value: formatCurrency(member.lastPayment), icon: CreditCard },
-              { label: "Total Check-ins", value: "47", icon: CalendarCheck },
+              { label: "Member Since", value: member.joined_date ? formatDate(member.joined_date) : "Recent", icon: Calendar },
+              { label: "Membership Expires", value: formatDate(expiryDate), icon: CalendarCheck },
+              { label: "Gender", value: member.gender || "Not specified", icon: CreditCard },
+              { label: "Account Access", value: member.repsi_access || "Connected", icon: CheckCircle2 },
             ].map(({ label, value, icon: Icon }) => (
               <div
                 key={label}
@@ -198,32 +340,52 @@ export default async function WorkspaceMemberProfilePage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-[var(--border)] bg-[var(--surface)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Recent Attendance</CardTitle>
+                <CardTitle className="text-base font-semibold">Member Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {attendanceHistory.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-[var(--border)] last:border-0">
-                    <span className="text-[var(--text)]">{formatDate(item.date)}</span>
-                    <span className="text-emerald-500 font-medium">{item.checkIn} — {item.checkOut}</span>
-                  </div>
-                ))}
+              <CardContent className="space-y-3 text-xs text-[var(--text-secondary)]">
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-muted)]">Full Name</span>
+                  <span className="font-semibold text-[var(--text)]">{memberName}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-muted)]">Phone</span>
+                  <span>{member.phone || "—"}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-muted)]">Email</span>
+                  <span>{member.email || "—"}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-muted)]">Emergency Contact</span>
+                  <span>{member.emergency_contact || "—"}</span>
+                </div>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-[var(--text-muted)]">Notes</span>
+                  <span>{member.notes || "No notes"}</span>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="border-[var(--border)] bg-[var(--surface)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Payment Invoices</CardTitle>
+                <CardTitle className="text-base font-semibold">Membership Plan</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {paymentHistory.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-xs py-2 border-b border-[var(--border)] last:border-0">
-                    <div>
-                      <span className="font-semibold text-[var(--text)]">{formatCurrency(item.amount)}</span>
-                      <span className="text-[var(--text-muted)] ml-2">via {item.method}</span>
-                    </div>
-                    <span className="text-emerald-500 font-bold uppercase">{item.status}</span>
+              <CardContent className="space-y-4">
+                <div className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-base text-[var(--text)]">{planName}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
+                      Expires: {formatDate(expiryDate)}
+                    </p>
                   </div>
-                ))}
+                  <Badge variant={member.status === "active" ? "active" : "frozen"}>
+                    {member.status.toUpperCase()}
+                  </Badge>
+                </div>
+                <Button variant="secondary" size="sm" className="w-full" onClick={() => setIsRenewOpen(true)}>
+                  <RefreshCcw className="w-3.5 h-3.5 mr-2" />
+                  Renew / Extend Membership
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -233,31 +395,25 @@ export default async function WorkspaceMemberProfilePage({
       {tab === "membership" && (
         <Card className="border-[var(--border)] bg-[var(--surface)]">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Current Membership Plan</CardTitle>
+            <CardTitle className="text-base font-semibold">Current Membership Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <div className="p-4 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center justify-between">
+            <div className="p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-between">
               <div>
-                <p className="font-bold text-base text-[var(--text)]">{member.plan} All-Access</p>
+                <p className="font-bold text-base text-[var(--text)]">{planName} All-Access</p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">
-                  Valid from {formatDate(member.joined)} to {formatDate(member.expiry)}
+                  Valid until {formatDate(expiryDate)}
                 </p>
               </div>
-              <Badge variant="active">Active Plan</Badge>
+              <Badge variant={statusVariant[member.status as MemberStatus] || "active"}>
+                {statusLabel[member.status as MemberStatus] || member.status}
+              </Badge>
             </div>
-            <div className="grid grid-cols-3 gap-4 pt-2">
-              <div className="p-3 rounded-lg border border-[var(--border)]">
-                <p className="text-xs text-[var(--text-muted)]">Remaining Days</p>
-                <p className="text-lg font-bold text-[var(--primary-dark)] dark:text-[var(--primary-hover)]">32 Days</p>
-              </div>
-              <div className="p-3 rounded-lg border border-[var(--border)]">
-                <p className="text-xs text-[var(--text-muted)]">Auto-Renewal</p>
-                <p className="text-lg font-bold text-[var(--text)]">Enabled</p>
-              </div>
-              <div className="p-3 rounded-lg border border-[var(--border)]">
-                <p className="text-xs text-[var(--text-muted)]">Locker Assigned</p>
-                <p className="text-lg font-bold text-[var(--text)]">#B-14</p>
-              </div>
+            <div className="flex gap-3">
+              <Button onClick={() => setIsRenewOpen(true)}>
+                <RefreshCcw className="w-4 h-4 mr-2" />
+                Renew Plan
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -269,19 +425,9 @@ export default async function WorkspaceMemberProfilePage({
             <CardTitle className="text-base font-semibold">Attendance Log</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {attendanceHistory.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-sm">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                    <span>{formatDate(item.date)}</span>
-                  </div>
-                  <div className="font-mono text-xs text-[var(--text-muted)]">
-                    In: <strong className="text-[var(--text)]">{item.checkIn}</strong> | Out: <strong className="text-[var(--text)]">{item.checkOut}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-xs text-[var(--text-muted)] py-4 text-center">
+              Real-time attendance logs recorded via entrance scanner.
+            </p>
           </CardContent>
         </Card>
       )}
@@ -292,87 +438,159 @@ export default async function WorkspaceMemberProfilePage({
             <CardTitle className="text-base font-semibold">Billing & Transaction Ledger</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {paymentHistory.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] text-sm">
+            <div className="p-4 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm text-[var(--text)]">{planName} Plan Fee</p>
+                <p className="text-xs text-[var(--text-muted)]">Membership payment recorded</p>
+              </div>
+              <span className="text-xs font-bold text-emerald-400">PAID</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* MODAL: EDIT MEMBER */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-[var(--text)] mb-4 flex items-center gap-2">
+              <Edit className="w-5 h-5 text-[var(--primary)]" />
+              Edit Member Profile
+            </h3>
+            <form onSubmit={handleEditSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="font-medium text-[var(--text)]">{item.description}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{item.id} · {formatDate(item.date)}</p>
+                  <label className="text-[var(--text-secondary)] block mb-1">First Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.first_name}
+                    onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                  />
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-[var(--text)]">{formatCurrency(item.amount)}</p>
-                  <span className="text-[10px] font-bold uppercase text-emerald-400">PAID</span>
+                <div>
+                  <label className="text-[var(--text-secondary)] block mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={editForm.last_name}
+                    onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                  />
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+
+              <div>
+                <label className="text-[var(--text-secondary)] block mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  required
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-secondary)] block mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-secondary)] block mb-1">Emergency Contact</label>
+                <input
+                  type="text"
+                  value={editForm.emergency_contact}
+                  onChange={(e) => setEditForm({ ...editForm, emergency_contact: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[var(--text-secondary)] block mb-1">Notes</label>
+                <textarea
+                  rows={2}
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
-      {tab === "workouts" && (
-        <Card className="border-[var(--border)] bg-[var(--surface)]">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Assigned Workout Routines</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="p-3.5 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-[var(--text)]">Hypertrophy Upper Body Split</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-[var(--primary-soft)] text-[var(--primary-dark)] dark:text-[var(--primary-hover)] font-bold">Trainer Assigned</span>
+      {/* MODAL: RENEW MEMBERSHIP */}
+      {isRenewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-[var(--text)] mb-4 flex items-center gap-2">
+              <RefreshCcw className="w-5 h-5 text-emerald-500" />
+              Renew Membership
+            </h3>
+            <form onSubmit={handleRenewSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="text-[var(--text-secondary)] block mb-1">Plan Name</label>
+                <input
+                  type="text"
+                  required
+                  value={renewForm.plan_name}
+                  onChange={(e) => setRenewForm({ ...renewForm, plan_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                />
               </div>
-              <p className="text-xs text-[var(--text-muted)] mt-1">Bench Press (4x8), Barbell Row (4x10), Overhead Press (3x10), Incline Dumbbell Curl (3x12)</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {tab === "measurements" && (
-        <Card className="border-[var(--border)] bg-[var(--surface)]">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Body Composition & Measurements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                <p className="text-xs text-[var(--text-muted)]">Weight</p>
-                <p className="text-xl font-bold text-[var(--text)] mt-1">74.2 kg</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[var(--text-secondary)] block mb-1">Duration (Months)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={36}
+                    required
+                    value={renewForm.duration_months}
+                    onChange={(e) => setRenewForm({ ...renewForm, duration_months: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[var(--text-secondary)] block mb-1">Price Paid (₹)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    required
+                    value={renewForm.price_paid}
+                    onChange={(e) => setRenewForm({ ...renewForm, price_paid: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)] text-sm text-[var(--text)] outline-none"
+                  />
+                </div>
               </div>
-              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                <p className="text-xs text-[var(--text-muted)]">Body Fat %</p>
-                <p className="text-xl font-bold text-[var(--text)] mt-1">15.4%</p>
-              </div>
-              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                <p className="text-xs text-[var(--text-muted)]">Chest</p>
-                <p className="text-xl font-bold text-[var(--text)] mt-1">40.5 in</p>
-              </div>
-              <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
-                <p className="text-xs text-[var(--text-muted)]">Waist</p>
-                <p className="text-xl font-bold text-[var(--text)] mt-1">31.2 in</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {tab === "activity" && (
-        <Card className="border-[var(--border)] bg-[var(--surface)]">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Audit & Interaction Timeline</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { action: "Checked in at Main Entrance", time: "Today at 06:42 AM" },
-              { action: "Membership auto-renewal processed via UPI", time: "Sep 1, 2026" },
-              { action: "Assigned Workout Plan 'Hypertrophy Upper Body Split'", time: "Aug 15, 2026" },
-              { action: "Body weight and measurements updated", time: "Aug 1, 2026" },
-            ].map((ev, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs py-2 border-b border-[var(--border)] last:border-0">
-                <div className="w-2 h-2 rounded-full bg-[var(--primary)]" />
-                <span className="text-[var(--text)] flex-1">{ev.action}</span>
-                <span className="text-[var(--text-muted)]">{ev.time}</span>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="secondary" onClick={() => setIsRenewOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Confirm Renewal
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -250,6 +250,12 @@ class TrainerService:
         if not trainer:
             raise HTTPException(status_code=404, detail="Trainer not found.")
 
+        if trainer.status != TrainerStatus.ACTIVE or not trainer.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot assign clients to {trainer.status.value.lower()} trainer. Only active trainers can take clients."
+            )
+
         member = (
             self.db.query(Member)
             .filter(
@@ -260,6 +266,12 @@ class TrainerService:
         )
         if not member:
             raise HTTPException(status_code=404, detail="Client / Member not found.")
+
+        if member.status in [MemberStatus.FROZEN, MemberStatus.CANCELLED, MemberStatus.EXPIRED]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot assign trainer to a member who is {member.status.value.lower()}."
+            )
 
         # Check existing relationship
         existing = (

@@ -116,7 +116,7 @@ export default function TrainerDashboardPage(props: { params: Promise<{ workspac
             <span className="text-xs text-[var(--text-muted)]">• {workspace}</span>
           </div>
           <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight mt-1">
-            Good morning, {profile?.name || user?.name || "Alex"} 👋
+            Good morning, {profile?.name || user?.name || "Alex"}
           </h1>
           <p className="text-xs text-[var(--text-muted)]">
             Here is your training schedule, client activity, and operations for today.

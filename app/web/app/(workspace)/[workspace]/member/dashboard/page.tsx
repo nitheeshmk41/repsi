@@ -42,7 +42,7 @@ export default function MemberDashboardPage({ params }: { params: Promise<{ work
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)] tracking-tight">
-            Good morning, {userName} 👋
+            Good morning, {userName}
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Ready for today's workout? Keep pushing towards your goals.

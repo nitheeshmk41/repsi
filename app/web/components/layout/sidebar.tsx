@@ -63,6 +63,7 @@ const ownerNavGroups: NavGroupDef[] = [
     items: [
       { label: "CRM & Leads", path: "/crm", icon: Target },
       { label: "Website Builder", path: "/website", icon: Globe },
+      { label: "Chat & Messages", path: "/chat", icon: MessageSquare },
     ],
   },
   {

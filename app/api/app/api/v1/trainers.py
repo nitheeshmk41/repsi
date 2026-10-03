@@ -315,6 +315,12 @@ def update_trainer(
 
     if data.status:
         trainer.is_active = (data.status == TrainerStatus.ACTIVE)
+        if data.status in [TrainerStatus.SUSPENDED, TrainerStatus.INACTIVE]:
+            db.query(TrainerClient).filter(
+                TrainerClient.workspace_id == tenant.workspace_id,
+                TrainerClient.trainer_id == trainer.id,
+                TrainerClient.status == TrainerClientStatus.ACTIVE
+            ).update({"status": TrainerClientStatus.PAUSED}, synchronize_session=False)
 
     db.commit()
     db.refresh(trainer)

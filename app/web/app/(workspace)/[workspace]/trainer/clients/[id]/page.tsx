@@ -248,7 +248,7 @@ export default function TrainerClientDetailPage(props: {
               </div>
               <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
                 <p className="text-xs text-[var(--text-muted)] font-medium">Workout Streak</p>
-                <h4 className="text-xl font-bold text-[var(--text)] mt-1">12 Days 🔥</h4>
+                <h4 className="text-xl font-bold text-[var(--text)] mt-1">12 Days</h4>
               </div>
             </div>
 

@@ -113,12 +113,17 @@ class CrmRepository(BaseTenantRepository[Lead]):
         conv_rate = (converted / total * 100) if total > 0 else 0.0
         pipeline_val = sum(l.expected_value for l in leads if l.status not in [LeadStatus.CONVERTED, LeadStatus.LOST])
 
-        # Follow-ups
+        # Follow-ups (excluding converted leads)
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        fu_query = self.db.query(LeadFollowUp).filter(LeadFollowUp.workspace_id == self.workspace_id)
+        fu_query = (
+            self.db.query(LeadFollowUp)
+            .outerjoin(Lead, LeadFollowUp.lead_id == Lead.id)
+            .filter(LeadFollowUp.workspace_id == self.workspace_id)
+            .filter((Lead.status != LeadStatus.CONVERTED) | (Lead.id == None))
+        )
         due_today = fu_query.filter(
             LeadFollowUp.status == FollowUpStatus.PENDING,
             LeadFollowUp.scheduled_at >= today_start,
@@ -149,12 +154,24 @@ class CrmRepository(BaseTenantRepository[Lead]):
         for l in leads:
             s = l.source or "Other"
             sources_map[s] = sources_map.get(s, 0) + 1
-        leads_by_source = [{"source": k, "count": v} for k, v in sources_map.items()]
+        leads_by_source = [
+            {"source": k, "count": v, "share": f"{round((v / total * 100), 1)}%" if total else "0%"}
+            for k, v in sources_map.items()
+        ]
 
         # Expired / At-Risk counts
         expired_count = self.db.query(Member).filter(
             Member.workspace_id == self.workspace_id,
             Member.status == MemberStatus.EXPIRED,
+        ).count()
+
+        # Renewals due in the next 14 days
+        today_date = date.today()
+        renewals_due = self.db.query(Membership).filter(
+            Membership.workspace_id == self.workspace_id,
+            Membership.status == "ACTIVE",
+            Membership.end_date >= today_date,
+            Membership.end_date <= today_date + timedelta(days=14),
         ).count()
 
         return {
@@ -168,7 +185,7 @@ class CrmRepository(BaseTenantRepository[Lead]):
             "follow_ups_due_today": due_today,
             "overdue_follow_ups": overdue,
             "upcoming_follow_ups": upcoming,
-            "renewals_due_count": 0,
+            "renewals_due_count": renewals_due,
             "inactive_members_count": expired_count,
             "estimated_pipeline_value": pipeline_val,
             "funnel": funnel,

@@ -23,10 +23,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const storedSlug = typeof window !== "undefined" ? localStorage.getItem("repsi_workspace_slug") : null;
     const authorizedSlug = user?.workspaceSlug || storedSlug;
 
-    const parts = pathname.split("/");
-    // Check if path format is /workspace/[slug]/...
-    if (parts[1] === "workspace" && parts[2]) {
-      const requestedSlug = parts[2];
+    const parts = pathname.split("/").filter(Boolean); // e.g. ["apex-fitness", "crm"]
+    if (parts.length > 0) {
+      const requestedSlug = parts[0];
+      const subRoute = parts[1] || "dashboard";
+
+      // Tenant isolation: block accessing another gym's workspace URL
       if (
         user?.role !== "SUPER_ADMIN" &&
         authorizedSlug &&
@@ -34,7 +36,41 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       ) {
         console.warn(`Unauthorized workspace URL attempt: requested '${requestedSlug}', authorized '${authorizedSlug}'`);
         setAuthorized(false);
-        router.replace(`/workspace/${authorizedSlug}/dashboard`);
+        const homePath = user?.role === "TRAINER" 
+          ? `/${authorizedSlug}/trainer/dashboard`
+          : (user?.role === "USER" || user?.role === "MEMBER")
+          ? `/${authorizedSlug}/member/dashboard`
+          : `/${authorizedSlug}/dashboard`;
+        router.replace(homePath);
+        return;
+      }
+
+      // Role-Based Access Control (RBAC) route guarding
+      const role = user?.role?.toUpperCase();
+
+      if (role === "USER" || role === "MEMBER") {
+        // Members are restricted to member portal, chat, and profile
+        const allowedMemberPrefixes = ["member", "chat", "profile"];
+        const isAllowed = allowedMemberPrefixes.some((prefix) => subRoute === prefix || subRoute.startsWith(prefix));
+        if (!isAllowed) {
+          console.warn(`Member role blocked from owner/trainer route: /${requestedSlug}/${subRoute}`);
+          setAuthorized(false);
+          router.replace(`/${authorizedSlug || requestedSlug}/member/dashboard`);
+          return;
+        }
+      } else if (role === "TRAINER") {
+        // Trainers cannot access owner-only management routes
+        const ownerOnlyRoutes = ["crm", "settings", "finance", "memberships", "website", "reports", "superadmin"];
+        const isOwnerOnly = ownerOnlyRoutes.includes(subRoute);
+        if (isOwnerOnly) {
+          console.warn(`Trainer role blocked from owner-only route: /${requestedSlug}/${subRoute}`);
+          setAuthorized(false);
+          router.replace(`/${authorizedSlug || requestedSlug}/trainer/dashboard`);
+          return;
+        }
+      } else if (role !== "SUPER_ADMIN" && subRoute === "superadmin") {
+        setAuthorized(false);
+        router.replace(`/${authorizedSlug || requestedSlug}/dashboard`);
         return;
       }
     }

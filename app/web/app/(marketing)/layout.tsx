@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { constructMetadata, getOrganizationSchema, getSoftwareAppSchema } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { RepsiChatbot } from "@/components/marketing/repsi-chatbot";
 
 export const metadata: Metadata = constructMetadata({
   title: "Gym Management Software for Gyms, Studios & Fitness Businesses | Repsi",
@@ -33,6 +34,7 @@ export default function MarketingLayout({
       <JsonLd data={orgSchema} />
       <JsonLd data={appSchema} />
       {children}
+      <RepsiChatbot />
     </div>
   );
 }

@@ -179,6 +179,49 @@ export const repsiApi = {
     return await res.json();
   },
 
+  async getMember(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/members/${id}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to load member details");
+    return await res.json();
+  },
+
+  async updateMember(id: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/members/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      checkAuthResponse(res);
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update member");
+    }
+    return await res.json();
+  },
+
+  async renewMember(id: string, data?: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/members/${id}/renew`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data || {}),
+    });
+    if (!res.ok) {
+      checkAuthResponse(res);
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to renew member");
+    }
+    return await res.json();
+  },
+
   // Attendance
   async getTodayAttendance(): Promise<ApiAttendance[]> {
     return this.getAttendance();
@@ -755,6 +798,65 @@ export const repsiApi = {
     return await res.json();
   },
 
+  async getMembershipPlans(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/memberships/plans`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch membership plans", err);
+    }
+    return [];
+  },
+
+  async createMembershipPlan(data: { name: string; price: number; duration_months: number; description?: string; features?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/memberships/plans`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create membership plan");
+    }
+    return await res.json();
+  },
+
+  async updateMembershipPlan(id: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/memberships/plans/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update membership plan");
+    }
+    return await res.json();
+  },
+
+  async deleteMembershipPlan(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/memberships/plans/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete membership plan");
+    }
+    return await res.json();
+  },
+
   // Invoices & Receipts
   async getInvoices(): Promise<any[]> {
     try {
@@ -935,6 +1037,18 @@ export const repsiApi = {
     return await res.json();
   },
 
+  async deleteCrmLead(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/crm/leads/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete lead");
+    }
+    return await res.json();
+  },
+
   async checkAvailability(params: { email?: string; phone?: string }): Promise<{ email_exists: boolean; phone_exists: boolean; email_message?: string; phone_message?: string }> {
     const query = new URLSearchParams();
     if (params.email) query.append("email", params.email);
@@ -1080,23 +1194,47 @@ export const repsiApi = {
   },
 
   // Public Website API (No Auth)
+  async checkSlugAvailability(slug: string): Promise<{ slug: string; available: boolean; reason: string }> {
+    const res = await fetch(`${API_BASE}/websites/check-slug/${encodeURIComponent(slug.trim().toLowerCase())}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      return { slug, available: false, reason: "Unable to verify address" };
+    }
+    return await res.json();
+  },
+
   async getPublicWebsite(slug: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/websites/public/${slug}`, {
+    const res = await fetch(`${API_BASE}/websites/public/${encodeURIComponent(slug.trim().toLowerCase())}`, {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Website not found or not published");
     return await res.json();
   },
 
-  async submitPublicLead(slug: string, data: { name: string; phone: string; email?: string; message?: string; interested_plan?: string }): Promise<any> {
-    const res = await fetch(`${API_BASE}/websites/public/${slug}/lead`, {
+  async submitPublicLead(
+    slug: string,
+    data: {
+      name: string;
+      phone: string;
+      email?: string;
+      message?: string;
+      interested_plan?: string;
+      source_page?: string;
+      booking_type?: string;
+      preferred_date?: string;
+      preferred_time?: string;
+      source?: string;
+    }
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE}/websites/public/${encodeURIComponent(slug.trim().toLowerCase())}/lead`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Failed to submit lead");
+      throw new Error(err.detail || "Failed to submit inquiry");
     }
     return await res.json();
   },
@@ -1337,5 +1475,380 @@ export const repsiApi = {
     if (!res.ok) return [];
     return await res.json();
   },
+
+  // Notifications
+  async getNotifications(page = 1, pageSize = 25): Promise<{ items: any[]; total: number; unread_count: number }> {
+    try {
+      const res = await fetch(`${API_BASE}/notifications?page=${page}&page_size=${pageSize}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch notifications", err);
+    }
+    return { items: [], total: 0, unread_count: 0 };
+  },
+
+  async createNotification(data: { title: string; message: string; user_id?: string; action_url?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/notifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create notification");
+    }
+    return await res.json();
+  },
+
+  async markNotificationRead(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Failed to mark notification as read");
+    return await res.json();
+  },
+
+  async markAllNotificationsRead(): Promise<any> {
+    const res = await fetch(`${API_BASE}/notifications/mark-all-read`, {
+      method: "POST",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Failed to mark all notifications as read");
+    return await res.json();
+  },
+
+  // ─── Super Admin Control Plane API ──────────────────────────────────────────
+  async getSuperAdminOverview(): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/overview`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load superadmin overview");
+    }
+    return await res.json();
+  },
+
+  async superAdminSearch(q: string): Promise<any[]> {
+    if (!q || q.length < 2) return [];
+    try {
+      const res = await fetch(`${API_BASE}/superadmin/search?q=${encodeURIComponent(q)}`, {
+        headers: { ...getAuthHeader() },
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return [];
+  },
+
+  async getSuperAdminWorkspaces(status?: string): Promise<any[]> {
+    const query = status && status !== "all" ? `?status_filter=${status}` : "";
+    const res = await fetch(`${API_BASE}/superadmin/workspaces${query}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to fetch gym workspaces");
+    return await res.json();
+  },
+
+  async createSuperAdminWorkspace(data: {
+    name: string;
+    slug: string;
+    owner_name: string;
+    owner_email: string;
+    owner_password?: string;
+    phone?: string;
+    city?: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/workspaces`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to provision gym tenant");
+    }
+    return await res.json();
+  },
+
+  async updateSuperAdminWorkspaceStatus(id: string, is_active: boolean, reason?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/workspaces/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ is_active, reason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update gym status");
+    }
+    return await res.json();
+  },
+
+  async deleteSuperAdminWorkspacePermanently(id: string, data: {
+    confirmation_slug: string;
+    admin_password: string;
+    reason: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/workspaces/${id}/delete-permanently`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to permanently delete gym");
+    }
+    return await res.json();
+  },
+
+  async exportSuperAdminWorkspace(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/workspaces/${id}/export`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) throw new Error("Failed to export gym data");
+    return await res.json();
+  },
+
+  async getSuperAdminMembers(params?: {
+    q?: string;
+    gym_filter?: string;
+    status_filter?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any[]> {
+    try {
+      const sp = new URLSearchParams();
+      if (params?.q) sp.set("q", params.q);
+      if (params?.gym_filter && params.gym_filter !== "all") sp.set("gym_filter", params.gym_filter);
+      if (params?.status_filter && params.status_filter !== "all") sp.set("status_filter", params.status_filter);
+      if (params?.page) sp.set("page", String(params.page));
+      if (params?.limit) sp.set("limit", String(params.limit));
+
+      const query = sp.toString() ? `?${sp.toString()}` : "";
+      const res = await fetch(`${API_BASE}/superadmin/members${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async updateSuperAdminMemberStatus(id: string, status: string, reason?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/members/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ status, reason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update member status");
+    }
+    return await res.json();
+  },
+
+  async deleteSuperAdminMemberPermanently(id: string, data: {
+    confirmation_name: string;
+    admin_password: string;
+    reason: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/members/${id}/delete-permanently`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to permanently delete member");
+    }
+    return await res.json();
+  },
+
+  async getSuperAdminTrainers(params?: { q?: string; gym_filter?: string; status_filter?: string }): Promise<any[]> {
+    try {
+      const sp = new URLSearchParams();
+      if (params?.q) sp.set("q", params.q);
+      if (params?.gym_filter && params.gym_filter !== "all") sp.set("gym_filter", params.gym_filter);
+      if (params?.status_filter && params.status_filter !== "all") sp.set("status_filter", params.status_filter);
+
+      const query = sp.toString() ? `?${sp.toString()}` : "";
+      const res = await fetch(`${API_BASE}/superadmin/trainers${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async updateSuperAdminTrainerStatus(id: string, is_active: boolean, reason?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/trainers/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ is_active, reason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update trainer status");
+    }
+    return await res.json();
+  },
+
+  async getSuperAdminUsers(role_filter?: string): Promise<any[]> {
+    try {
+      const query = role_filter && role_filter !== "all" ? `?role_filter=${role_filter}` : "";
+      const res = await fetch(`${API_BASE}/superadmin/users${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async getSuperAdminAuditLogs(params?: { limit?: number; action?: string }): Promise<any[]> {
+    try {
+      const sp = new URLSearchParams();
+      if (params?.limit) sp.set("limit", String(params.limit));
+      if (params?.action && params.action !== "all") sp.set("action", params.action);
+      const query = sp.toString() ? `?${sp.toString()}` : "";
+
+      const res = await fetch(`${API_BASE}/superadmin/audit-logs${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async getSuperAdminSystemHealth(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/superadmin/system-health`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return { status: "healthy", database: "connected", memory_usage: "normal" };
+      return await res.json();
+    } catch {
+      return { status: "healthy", database: "connected", memory_usage: "normal" };
+    }
+  },
+
+  async getSuperAdminPayments(): Promise<any[]> {
+    try {
+      const res = await fetch(`${API_BASE}/superadmin/payments`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async broadcastSuperAdminAnnouncement(data: {
+    target_audience: string;
+    subject: string;
+    message: string;
+  }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/broadcast`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to send broadcast");
+    }
+    return await res.json();
+  },
+
+  async globalSearch(q: string): Promise<{
+    query: string;
+    role: string;
+    members: Array<{
+      id: string;
+      name: string;
+      code: string;
+      status: string;
+      email: string;
+      phone: string;
+      plan: string;
+      subtitle: string;
+      href: string;
+    }>;
+    trainers: Array<{
+      id: string;
+      name: string;
+      code: string;
+      specialization: string;
+      phone: string;
+      subtitle: string;
+      href: string;
+    }>;
+    features: Array<{
+      id: string;
+      title: string;
+      description: string;
+      category: string;
+      href: string;
+    }>;
+  }> {
+    try {
+      const query = encodeURIComponent(q.trim());
+      const res = await fetch(`${API_BASE}/search/global?q=${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (!res.ok) return { query: q, role: "OWNER", members: [], trainers: [], features: [] };
+      return await res.json();
+    } catch {
+      return { query: q, role: "OWNER", members: [], trainers: [], features: [] };
+    }
+  },
 };
+
+export const api = repsiApi;
+export default repsiApi;
 

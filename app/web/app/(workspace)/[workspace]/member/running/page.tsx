@@ -133,7 +133,7 @@ export default function RunningTrackerPage(props: { params: Promise<{ workspace:
 
           <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">🔥 12-Day Workout Streak</span>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">12-Day Workout Streak</span>
               <p className="text-xs text-[var(--text-muted)]">Active consistency streak unlocked!</p>
             </div>
             <span className="text-2xl font-black text-amber-500">12 Days</span>
@@ -141,7 +141,7 @@ export default function RunningTrackerPage(props: { params: Promise<{ workspace:
 
           <div className="space-y-2">
             <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-between text-xs">
-              <span className="font-semibold text-[var(--text)]">🏆 First 5K Outdoor Run</span>
+              <span className="font-semibold text-[var(--text)]">First 5K Outdoor Run</span>
               <span className="text-emerald-600 font-bold">UNLOCKED</span>
             </div>
             <div className="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] flex items-center justify-between text-xs">

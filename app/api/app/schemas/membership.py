@@ -12,6 +12,15 @@ class MembershipPlanCreate(BaseModel):
     features: Optional[str] = None
 
 
+class MembershipPlanUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    duration_months: Optional[int] = None
+    price: Optional[float] = None
+    features: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class MembershipPlanResponse(BaseModel):
     id: str
     workspace_id: str

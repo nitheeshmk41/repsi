@@ -8,6 +8,7 @@ from app.models.member import MembershipPlan, Membership, Member, MemberStatus
 from app.models.user import Workspace
 from app.schemas.membership import (
     MembershipPlanCreate,
+    MembershipPlanUpdate,
     MembershipPlanResponse,
     MembershipCreate,
     MembershipResponse,
@@ -40,6 +41,44 @@ def create_plan(
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can create membership plans.")
     repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
     return repo.create(**data.model_dump())
+
+
+@router.put("/plans/{id}", response_model=MembershipPlanResponse)
+def update_plan(
+    id: str,
+    data: MembershipPlanUpdate,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+        raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can modify membership plans.")
+    repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
+    plan = repo.get(id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Membership plan not found")
+    return repo.update(plan, **data.model_dump(exclude_unset=True))
+
+
+@router.delete("/plans/{id}")
+def delete_plan(
+    id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+        raise HTTPException(status_code=403, detail="Forbidden. Only owners/staff can delete membership plans.")
+    repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
+    plan = repo.get(id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Membership plan not found")
+    active_mems = db.query(Membership).filter(Membership.plan_id == id, Membership.status == MemberStatus.ACTIVE).count()
+    if active_mems > 0:
+        plan.is_active = False
+        db.commit()
+        return {"status": "success", "message": "Plan has active members; deactivated successfully"}
+    db.delete(plan)
+    db.commit()
+    return {"status": "success", "message": "Membership plan deleted successfully"}
 
 
 @router.get("/", response_model=List[MembershipResponse])

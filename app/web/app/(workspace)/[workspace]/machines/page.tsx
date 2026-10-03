@@ -2,6 +2,7 @@
 
 import { useState, use, useEffect } from "react";
 import { repsiApi } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 import { 
   Dumbbell, 
   Plus, 
@@ -42,10 +43,10 @@ export default function MachinesManagementPage(props: { params: Promise<{ worksp
   // New Machine Form state
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState<GymMachine["category"]>("Strength");
-  const [newBrand, setNewBrand] = useState("Jerai Fitness");
-  const [newModel, setNewModel] = useState("Pro Series");
-  const [newMuscle, setNewMuscle] = useState("Chest, Shoulders");
-  const [newInstructions, setNewInstructions] = useState("Keep form strict, control eccentric phase.");
+  const [newBrand, setNewBrand] = useState("");
+  const [newModel, setNewModel] = useState("");
+  const [newMuscle, setNewMuscle] = useState("");
+  const [newInstructions, setNewInstructions] = useState("");
 
   const fetchMachines = async () => {
     setLoading(true);
@@ -274,22 +275,24 @@ export default function MachinesManagementPage(props: { params: Promise<{ worksp
       </div>
 
       {filtered.length === 0 && !loading && (
-        <div className="rounded-[16px] border border-dashed border-[var(--border)] p-12 text-center space-y-3 bg-[var(--surface)]/50">
-          <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mx-auto flex items-center justify-center">
-            <Dumbbell className="h-6 w-6" />
-          </div>
-          <h3 className="text-base font-bold text-[var(--text)]">No equipment logged yet</h3>
-          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
-            Get started by adding gym machines, dumbbells, and cardio equipment to track maintenance logs and instructions for your workspace.
-          </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-[8px] bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:bg-[var(--primary-hover)] transition-all shadow-sm cursor-pointer mt-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add First Machine</span>
-          </button>
-        </div>
+        <EmptyState
+          mascotPose="fitness"
+          speechBubble="Track machines & maintain uptime"
+          title="No equipment added yet"
+          description="Add your gym equipment to organize workouts, schedule preventative maintenance, and attach exercise instructions."
+          action={{
+            label: "+ Add equipment",
+            onClick: () => setShowAddModal(true),
+          }}
+          guideTitle="How to register gym equipment"
+          guideSteps={[
+            "Click + Add equipment",
+            "Enter machine name & brand (e.g. Leg Press, Precor)",
+            "Specify target muscle group & safety instructions",
+            "Track service dates and operational status",
+          ]}
+          guideLinkText="View equipment guide →"
+        />
       )}
 
       {/* Add Machine Modal */}
@@ -330,6 +333,7 @@ export default function MachinesManagementPage(props: { params: Promise<{ worksp
                   <label className="block text-xs font-semibold text-[var(--text)] mb-1">Brand</label>
                   <input
                     type="text"
+                    placeholder="e.g. Jerai Fitness"
                     value={newBrand}
                     onChange={(e) => setNewBrand(e.target.value)}
                     className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
@@ -341,6 +345,7 @@ export default function MachinesManagementPage(props: { params: Promise<{ worksp
                 <label className="block text-xs font-semibold text-[var(--text)] mb-1">Target Muscle Group</label>
                 <input
                   type="text"
+                  placeholder="e.g. Chest, Shoulders, Triceps"
                   value={newMuscle}
                   onChange={(e) => setNewMuscle(e.target.value)}
                   className="w-full h-9 rounded-[8px] border border-[var(--border)] bg-[var(--background)] px-3 text-xs text-[var(--text)]"
@@ -351,6 +356,7 @@ export default function MachinesManagementPage(props: { params: Promise<{ worksp
                 <label className="block text-xs font-semibold text-[var(--text)] mb-1">Instructions / Notes</label>
                 <textarea
                   rows={3}
+                  placeholder="e.g. Keep form strict, control eccentric phase, adjust seat height."
                   value={newInstructions}
                   onChange={(e) => setNewInstructions(e.target.value)}
                   className="w-full rounded-[8px] border border-[var(--border)] bg-[var(--background)] p-3 text-xs text-[var(--text)]"

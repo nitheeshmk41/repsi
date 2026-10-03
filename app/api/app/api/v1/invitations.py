@@ -452,10 +452,9 @@ def direct_add_user(
 
     return {
         "status": "success",
-        "message": f"Account for {data.name} created and credentials emailed to {normalized_email}.",
+        "message": f"Account for {data.name} created and welcome notification emailed to {normalized_email}.",
         "user_id": user.id,
         "email": normalized_email,
-        "password": raw_password,
         "role": assigned_role.value
     }
 

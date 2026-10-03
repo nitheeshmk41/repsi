@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,6 +20,19 @@ from app.schemas.website import (
 from app.middleware.tenant import get_current_tenant, TenantContext
 
 router = APIRouter(prefix="/websites", tags=["Website Builder"])
+
+RESERVED_SLUGS = {
+    "dashboard", "members", "trainers", "memberships", "settings", "api",
+    "login", "signup", "onboarding", "superadmin", "pricing", "features",
+    "solutions", "site", "website", "tour", "about", "contact", "blog",
+    "compare", "guides", "help", "how-it-works", "integrations", "partners",
+    "use-cases", "careers", "changelog", "cities", "docs", "downloads",
+    "verify-email", "reset-password", "forgot-password", "invite", "admin",
+    "static", "assets", "public", "_next", "favicon.ico", "mascot", "images",
+    "health", "redoc", "openapi.json", "crm", "activity", "analytics",
+    "attendance", "chat", "classes", "expenses", "machines", "member",
+    "notifications", "payments", "reports", "trainer", "workouts"
+}
 
 
 def _get_or_create_website(db: Session, workspace_id: str) -> Website:
@@ -42,11 +56,62 @@ def _get_or_create_website(db: Session, workspace_id: str) -> Website:
             is_published=False,
             views_count=0,
             leads_count=0,
+            assistant_enabled=True,
+            assistant_name="Gym Assistant",
+            assistant_welcome="Hi! I'm your gym assistant 👋 How can I help you today?",
+            assistant_character="welcome",
         )
         db.add(site)
         db.commit()
         db.refresh(site)
     return site
+
+
+@router.get("/check-slug/{slug}")
+def check_slug_availability(
+    slug: str,
+    db: Session = Depends(get_db),
+):
+    clean_slug = slug.strip().lower()
+    if not clean_slug:
+        return {"slug": "", "available": False, "reason": "Address cannot be empty"}
+
+    if not re.match(r"^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$", clean_slug):
+        return {
+            "slug": clean_slug,
+            "available": False,
+            "reason": "Address must be 3-40 lowercase letters, numbers, or hyphens (cannot start or end with a hyphen)",
+        }
+
+    if clean_slug in RESERVED_SLUGS:
+        return {
+            "slug": clean_slug,
+            "available": False,
+            "reason": f"'{clean_slug}' is a reserved Repsi system route",
+        }
+
+    # Check database uniqueness across Websites and Workspaces
+    site_exists = db.query(Website).filter(func.lower(Website.subdomain) == clean_slug).first()
+    if site_exists:
+        return {
+            "slug": clean_slug,
+            "available": False,
+            "reason": "This website address is already taken by another gym",
+        }
+
+    ws_exists = db.query(Workspace).filter(func.lower(Workspace.slug) == clean_slug).first()
+    if ws_exists:
+        return {
+            "slug": clean_slug,
+            "available": False,
+            "reason": "This website address is already taken",
+        }
+
+    return {
+        "slug": clean_slug,
+        "available": True,
+        "reason": "Available",
+    }
 
 
 @router.get("/my-website", response_model=WebsiteResponse)
@@ -66,6 +131,41 @@ def update_my_website(
 ):
     site = _get_or_create_website(db, tenant.workspace_id)
     update_dict = data.model_dump(exclude_unset=True)
+
+    # Handle custom subdomain / slug update if provided
+    new_subdomain = update_dict.pop("subdomain", None)
+    if new_subdomain is not None:
+        clean_sub = new_subdomain.strip().lower()
+        if clean_sub != site.subdomain.lower():
+            if not re.match(r"^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$", clean_sub):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Website address must be 3-40 lowercase letters, numbers, or hyphens",
+                )
+            if clean_sub in RESERVED_SLUGS:
+                raise HTTPException(status_code=400, detail=f"'{clean_sub}' is a reserved route")
+            
+            existing = (
+                db.query(Website)
+                .filter(func.lower(Website.subdomain) == clean_sub, Website.workspace_id != tenant.workspace_id)
+                .first()
+            )
+            if existing:
+                raise HTTPException(status_code=400, detail="This website address is already taken")
+
+            existing_ws = (
+                db.query(Workspace)
+                .filter(func.lower(Workspace.slug) == clean_sub, Workspace.id != tenant.workspace_id)
+                .first()
+            )
+            if existing_ws:
+                raise HTTPException(status_code=400, detail="This address is already in use")
+
+            site.subdomain = clean_sub
+            # Keep Workspace slug synchronized
+            ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+            if ws:
+                ws.slug = clean_sub
 
     for k, v in update_dict.items():
         if hasattr(site, k) and k not in ("id", "workspace_id", "subdomain"):
@@ -279,6 +379,44 @@ def submit_public_website_lead(
     first_name = parts[0]
     last_name = parts[1] if len(parts) > 1 else ""
 
+    # Determine lead source and priority based on action
+    booking_type = data.booking_type or ""
+    if booking_type == "free_trial":
+        lead_source = "Trial Booking"
+        lead_priority = LeadPriority.URGENT
+        activity_title = "Free Trial Booking via Website Assistant"
+    elif booking_type == "visit":
+        lead_source = "Visit Booking"
+        lead_priority = LeadPriority.HIGH
+        activity_title = "Facility Visit Booking via Website Assistant"
+    elif booking_type == "chat_handoff":
+        lead_source = "Website Chat"
+        lead_priority = LeadPriority.HIGH
+        activity_title = "Direct Question / Chat Request via Assistant"
+    elif data.source and data.source != "Website":
+        lead_source = data.source
+        lead_priority = LeadPriority.HIGH
+        activity_title = f"Inquiry via {data.source}"
+    else:
+        lead_source = "Website"
+        lead_priority = LeadPriority.HIGH
+        activity_title = f"Inquiry via Website ({data.source_page})"
+
+    # Compose structured notes
+    note_details = []
+    if data.booking_type:
+        note_details.append(f"Type: {data.booking_type.replace('_', ' ').title()}")
+    if data.preferred_date:
+        note_details.append(f"Date: {data.preferred_date}")
+    if data.preferred_time:
+        note_details.append(f"Time: {data.preferred_time}")
+    if data.interested_plan:
+        note_details.append(f"Plan: {data.interested_plan}")
+    if data.message:
+        note_details.append(f"Note: {data.message}")
+
+    note_summary = " | ".join(note_details) if note_details else f"Inquiry from {data.source_page} page"
+
     # Create CRM Lead directly in the gym's workspace
     lead = Lead(
         workspace_id=site.workspace_id,
@@ -286,11 +424,11 @@ def submit_public_website_lead(
         last_name=last_name,
         phone=data.phone.strip(),
         email=data.email.strip().lower() if data.email else None,
-        source="Website",
+        source=lead_source,
         status=LeadStatus.NEW,
-        priority=LeadPriority.HIGH,
+        priority=lead_priority,
         interested_plan=data.interested_plan,
-        notes=f"Inquiry from public site ({data.source_page} page): {data.message or 'No message provided'}",
+        notes=note_summary,
         expected_value=1499.0,
     )
     db.add(lead)
@@ -301,8 +439,8 @@ def submit_public_website_lead(
         workspace_id=site.workspace_id,
         lead_id=lead.id,
         activity_type="note",
-        title="Inquiry via Website",
-        description=f"Visitor submitted lead form on {data.source_page} page. Message: {data.message or 'N/A'}",
+        title=activity_title,
+        description=note_summary,
         created_at=datetime.now(timezone.utc),
     )
     db.add(act)
@@ -312,6 +450,10 @@ def submit_public_website_lead(
 
     return {
         "status": "success",
-        "message": "Thank you! Your inquiry has been received. Our gym team will contact you shortly.",
+        "message": (
+            "🎉 Your free trial has been booked! We look forward to seeing you."
+            if booking_type == "free_trial"
+            else "Thank you! Your inquiry has been received. Our gym team will contact you shortly."
+        ),
         "lead_id": lead.id,
     }

@@ -60,10 +60,10 @@ export default function OnboardingWizardPage() {
   const [resendTimer, setResendTimer] = useState(29);
 
   // Step 3: Gym Identity
-  const [gymName, setGymName] = useState("FitZone Fitness");
+  const [gymName, setGymName] = useState("");
   const [businessType, setBusinessType] = useState("Gym & Fitness center");
-  const [gymPhone, setGymPhone] = useState("+91 98765 43210");
-  const [gymCity, setGymCity] = useState("Coimbatore");
+  const [gymPhone, setGymPhone] = useState("");
+  const [gymCity, setGymCity] = useState("");
 
   // Step 4: Business Setup
   const [locationsCount, setLocationsCount] = useState("1 location");
@@ -683,14 +683,24 @@ export default function OnboardingWizardPage() {
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={() => setStep(4)}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer mt-2"
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg border border-[#E2E8E5] bg-white hover:bg-zinc-50 text-[#64748B] text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(4)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -778,14 +788,24 @@ export default function OnboardingWizardPage() {
                 </select>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setStep(5)}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer mt-2"
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg border border-[#E2E8E5] bg-white hover:bg-zinc-50 text-[#64748B] text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(5)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -884,14 +904,24 @@ export default function OnboardingWizardPage() {
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => setStep(6)}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer mt-2"
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(4)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg border border-[#E2E8E5] bg-white hover:bg-zinc-50 text-[#64748B] text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(6)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="text-center">
@@ -1014,14 +1044,24 @@ export default function OnboardingWizardPage() {
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => setStep(7)}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer mt-2"
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(5)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg border border-[#E2E8E5] bg-white hover:bg-zinc-50 text-[#64748B] text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(7)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="text-center">

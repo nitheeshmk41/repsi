@@ -10,7 +10,7 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
         super().__init__(Attendance, db, workspace_id)
 
     def count_today(self) -> int:
-        today_start = datetime.combine(date.today(), datetime.min.time())
+        today_start = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=timezone.utc)
         return (
             self.db.query(Attendance)
             .filter(
@@ -21,7 +21,7 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
         )
 
     def count_currently_inside(self) -> int:
-        today_start = datetime.combine(date.today(), datetime.min.time())
+        today_start = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=timezone.utc)
         return (
             self.db.query(Attendance)
             .filter(
@@ -33,8 +33,8 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
         )
 
     def get_today_attendance(self) -> list[Attendance]:
-        today_start = datetime.combine(date.today(), datetime.min.time())
-        return (
+        today_start = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=timezone.utc)
+        items = (
             self.db.query(Attendance)
             .filter(
                 Attendance.workspace_id == self.workspace_id,
@@ -43,6 +43,15 @@ class AttendanceRepository(BaseTenantRepository[Attendance]):
             .order_by(Attendance.check_in_time.desc())
             .all()
         )
+        if not items:
+            items = (
+                self.db.query(Attendance)
+                .filter(Attendance.workspace_id == self.workspace_id)
+                .order_by(Attendance.check_in_time.desc())
+                .limit(50)
+                .all()
+            )
+        return items
 
     def get_multi(self, skip: int = 0, limit: int = 100) -> list[Attendance]:
         return (

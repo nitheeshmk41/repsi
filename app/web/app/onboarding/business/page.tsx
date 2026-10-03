@@ -16,7 +16,7 @@ export default function OnboardingBusinessPage() {
     gymType: "Strength & Conditioning",
     locationsCount: "1 Location",
     approxMembers: "250-500 members",
-    openingHours: "05:30 AM – 10:30 PM",
+    openingHours: "",
     timezone: "Asia/Kolkata (IST)",
     currency: "INR (₹)",
   });

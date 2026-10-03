@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useSearchParams } from "next/navigation";
 import { repsiApi } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Target,
   Users,
@@ -27,6 +29,7 @@ import {
   Tag,
   Eye,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 
 interface Lead {
@@ -99,11 +102,19 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
 
+  const searchParams = useSearchParams();
+
   // Modals
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [selectedLeadForConvert, setSelectedLeadForConvert] = useState<Lead | null>(null);
   const [selectedLeadDetail, setSelectedLeadDetail] = useState<Lead | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setShowAddLeadModal(true);
+    }
+  }, [searchParams]);
 
   // Add Lead Form State
   const [newLead, setNewLead] = useState({
@@ -213,6 +224,17 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
     }
   };
 
+  const handleDeleteLead = async (leadId: string) => {
+    if (!confirm("Are you sure you want to delete this lead? This will also remove associated follow-ups and activities.")) return;
+    try {
+      await repsiApi.deleteCrmLead(leadId);
+      if (selectedLeadDetail?.id === leadId) setSelectedLeadDetail(null);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || "Failed to delete lead");
+    }
+  };
+
   const handleCreateFollowUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -293,8 +315,8 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Total Leads</span>
             <Users className="w-4 h-4 text-info" />
           </div>
-          <div className="text-2xl font-bold text-text">{metrics?.total_leads ?? 128}</div>
-          <div className="text-xs text-success font-medium mt-1">+{metrics?.new_leads ?? 18} this month</div>
+          <div className="text-2xl font-bold text-text">{metrics?.total_leads ?? leads.length}</div>
+          <div className="text-xs text-success font-medium mt-1">+{metrics?.new_leads ?? 0} this month</div>
         </div>
 
         {/* 2. FOLLOW-UPS */}
@@ -303,8 +325,8 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Follow-ups</span>
             <Phone className="w-4 h-4 text-warning" />
           </div>
-          <div className="text-2xl font-bold text-text">{metrics?.follow_ups_due_today ?? 12}</div>
-          <div className="text-xs text-primary font-medium mt-1">{metrics?.overdue_follow_ups ?? 4} overdue</div>
+          <div className="text-2xl font-bold text-text">{metrics?.follow_ups_due_today ?? followUps.length}</div>
+          <div className="text-xs text-primary font-medium mt-1">{metrics?.overdue_follow_ups ?? 0} overdue</div>
         </div>
 
         {/* 3. TRIALS */}
@@ -313,8 +335,8 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Trials</span>
             <Sparkles className="w-4 h-4 text-info" />
           </div>
-          <div className="text-2xl font-bold text-text">{metrics?.trials ?? 18}</div>
-          <div className="text-xs text-info font-medium mt-1">6 this week</div>
+          <div className="text-2xl font-bold text-text">{metrics?.trials ?? 0}</div>
+          <div className="text-xs text-info font-medium mt-1">Active trials</div>
         </div>
 
         {/* 4. CONVERSION */}
@@ -324,9 +346,9 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <TrendingUp className="w-4 h-4 text-success" />
           </div>
           <div className="text-2xl font-bold text-success">
-            {metrics?.conversion_rate_pct ? `${metrics.conversion_rate_pct.toFixed(1)}%` : "14.8%"}
+            {metrics?.conversion_rate_pct != null ? `${Number(metrics.conversion_rate_pct).toFixed(1)}%` : "0.0%"}
           </div>
-          <div className="text-xs text-success font-medium mt-1">+2.4% vs last mo</div>
+          <div className="text-xs text-success font-medium mt-1">Lead to member</div>
         </div>
 
         {/* 5. RENEWALS */}
@@ -335,7 +357,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Renewals</span>
             <Calendar className="w-4 h-4 text-purple-400" />
           </div>
-          <div className="text-2xl font-bold text-text">{metrics?.renewals_due ?? 23}</div>
+          <div className="text-2xl font-bold text-text">{metrics?.renewals_due ?? 0}</div>
           <div className="text-xs text-purple-400 font-medium mt-1">Next 30 days</div>
         </div>
 
@@ -345,7 +367,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">At Risk</span>
             <ShieldAlert className="w-4 h-4 text-warning" />
           </div>
-          <div className="text-2xl font-bold text-warning">{atRiskList.length || 11}</div>
+          <div className="text-2xl font-bold text-warning">{metrics?.at_risk_members ?? atRiskList.length}</div>
           <div className="text-xs text-warning font-medium mt-1">Needs attention</div>
         </div>
       </div>
@@ -373,7 +395,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
           }`}
         >
           <Users className="w-4 h-4" />
-          Leads ({leads.length || 128})
+          Leads ({leads.length})
         </button>
 
         <button
@@ -385,7 +407,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
           }`}
         >
           <Clock className="w-4 h-4" />
-          Follow-ups ({followUps.length || 12})
+          Follow-ups ({followUps.length})
         </button>
 
         <button
@@ -397,7 +419,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
-          Renewals & At-Risk ({atRiskList.length || 11})
+          Renewals & At-Risk ({atRiskList.length})
         </button>
 
         <button
@@ -415,7 +437,27 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
 
       {/* TAB 1: KANBAN PIPELINE */}
       {activeTab === "pipeline" && (
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 overflow-x-auto pb-4">
+        leads.length === 0 && !loading ? (
+          <EmptyState
+            mascotPose="help"
+            speechBubble="Grow your gym with CRM"
+            title="No leads yet"
+            description="Your leads will appear here when you add them. Track inquiries, free trials, and follow-ups to convert visitors into active members."
+            action={{
+              label: "+ Add lead",
+              onClick: () => setShowAddLeadModal(true),
+            }}
+            guideTitle="How CRM Lead Conversion works"
+            guideSteps={[
+              "Click + Add lead",
+              "Enter inquiry name, phone & interested plan",
+              "Schedule gym visits or free trials",
+              "Convert lead to active member with 1 click",
+            ]}
+            guideLinkText="View CRM guide →"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 overflow-x-auto pb-4">
           {PIPELINE_STAGES.map((stage) => {
             const stageLeads = leads.filter((l) => l.status.toLowerCase() === stage.key);
             const totalValue = stageLeads.reduce((acc, l) => acc + (l.expected_value || 0), 0);
@@ -507,6 +549,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
             );
           })}
         </div>
+        )
       )}
 
       {/* TAB 2: ALL LEADS LIST */}
@@ -572,8 +615,25 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
               <tbody className="divide-y divide-zinc-800/60">
                 {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-text-muted">
-                      No leads match your filter.
+                    <td colSpan={7} className="px-6 py-10">
+                      <EmptyState
+                        mascotPose="help"
+                        speechBubble="Your leads list is empty"
+                        title="No leads yet"
+                        description="Your leads will appear here when you add them. Track inquiries and turn prospects into paying gym members."
+                        action={{
+                          label: "+ Add lead",
+                          onClick: () => setShowAddLeadModal(true),
+                        }}
+                        guideTitle="Quick CRM Steps"
+                        guideSteps={[
+                          "Click + Add lead",
+                          "Record phone number & target package",
+                          "Schedule trial workout or gym walk-in",
+                          "Click 'Convert' once membership is purchased",
+                        ]}
+                        guideLinkText="View guide →"
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -632,15 +692,24 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {!lead.converted_member_id && (
+                          {!lead.converted_member_id && lead.status.toLowerCase() !== "converted" && (
                             <button
                               onClick={() => setSelectedLeadForConvert(lead)}
                               className="px-2.5 py-1 rounded-lg bg-success-soft hover:bg-success-soft text-text text-xs font-medium transition flex items-center gap-1"
+                              title="Convert to Member"
                             >
                               <UserCheck className="w-3.5 h-3.5" />
                               Convert
                             </button>
                           )}
+
+                          <button
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="p-1.5 rounded-lg bg-surface-elevated text-text-muted hover:text-rose-400 hover:bg-rose-500/10 transition"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -865,13 +934,13 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                   </p>
                 </div>
                 <span className="text-xs px-3 py-1 rounded-full bg-success-soft text-success border border-success font-medium">
-                  {metrics?.conversion_rate_pct ? `${metrics.conversion_rate_pct.toFixed(1)}%` : "14.8%"} Overall
+                  {metrics?.conversion_rate_pct !== undefined ? `${Number(metrics.conversion_rate_pct).toFixed(1)}%` : "0%"} Overall
                 </span>
               </div>
               <div className="space-y-4">
                 {PIPELINE_STAGES.filter((s) => s.key !== "lost").map((stage, idx) => {
                   const count = leads.filter((l) => l.status.toLowerCase() === stage.key).length;
-                  const total = leads.length || 128;
+                  const total = leads.length;
                   const pct = total > 0 ? ((count / total) * 100).toFixed(0) : "0";
                   return (
                     <div key={stage.key} className="p-3 rounded-xl bg-surface border border-border">
@@ -883,13 +952,13 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                           <span className="font-medium">{stage.label}</span>
                         </div>
                         <span className="font-mono text-text-secondary font-semibold">
-                          {count || (idx === 0 ? 42 : idx === 1 ? 28 : idx === 2 ? 19 : idx === 3 ? 18 : 19)} leads ({pct || "15"}%)
+                          {count} leads ({pct}%)
                         </span>
                       </div>
                       <div className="h-2 rounded-full bg-surface-elevated overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-rose-500 to-orange-500 rounded-full"
-                          style={{ width: `${Math.max(8, Number(pct) || (idx === 0 ? 75 : idx === 1 ? 55 : idx === 2 ? 40 : idx === 3 ? 30 : 20))}%` }}
+                          style={{ width: `${Math.max(count > 0 ? 8 : 0, Number(pct))}%` }}
                         />
                       </div>
                     </div>
@@ -900,158 +969,164 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
           )}
 
           {/* Sub-view: Lead Sources */}
-          {analyticsSubTab === "sources" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-2xl bg-surface border border-border p-6">
-                <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-info" />
-                  Acquisition Channels
-                </h3>
-                <p className="text-xs text-text-secondary mb-6">Where new member inquiries originate from</p>
-                <div className="space-y-3">
-                  {[
-                    { src: "Walk-in", count: 48, share: "37.5%" },
-                    { src: "Website", count: 32, share: "25.0%" },
-                    { src: "Instagram", count: 24, share: "18.8%" },
-                    { src: "Referral", count: 14, share: "10.9%" },
-                    { src: "Google / Local SEO", count: 7, share: "5.5%" },
-                    { src: "WhatsApp", count: 3, share: "2.3%" },
-                  ].map((item) => (
-                    <div
-                      key={item.src}
-                      className="flex items-center justify-between p-3 rounded-xl bg-surface border border-border"
-                    >
-                      <span className="font-medium text-sm text-text-secondary">{item.src}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-text-muted">{item.share}</span>
-                        <span className="font-mono text-sm text-text font-bold bg-surface-elevated px-2.5 py-0.5 rounded">
-                          {item.count}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          {analyticsSubTab === "sources" && (() => {
+            const sourcesMap: Record<string, number> = {};
+            leads.forEach((l) => {
+              const src = l.source || "Other";
+              sourcesMap[src] = (sourcesMap[src] || 0) + 1;
+            });
+            const total = leads.length;
+            const sourcesList = Object.entries(sourcesMap).map(([src, count]) => ({
+              src,
+              count,
+              share: total > 0 ? `${((count / total) * 100).toFixed(1)}%` : "0%",
+            })).sort((a, b) => b.count - a.count);
 
-              <div className="rounded-2xl bg-surface border border-border p-6 flex flex-col justify-between">
-                <div>
+            const topSource = sourcesList[0];
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="rounded-2xl bg-surface border border-border p-6">
                   <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-warning" />
-                    Top Performing Source
+                    <Tag className="w-5 h-5 text-info" />
+                    Acquisition Channels
                   </h3>
-                  <p className="text-xs text-text-secondary mb-6">Highest conversion rate by source</p>
-                  <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-warning mb-4">
-                    <div className="text-xs font-semibold text-warning uppercase tracking-wider mb-1">
-                      Highest Conversion
-                    </div>
-                    <div className="text-2xl font-bold text-text mb-1">Walk-in & Referrals</div>
-                    <p className="text-xs text-text-secondary">
-                      Convert at <strong>34.2%</strong> into paid memberships within 5 days of initial contact.
-                    </p>
+                  <p className="text-xs text-text-secondary mb-6">Where new member inquiries originate from</p>
+                  <div className="space-y-3">
+                    {sourcesList.length === 0 ? (
+                      <p className="text-xs text-text-muted">No lead sources recorded yet.</p>
+                    ) : (
+                      sourcesList.map((item) => (
+                        <div
+                          key={item.src}
+                          className="flex items-center justify-between p-3 rounded-xl bg-surface border border-border"
+                        >
+                          <span className="font-medium text-sm text-text-secondary">{item.src}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-text-muted">{item.share}</span>
+                            <span className="font-mono text-sm text-text font-bold bg-surface-elevated px-2.5 py-0.5 rounded">
+                              {item.count}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                  <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-info">
-                    <div className="text-xs font-semibold text-info uppercase tracking-wider mb-1">
-                      Highest Volume
+                </div>
+
+                <div className="rounded-2xl bg-surface border border-border p-6 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-warning" />
+                      Top Performing Source
+                    </h3>
+                    <p className="text-xs text-text-secondary mb-6">Lead acquisition distribution</p>
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-warning mb-4">
+                      <div className="text-xs font-semibold text-warning uppercase tracking-wider mb-1">
+                        Primary Source
+                      </div>
+                      <div className="text-2xl font-bold text-text mb-1">{topSource?.src || "None"}</div>
+                      <p className="text-xs text-text-secondary">
+                        Generates <strong>{topSource?.share || "0%"}</strong> of all captured leads ({topSource?.count || 0} prospects).
+                      </p>
                     </div>
-                    <div className="text-2xl font-bold text-text mb-1">Website Builder & Google</div>
-                    <p className="text-xs text-text-secondary">
-                      Delivering 32 high-intent trial inquiries directly synced into your CRM.
-                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Sub-view: Conversion */}
-          {analyticsSubTab === "conversion" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl bg-surface border border-border">
-                <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Lead-to-Trial Rate</div>
-                <div className="text-3xl font-bold text-info">42.8%</div>
-                <p className="text-xs text-text-muted mt-2">55 trials booked from 128 inquiries</p>
+          {analyticsSubTab === "conversion" && (() => {
+            const total = leads.length;
+            const trials = leads.filter((l) => l.status.toLowerCase() === "trial").length;
+            const converted = leads.filter((l) => l.status.toLowerCase() === "converted" || !!l.converted_member_id).length;
+            const trialRate = total > 0 ? ((trials / total) * 100).toFixed(1) : "0.0";
+            const convRate = total > 0 ? ((converted / total) * 100).toFixed(1) : "0.0";
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl bg-surface border border-border">
+                  <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Lead-to-Trial Rate</div>
+                  <div className="text-3xl font-bold text-info">{trialRate}%</div>
+                  <p className="text-xs text-text-muted mt-2">{trials} trials booked from {total} inquiries</p>
+                </div>
+                <div className="p-5 rounded-2xl bg-surface border border-border">
+                  <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Lead-to-Member Conversion</div>
+                  <div className="text-3xl font-bold text-success">{convRate}%</div>
+                  <p className="text-xs text-text-muted mt-2">{converted} paid conversions from {total} inquiries</p>
+                </div>
+                <div className="p-5 rounded-2xl bg-surface border border-border">
+                  <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Active In-Pipeline</div>
+                  <div className="text-3xl font-bold text-purple-400">{Math.max(0, total - converted)}</div>
+                  <p className="text-xs text-text-muted mt-2">Active prospects undergoing gym follow-up</p>
+                </div>
               </div>
-              <div className="p-5 rounded-2xl bg-surface border border-border">
-                <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Trial-to-Member Rate</div>
-                <div className="text-3xl font-bold text-success">34.5%</div>
-                <p className="text-xs text-text-muted mt-2">19 paid conversions from finished trials</p>
-              </div>
-              <div className="p-5 rounded-2xl bg-surface border border-border">
-                <div className="text-xs uppercase text-text-secondary font-semibold mb-2">Avg. Decision Time</div>
-                <div className="text-3xl font-bold text-purple-400">4.2 Days</div>
-                <p className="text-xs text-text-muted mt-2">From first contact to membership signup</p>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Sub-view: Staff Performance */}
           {analyticsSubTab === "staff" && (
             <div className="rounded-2xl bg-surface border border-border p-6">
               <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
                 <Users className="w-5 h-5 text-indigo-400" />
-                Staff Follow-up & Conversion Leaderboard
+                Staff Follow-up & Conversion Summary
               </h3>
-              <p className="text-xs text-text-secondary mb-6">Tracking outreach velocity and conversion close rates</p>
+              <p className="text-xs text-text-secondary mb-6">Tracking outreach tasks and completed follow-up records</p>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-xs uppercase text-text-muted">
-                      <th className="pb-3">Staff / Trainer</th>
-                      <th className="pb-3">Follow-ups Done</th>
-                      <th className="pb-3">Trials Conducted</th>
-                      <th className="pb-3">Members Converted</th>
-                      <th className="pb-3 text-right">Close Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/50">
-                    {[
-                      { name: "Arun Kumar", calls: 46, trials: 14, converted: 8, rate: "57.1%" },
-                      { name: "Priya Patel", calls: 38, trials: 11, converted: 6, rate: "54.5%" },
-                      { name: "David Chen", calls: 24, trials: 8, converted: 4, rate: "50.0%" },
-                    ].map((s) => (
-                      <tr key={s.name} className="hover:bg-surface-elevated">
-                        <td className="py-3 font-semibold text-text">{s.name}</td>
-                        <td className="py-3 text-text-secondary">{s.calls}</td>
-                        <td className="py-3 text-text-secondary">{s.trials}</td>
-                        <td className="py-3 font-mono text-success font-semibold">{s.converted}</td>
-                        <td className="py-3 text-right font-mono text-text font-bold">{s.rate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-surface-elevated">
+                    <span className="text-sm font-medium">Pending Follow-ups</span>
+                    <span className="font-mono text-sm font-bold text-warning">{followUps.filter(f => f.status === "pending").length}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-surface-elevated">
+                    <span className="text-sm font-medium">Completed Follow-ups</span>
+                    <span className="font-mono text-sm font-bold text-success">{followUps.filter(f => f.status === "completed").length}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-surface-elevated">
+                    <span className="text-sm font-medium">Total Tracked Tasks</span>
+                    <span className="font-mono text-sm font-bold text-text">{followUps.length}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Sub-view: Revenue Opportunity */}
-          {analyticsSubTab === "revenue" && (
-            <div className="rounded-2xl bg-surface border border-border p-6">
-              <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-success" />
-                Active Pipeline Revenue Opportunity
-              </h3>
-              <p className="text-xs text-text-secondary mb-6">Estimated monetary value of warm prospects currently in discussion</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 rounded-xl bg-surface border border-border">
-                  <div className="text-xs text-text-secondary mb-1">Total Pipeline Value</div>
-                  <div className="text-2xl font-bold text-text font-mono">
-                    ₹{metrics?.pipeline_estimated_revenue ? metrics.pipeline_estimated_revenue.toLocaleString() : "1,84,000"}
+          {analyticsSubTab === "revenue" && (() => {
+            const activeLeads = leads.filter((l) => l.status.toLowerCase() !== "converted" && l.status.toLowerCase() !== "lost");
+            const totalPipelineVal = activeLeads.reduce((acc, l) => acc + (Number(l.expected_value) || 0), 0);
+            const weightedVal = Math.round(totalPipelineVal * 0.6);
+
+            return (
+              <div className="rounded-2xl bg-surface border border-border p-6">
+                <h3 className="font-semibold text-lg text-text mb-2 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-success" />
+                  Active Pipeline Revenue Opportunity
+                </h3>
+                <p className="text-xs text-text-secondary mb-6">Estimated monetary value of warm prospects currently in discussion</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 rounded-xl bg-surface border border-border">
+                    <div className="text-xs text-text-secondary mb-1">Total Pipeline Value</div>
+                    <div className="text-2xl font-bold text-text font-mono">
+                      ₹{totalPipelineVal.toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-text-muted mt-1">{activeLeads.length} open prospect deals</div>
                   </div>
-                  <div className="text-[11px] text-text-muted mt-1">42 open prospect deals</div>
-                </div>
-                <div className="p-4 rounded-xl bg-surface border border-border">
-                  <div className="text-xs text-text-secondary mb-1">Weighted Forecast (60%)</div>
-                  <div className="text-2xl font-bold text-success font-mono">₹1,10,400</div>
-                  <div className="text-[11px] text-success/80 mt-1">Expected this billing cycle</div>
-                </div>
-                <div className="p-4 rounded-xl bg-surface border border-border">
-                  <div className="text-xs text-text-secondary mb-1">At-Risk Renewal Protection</div>
-                  <div className="text-2xl font-bold text-warning font-mono">₹46,200</div>
-                  <div className="text-[11px] text-orange-500/80 mt-1">11 inactive member dues</div>
+                  <div className="p-4 rounded-xl bg-surface border border-border">
+                    <div className="text-xs text-text-secondary mb-1">Weighted Forecast (60%)</div>
+                    <div className="text-2xl font-bold text-success font-mono">₹{weightedVal.toLocaleString()}</div>
+                    <div className="text-[11px] text-success/80 mt-1">Expected based on typical conversion rate</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface border border-border">
+                    <div className="text-xs text-text-secondary mb-1">At-Risk Member Alerts</div>
+                    <div className="text-2xl font-bold text-warning font-mono">{atRiskList.length}</div>
+                    <div className="text-[11px] text-orange-500/80 mt-1">Members requiring retention outreach</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -1141,7 +1216,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
-                    <option value="urgent">Urgent 🔥</option>
+                    <option value="urgent">Urgent</option>
                   </select>
                 </div>
               </div>
@@ -1300,7 +1375,7 @@ export default function CrmManagementPage(props: { params: Promise<{ workspace: 
                   className="w-full px-3 py-2 rounded-xl bg-surface-elevated border border-border text-sm text-text outline-none"
                 >
                   <option value="">General Gym Task</option>
-                  {leads.map((l) => (
+                  {leads.filter((l) => l.status.toLowerCase() !== "converted" && !l.converted_member_id).map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.first_name} {l.last_name} ({l.phone})
                     </option>

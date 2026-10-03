@@ -2,7 +2,7 @@ from typing import Optional, List
 from datetime import datetime, date, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.core.database import get_db
 from app.models.crm import Lead, LeadActivity, LeadFollowUp, LeadStatus, LeadPriority, FollowUpType, FollowUpStatus
@@ -29,9 +29,20 @@ from app.core.security import get_password_hash
 router = APIRouter(prefix="/crm", tags=["CRM"])
 
 
+def require_crm_access(tenant: TenantContext = Depends(get_current_tenant)) -> TenantContext:
+    allowed_roles = {UserRole.OWNER.value, UserRole.SUPER_ADMIN.value, UserRole.ADMIN.value, UserRole.MANAGER.value, UserRole.STAFF.value}
+    role_str = tenant.role.value if hasattr(tenant.role, "value") else str(tenant.role)
+    if role_str not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CRM access is restricted to gym owners, administrators, and staff."
+        )
+    return tenant
+
+
 @router.get("/dashboard", response_model=CrmDashboardMetrics)
 def get_crm_dashboard(
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -40,7 +51,7 @@ def get_crm_dashboard(
 
 @router.get("/pipeline", response_model=List[PipelineStageSummary])
 def get_crm_pipeline(
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -81,7 +92,7 @@ def list_leads(
     assigned_staff_id: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -102,10 +113,29 @@ def list_leads(
 @router.post("/leads", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 def create_lead(
     data: LeadCreate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
+
+    # Prevent duplicate lead creation with same phone or email in this gym
+    clean_phone = "".join(c for c in (data.phone or "") if c.isdigit() or c == "+")
+    clean_email = data.email.strip().lower() if data.email else None
+
+    dup_filters = []
+    if clean_phone:
+        dup_filters.append(Lead.phone == clean_phone)
+    if clean_email:
+        dup_filters.append(func.lower(Lead.email) == clean_email)
+
+    if dup_filters:
+        existing = repo.scoped_query().filter(Lead.status != LeadStatus.CONVERTED).filter(or_(*dup_filters)).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"An active lead with this {'phone number' if existing.phone == clean_phone else 'email'} already exists in your gym records."
+            )
+
     cols = {c.name for c in Lead.__table__.columns}
     lead_kwargs = {
         k: v for k, v in data.model_dump().items()
@@ -128,7 +158,7 @@ def create_lead(
 @router.get("/leads/{id}", response_model=LeadResponse)
 def get_lead(
     id: str,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -142,7 +172,7 @@ def get_lead(
 def update_lead(
     id: str,
     data: LeadUpdate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -159,11 +189,37 @@ def update_lead(
     return updated
 
 
+@router.delete("/leads/{id}")
+def delete_lead(
+    id: str,
+    tenant: TenantContext = Depends(require_crm_access),
+    db: Session = Depends(get_db),
+):
+    repo = CrmRepository(db, tenant.workspace_id)
+    lead = repo.get(id)
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    db.query(LeadFollowUp).filter(
+        LeadFollowUp.lead_id == id,
+        LeadFollowUp.workspace_id == tenant.workspace_id,
+    ).delete(synchronize_session=False)
+
+    db.query(LeadActivity).filter(
+        LeadActivity.lead_id == id,
+        LeadActivity.workspace_id == tenant.workspace_id,
+    ).delete(synchronize_session=False)
+
+    db.delete(lead)
+    db.commit()
+    return {"status": "success", "message": "Lead deleted successfully"}
+
+
 @router.patch("/leads/{id}/status", response_model=LeadResponse)
 def update_lead_status(
     id: str,
     data: LeadStatusUpdate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)
@@ -197,11 +253,12 @@ def update_lead_status(
 def convert_lead_to_member(
     id: str,
     data: LeadConvertRequest,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     """
     Converts lead to full gym member without creating duplicates.
+    Prevents duplicate conversion if lead is already converted.
     If member with same phone or email exists, links the lead.
     Otherwise provisions Member, User account, and initial membership.
     """
@@ -209,6 +266,12 @@ def convert_lead_to_member(
     lead = repo.get(id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+
+    if lead.status == LeadStatus.CONVERTED or lead.converted_member_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This lead has already been converted to a member."
+        )
 
     clean_phone = "".join(c for c in lead.phone if c.isdigit() or c == "+")
     clean_email = lead.email.strip().lower() if lead.email else f"{clean_phone}@repsi.internal"
@@ -283,6 +346,16 @@ def convert_lead_to_member(
     lead.status = LeadStatus.CONVERTED
     lead.converted_at = datetime.now(timezone.utc)
 
+    # Auto-complete or close any pending follow-ups for this lead
+    db.query(LeadFollowUp).filter(
+        LeadFollowUp.lead_id == lead.id,
+        LeadFollowUp.workspace_id == tenant.workspace_id,
+        LeadFollowUp.status == FollowUpStatus.PENDING,
+    ).update(
+        {LeadFollowUp.status: FollowUpStatus.COMPLETED, LeadFollowUp.completed_at: datetime.now(timezone.utc)},
+        synchronize_session=False,
+    )
+
     # Activity log
     repo.log_activity(
         lead_id=lead.id,
@@ -308,13 +381,15 @@ def convert_lead_to_member(
 @router.get("/follow-ups", response_model=List[LeadFollowUpResponse])
 def list_follow_ups(
     status_filter: Optional[str] = None,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     q = (
         db.query(LeadFollowUp, Lead)
         .outerjoin(Lead, LeadFollowUp.lead_id == Lead.id)
         .filter(LeadFollowUp.workspace_id == tenant.workspace_id)
+        .filter((Lead.status != LeadStatus.CONVERTED) | (Lead.id == None))
+        .filter((Lead.converted_member_id == None) | (Lead.id == None))
     )
 
     if status_filter and status_filter != "all":
@@ -346,9 +421,20 @@ def list_follow_ups(
 @router.post("/follow-ups", response_model=LeadFollowUpResponse, status_code=status.HTTP_201_CREATED)
 def create_follow_up(
     data: LeadFollowUpCreate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
+    # Exclude converted leads from follow-up scheduling
+    if data.lead_id:
+        lead = db.query(Lead).filter(Lead.id == data.lead_id, Lead.workspace_id == tenant.workspace_id).first()
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        if lead.status == LeadStatus.CONVERTED or lead.converted_member_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot schedule follow-up for an already converted lead."
+            )
+
     fu = LeadFollowUp(
         workspace_id=tenant.workspace_id,
         lead_id=data.lead_id,
@@ -398,7 +484,7 @@ def create_follow_up(
 def update_follow_up(
     id: str,
     data: LeadFollowUpUpdate,
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     fu = db.query(LeadFollowUp).filter(
@@ -433,7 +519,7 @@ def update_follow_up(
 
 @router.get("/at-risk", response_model=List[AtRiskMemberItem])
 def get_at_risk_members(
-    tenant: TenantContext = Depends(get_current_tenant),
+    tenant: TenantContext = Depends(require_crm_access),
     db: Session = Depends(get_db),
 ):
     repo = CrmRepository(db, tenant.workspace_id)

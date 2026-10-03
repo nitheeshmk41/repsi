@@ -63,11 +63,6 @@ const OptionWheel = dynamic(
   { ssr: false }
 );
 
-const ProductDemoDock = dynamic(
-  () => import("@/components/ui/dock").then((mod) => mod.ProductDemoDock),
-  { ssr: false }
-);
-
 const LanyardSection = dynamic(
   () => import("@/components/ui/lanyard").then((mod) => mod.LanyardSection),
   { ssr: false }
@@ -460,11 +455,6 @@ export default function MarketingLandingPage() {
           </div>
         </div>
       </section>
-
-      {/* 11. DARK REAL PRODUCT DEMO (DOCK SECTION) */}
-      <div id="demo">
-        <ProductDemoDock />
-      </div>
 
       {/* 12. LIGHT TESTIMONIALS SECTION */}
       <section className="bg-white py-24 px-4 sm:px-6 lg:px-8 border-b border-[#E5EAE6]">

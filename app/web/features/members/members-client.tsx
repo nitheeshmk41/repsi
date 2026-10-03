@@ -117,6 +117,7 @@ export function MembersClient({ initialMembers }: MembersClientProps) {
       <MembersTable
         members={filtered}
         onAddMember={() => setAddDialogOpen(true)}
+        onImportCsv={() => setCsvModalOpen(true)}
         onDeleteMember={handleDeleteMember}
       />
 
