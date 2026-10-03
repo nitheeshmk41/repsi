@@ -9,6 +9,7 @@ import '../../../shared/animations/repsi_press.dart';
 import '../../../shared/animations/repsi_stagger.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'owner_search_modal.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
@@ -19,6 +20,15 @@ class DashboardView extends ConsumerStatefulWidget {
 
 class _DashboardViewState extends ConsumerState<DashboardView> {
   String _selectedBranch = 'Indiranagar';
+
+  void _openSearch(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const OwnerSearchModal(),
+    );
+  }
 
   final List<Map<String, dynamic>> _branches = const [
     {'name': 'Indiranagar', 'members': '1,248', 'revenue': '₹84,200', 'status': 'Open'},
@@ -198,6 +208,20 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                           ),
                         ),
                         const SizedBox(width: 6),
+                        // Search Button
+                        GestureDetector(
+                          onTap: () => _openSearch(context),
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.search_rounded, size: 18, color: AppColors.textSecondary),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
                         // Notifications
                         Container(
                           width: 34,
@@ -236,11 +260,69 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   ],
                 ),
               ),
+              const SizedBox(height: 14),
+
+              // Repsi Global Search Trigger Bar
+              RepsiStaggerItem(
+                index: 1,
+                child: GestureDetector(
+                  onTap: () => _openSearch(context),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x06000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Search members, trainers, features...',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Text(
+                            '⌘K',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
 
               // 1. Business Greeting
               RepsiStaggerItem(
-                index: 1,
+                index: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

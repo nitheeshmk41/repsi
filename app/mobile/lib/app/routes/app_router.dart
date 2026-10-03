@@ -14,10 +14,12 @@ import '../../features/member/presentation/views/exercise_library_view.dart';
 import '../../features/member/presentation/views/member_shell_view.dart';
 import '../../features/member/presentation/views/qr_attendance_view.dart';
 import '../../features/members/views/add_member_view.dart';
+import '../../features/members/views/member_detail_view.dart';
 import '../../features/members/views/members_list_view.dart';
 import '../../features/more/views/more_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/operations/views/operations_view.dart';
+import '../../features/operations/views/website_builder_mobile_view.dart';
 import '../../features/shell/views/app_shell_view.dart';
 import '../../features/splash/views/splash_view.dart';
 import '../../features/trainer/views/trainer_shell_view.dart';
@@ -176,6 +178,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const ExerciseLibraryView(),
         ),
+      ),
+
+      // Website Builder route
+      GoRoute(
+        path: RouteNames.websiteBuilder,
+        pageBuilder: (context, state) => buildRepsiPageTransition(
+          context: context,
+          state: state,
+          child: const WebsiteBuilderMobileView(),
+        ),
+      ),
+
+      // Member Detail route
+      GoRoute(
+        path: RouteNames.memberDetail,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return buildRepsiPageTransition(
+            context: context,
+            state: state,
+            child: MemberDetailView(memberId: id),
+          );
+        },
       ),
 
       // Owner App Shell Route

@@ -293,30 +293,32 @@ class MemberHomeView extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Flexible(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF3B82F6),
-                                  shape: BoxShape.circle,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Synced with Health Connect: 8,426 steps, 486 kcal'),
+                                  backgroundColor: AppColors.primary,
+                                  behavior: SnackBarBehavior.floating,
                                 ),
+                              );
+                            },
+                            icon: const Icon(Icons.sync_rounded, size: 14, color: Color(0xFF2563EB)),
+                            label: const Text(
+                              'Sync Health Data',
+                              style: TextStyle(
+                                color: Color(0xFF2563EB),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
                               ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  'Health Connect Synced',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              side: const BorderSide(color: Color(0xFFBFDBFE)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
                           ),
                         ),
                       ],
@@ -329,27 +331,27 @@ class MemberHomeView extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildActivityMetric('8,420', 'Steps', '6.2 km', Icons.directions_walk_rounded, const Color(0xFF3B82F6)),
+                              _buildActivityMetric('8,426', 'Steps', '5.8 km', Icons.directions_walk_rounded, const Color(0xFF3B82F6)),
                               _buildVerticalLine(),
-                              _buildActivityMetric('412', 'Active kcal', 'Target 500', Icons.local_fire_department_rounded, const Color(0xFFEF4444)),
+                              _buildActivityMetric('486', 'Active Calories', 'kcal burned', Icons.local_fire_department_rounded, const Color(0xFFEF4444)),
                               _buildVerticalLine(),
-                              _buildActivityMetric('72', 'Active min', 'Goal 60m', Icons.timer_outlined, const Color(0xFF10B981)),
+                              _buildActivityMetric('5.8', 'Distance', 'km covered', Icons.route_rounded, const Color(0xFF10B981)),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           const Divider(height: 1, color: AppColors.border),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.monitor_weight_outlined, size: 16, color: AppColors.textSecondary),
+                                    const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.primary),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        'Weight: 78.4 kg (↓ 4.8 kg)',
+                                        'Gym Attendance: 18 visits this month',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: AppTypography.caption.copyWith(
@@ -367,21 +369,36 @@ class MemberHomeView extends StatelessWidget {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.primary),
+                                    const Icon(Icons.card_membership_rounded, size: 16, color: Color(0xFFD97706)),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        'Attendance: 18 / 20 visits',
+                                        'Active until 24 Nov',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: AppTypography.caption.copyWith(
-                                          color: AppColors.primaryDark,
+                                          color: const Color(0xFFD97706),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 12,
                                         ),
                                       ),
                                     ),
                                   ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.sports_gymnastics_rounded, size: 16, color: Color(0xFF8B5CF6)),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Trainer: Coach Arun',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],

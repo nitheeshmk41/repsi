@@ -48,6 +48,12 @@ class ApiEndpoints {
   static const String reportsSummary = '/reports/summary';
   static const String revenueTrends = '/reports/revenue-trends';
 
+  // Global Search
+  static const String globalSearch = '/search/global';
+
+  // Website Builder
+  static const String website = '/website';
+
   // Users & Staff
   static const String users = '/users';
 }

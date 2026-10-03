@@ -7,7 +7,6 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../shared/animations/repsi_stagger.dart';
-import '../../../shared/widgets/repsi_button.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -326,7 +325,7 @@ class MoreView extends ConsumerWidget {
 
   void _handleMenuTap(BuildContext context, String title) {
     if (title.contains('Website Builder')) {
-      _showWebsiteBuilderModal(context);
+      context.push(RouteNames.websiteBuilder);
     } else if (title.contains('Automation')) {
       _showAutomationsModal(context);
     } else if (title.contains('Roles') || title.contains('Staff')) {
@@ -338,121 +337,6 @@ class MoreView extends ConsumerWidget {
         SnackBar(content: Text('Opened $title module')),
       );
     }
-  }
-
-  void _showWebsiteBuilderModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Website Builder',
-                            style: AppTypography.heading.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(4)),
-                            child: const Text('● Published', style: TextStyle(color: AppColors.primaryDark, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                      const Text(
-                        'repsifitness.repsi.app',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: RepsiButton(
-                      text: 'Preview Site',
-                      variant: RepsiButtonVariant.outline,
-                      leadingIcon: const Icon(Icons.visibility_outlined, size: 16),
-                      size: RepsiButtonSize.small,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening repsifitness.repsi.app preview...')),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: RepsiButton(
-                      text: 'Share Link',
-                      variant: RepsiButtonVariant.outline,
-                      leadingIcon: const Icon(Icons.share_outlined, size: 16),
-                      size: RepsiButtonSize.small,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Website link copied to clipboard')),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text('Pages & Sections', style: AppTypography.sectionHeading.copyWith(fontSize: 14, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView(
-                  children: const [
-                    _PageTile(title: 'Hero Section', subtitle: 'Main banner, slogan, lead capture form', isEnabled: true),
-                    _PageTile(title: 'About Gym', subtitle: 'Philosophy, facilities, equipment showcase', isEnabled: true),
-                    _PageTile(title: 'Membership Plans', subtitle: 'Gold, Silver, Platinum pricing tables', isEnabled: true),
-                    _PageTile(title: 'Trainers Roster', subtitle: 'Alex Vance, Arun Kumar profiles', isEnabled: true),
-                    _PageTile(title: 'Class Schedule', subtitle: 'Live class calendar with instant booking', isEnabled: true),
-                    _PageTile(title: 'Member Testimonials', subtitle: 'Transformation photos & Google Reviews', isEnabled: true),
-                    _PageTile(title: 'Contact & Location', subtitle: 'Indiranagar Hub map & WhatsApp hotline', isEnabled: true),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              RepsiButton(
-                text: 'Publish Changes',
-                isFullWidth: true,
-                size: RepsiButtonSize.large,
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Website published live to repsifitness.repsi.app!'), backgroundColor: AppColors.primary),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void _showAutomationsModal(BuildContext context) {
@@ -540,25 +424,6 @@ class MoreView extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _PageTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool isEnabled;
-
-  const _PageTile({required this.title, required this.subtitle, required this.isEnabled});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.web_outlined, color: AppColors.primary),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-      trailing: const Icon(Icons.edit_note_rounded, color: AppColors.textSecondary),
     );
   }
 }
