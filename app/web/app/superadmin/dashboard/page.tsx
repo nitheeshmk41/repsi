@@ -45,6 +45,32 @@ export default function SuperAdminDashboardPage() {
     loadData();
   }, []);
 
+  if (!loading && !metrics) {
+    return (
+      <div className="max-w-md mx-auto my-16 p-8 rounded-2xl bg-zinc-900 border border-zinc-800 text-center space-y-4 shadow-2xl">
+        <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-white">Super Admin Access Required</h2>
+          <p className="text-xs text-zinc-400 mt-1">
+            Your session token is invalid, expired, or lacks Super Admin platform permissions.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 pt-2">
+          <Link href="/login?redirect=/superadmin/dashboard">
+            <Button className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs">
+              Sign in as Super Admin
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={loadData} className="w-full border-zinc-800 bg-zinc-900 text-zinc-300 text-xs">
+            Refresh Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* ── Top Header ────────────────────────────────────────────────────── */}

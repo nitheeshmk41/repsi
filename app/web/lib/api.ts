@@ -1528,15 +1528,17 @@ export const repsiApi = {
 
   // ─── Super Admin Control Plane API ──────────────────────────────────────────
   async getSuperAdminOverview(): Promise<any> {
-    const res = await fetch(`${API_BASE}/superadmin/overview`, {
-      headers: { ...getAuthHeader() },
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Failed to load superadmin overview");
+    try {
+      const res = await fetch(`${API_BASE}/superadmin/overview`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      checkAuthResponse(res);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
-    return await res.json();
   },
 
   async superAdminSearch(q: string): Promise<any[]> {
@@ -1545,19 +1547,25 @@ export const repsiApi = {
       const res = await fetch(`${API_BASE}/superadmin/search?q=${encodeURIComponent(q)}`, {
         headers: { ...getAuthHeader() },
       });
+      checkAuthResponse(res);
       if (res.ok) return await res.json();
     } catch {}
     return [];
   },
 
   async getSuperAdminWorkspaces(status?: string): Promise<any[]> {
-    const query = status && status !== "all" ? `?status_filter=${status}` : "";
-    const res = await fetch(`${API_BASE}/superadmin/workspaces${query}`, {
-      headers: { ...getAuthHeader() },
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch gym workspaces");
-    return await res.json();
+    try {
+      const query = status && status !== "all" ? `?status_filter=${status}` : "";
+      const res = await fetch(`${API_BASE}/superadmin/workspaces${query}`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      checkAuthResponse(res);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
   },
 
   async createSuperAdminWorkspace(data: {
