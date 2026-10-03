@@ -8,6 +8,7 @@ import '../../../../shared/animations/repsi_stagger.dart';
 import '../../../../shared/widgets/repsi_button.dart';
 import '../../../../shared/widgets/repsi_card.dart';
 import 'active_workout_view.dart';
+import 'exercise_library_view.dart';
 import 'member_classes_view.dart';
 import 'member_membership_view.dart';
 import 'qr_attendance_view.dart';
@@ -223,17 +224,45 @@ class MemberHomeView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      RepsiButton(
-                        text: 'Start Workout',
-                        leadingIcon: const Icon(Icons.play_arrow_rounded, size: 22),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ActiveWorkoutView()),
-                          );
-                        },
-                        isFullWidth: true,
-                        size: RepsiButtonSize.large,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RepsiButton(
+                              text: 'Start Workout',
+                              leadingIcon: const Icon(Icons.play_arrow_rounded, size: 22),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const ActiveWorkoutView()),
+                                );
+                              },
+                              size: RepsiButtonSize.large,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ExerciseLibraryView()),
+                              );
+                            },
+                            icon: const Icon(Icons.menu_book_rounded, size: 16, color: AppColors.primary),
+                            label: const Text(
+                              'Exercises',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

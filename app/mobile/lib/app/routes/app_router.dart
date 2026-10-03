@@ -10,6 +10,7 @@ import '../../features/auth/views/signup_view.dart';
 import '../../features/auth/views/verify_otp_view.dart';
 import '../../features/dashboard/views/dashboard_view.dart';
 import '../../features/finance/views/owner_finance_view.dart';
+import '../../features/member/presentation/views/exercise_library_view.dart';
 import '../../features/member/presentation/views/member_shell_view.dart';
 import '../../features/member/presentation/views/qr_attendance_view.dart';
 import '../../features/members/views/add_member_view.dart';
@@ -164,6 +165,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           context: context,
           state: state,
           child: const AddMemberView(),
+        ),
+      ),
+
+      // Exercise Library route
+      GoRoute(
+        path: RouteNames.exerciseLibrary,
+        pageBuilder: (context, state) => buildRepsiPageTransition(
+          context: context,
+          state: state,
+          child: const ExerciseLibraryView(),
         ),
       ),
 
