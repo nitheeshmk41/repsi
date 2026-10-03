@@ -61,6 +61,7 @@ export function MarketingNav() {
         { label: "About", href: "/about" },
         { label: "Contact", href: "/contact" },
         { label: "Careers", href: "/careers" },
+        { label: "Partner Program", href: "/partners" },
       ],
     },
   ];

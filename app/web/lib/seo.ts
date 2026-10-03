@@ -127,7 +127,7 @@ export function getSoftwareAppSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Repsi Gym Management Software",
+    name: "Repsi Fitness Management Software",
     operatingSystem: "Web, iOS, Android",
     applicationCategory: "BusinessApplication",
     offers: {

@@ -22,12 +22,14 @@ import {
   X,
   ExternalLink,
   User as UserIcon,
+  Sparkles,
 } from "lucide-react";
 import { logoutSession, getAuthUser } from "@/lib/auth";
 import { repsiApi } from "@/lib/api";
 
 const sidebarNavItems = [
   { name: "Dashboard", href: "/superadmin/dashboard", icon: LayoutDashboard },
+  { name: "Content & Growth", href: "/superadmin/content-growth", icon: Sparkles },
   { name: "Gyms", href: "/superadmin/gyms", icon: Building2 },
   { name: "Members", href: "/superadmin/members", icon: Users },
   { name: "Trainers", href: "/superadmin/trainers", icon: Dumbbell },

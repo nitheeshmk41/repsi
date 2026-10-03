@@ -221,6 +221,11 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/partners" className="hover:text-[#22C55E] transition-colors duration-150">
+                    Partner Program
+                  </Link>
+                </li>
+                <li>
                   <Link href="/about" className="hover:text-[#22C55E] transition-colors duration-150">
                     Privacy
                   </Link>
