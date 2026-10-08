@@ -1,0 +1,28 @@
+name: Deploy API to Bluehost VPS
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'app/api/**'
+      - 'docker/**'
+      - 'docker-compose.production.yml'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    name: Deploy API Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_PASSPHRASE }}
+          script: |
+            cd /opt/repsi
+            git pull origin main
+            docker compose -f docker-compose.production.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.production.yml exec -T api uv run alembic upgrade head

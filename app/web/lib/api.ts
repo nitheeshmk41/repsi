@@ -28,9 +28,108 @@ export interface ApiAttendance {
   personType: "member" | "trainer";
   checkInTime: string;
   checkOutTime?: string;
+  durationMinutes?: number;
+  durationFormatted?: string;
   status: "in" | "out";
-  method: "qr" | "biometric" | "manual";
+  method: "qr" | "biometric" | "manual" | "rfid";
+  checkoutType?: "MANUAL" | "AUTO" | "STAFF";
   terminalId?: string;
+  gymLocationId?: string;
+  avatarUrl?: string;
+  planName?: string;
+  membershipStatus?: string;
+  notes?: string;
+}
+
+export interface ApiAttendanceSummary {
+  today_total: number;
+  currently_inside: number;
+  total_checked_out: number;
+  peak_hour: string;
+  average_dwell_minutes: number;
+  abnormal_sessions_count: number;
+  auto_checkouts_count: number;
+}
+
+export interface ApiCurrentlyInside {
+  attendance_id: string;
+  member_id?: string;
+  trainer_id?: string;
+  name: string;
+  person_type: "member" | "trainer";
+  avatar_url?: string;
+  phone?: string;
+  plan_name?: string;
+  membership_status?: string;
+  check_in_time: string;
+  elapsed_minutes: number;
+  duration_formatted: string;
+  terminal_id?: string;
+  gym_location_id?: string;
+}
+
+export interface ApiAttendanceQR {
+  id: string;
+  workspace_id: string;
+  gym_location_id?: string;
+  token: string;
+  payload: string;
+  label: string;
+  is_active: boolean;
+  expires_at?: string;
+  rotated_at?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface ApiAttendanceSettings {
+  id?: string;
+  workspace_id: string;
+  gym_location_id?: string;
+  max_session_duration_minutes: number;
+  gym_closing_time: string;
+  auto_checkout_enabled: boolean;
+  qr_rotation_interval_minutes: number;
+  allow_member_manual_checkout: boolean;
+  allow_staff_manual_checkout: boolean;
+}
+
+export interface ApiAttendanceAnalytics {
+  daily_trends: { date: string; check_ins: number }[];
+  hourly_distribution: { hour: string; count: number }[];
+  day_of_week_distribution: { day: string; count: number }[];
+  average_duration_minutes: number;
+  total_visits_period: number;
+  unique_members_visited: number;
+  most_active_members: { id: string; name: string; visits: number; plan: string; status: string }[];
+  declining_members: any[];
+  inactive_members_count: number;
+  inactive_members: { id: string; name: string; phone?: string; plan: string; days_inactive: number }[];
+}
+
+export interface ApiMemberPersonalAttendance {
+  member_id: string;
+  member_name: string;
+  total_visits: number;
+  this_week_visits: number;
+  this_month_visits: number;
+  average_duration_minutes: number;
+  current_streak_days: number;
+  last_visit_time?: string;
+  is_currently_inside: boolean;
+  active_session?: ApiAttendance;
+  calendar_attendance_dates: string[];
+  recent_sessions: ApiAttendance[];
+}
+
+export interface ApiGymLocation {
+  id: string;
+  workspace_id: string;
+  name: string;
+  code: string;
+  address?: string;
+  closing_time: string;
+  is_active: boolean;
 }
 
 export interface ApiTrainer {
@@ -227,9 +326,29 @@ export const repsiApi = {
     return this.getAttendance();
   },
 
-  async getAttendance(): Promise<ApiAttendance[]> {
+  async getAttendance(params?: {
+    search?: string;
+    status?: string;
+    checkout_type?: string;
+    date_from?: string;
+    date_to?: string;
+    gym_location_id?: string;
+    limit?: number;
+  }): Promise<ApiAttendance[]> {
     try {
-      const res = await fetch(`${API_BASE}/attendance/`, {
+      const query = new URLSearchParams();
+      if (params?.search) query.append("search", params.search);
+      if (params?.status && params.status !== "all") query.append("status", params.status);
+      if (params?.checkout_type) query.append("checkout_type", params.checkout_type);
+      if (params?.date_from) query.append("date_from", params.date_from);
+      if (params?.date_to) query.append("date_to", params.date_to);
+      if (params?.gym_location_id) query.append("gym_location_id", params.gym_location_id);
+      if (params?.limit) query.append("limit", params.limit.toString());
+
+      const qs = query.toString();
+      const endpoint = qs ? `${API_BASE}/attendance/history?${qs}` : `${API_BASE}/attendance/history`;
+
+      const res = await fetch(endpoint, {
         headers: { ...getAuthHeader() },
         cache: "no-store",
       });
@@ -238,7 +357,7 @@ export const repsiApi = {
         if (Array.isArray(data)) {
           return data.map((a: any) => ({
             id: a.id,
-            name: a.person_name || a.member?.first_name || a.trainer?.name || (a.trainer_id ? "Trainer" : "Member"),
+            name: a.person_name || a.member?.first_name || (a.trainer_id ? "Trainer" : "Member"),
             memberId: a.member_id || undefined,
             trainerId: a.trainer_id || undefined,
             personType: (a.person_type || (a.trainer_id ? "trainer" : "member")) as "member" | "trainer",
@@ -248,26 +367,29 @@ export const repsiApi = {
             checkOutTime: a.check_out_time
               ? new Date(a.check_out_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
               : undefined,
+            durationMinutes: a.duration_minutes,
+            durationFormatted: a.duration_formatted || "0m",
             status: (a.attendance_status || (a.check_out_time ? "out" : "in")) as "in" | "out",
-            method: (a.method || "qr") as "qr" | "biometric" | "manual",
+            method: (a.method || "qr") as "qr" | "biometric" | "manual" | "rfid",
+            checkoutType: (a.checkout_type || "MANUAL") as "MANUAL" | "AUTO" | "STAFF",
             terminalId: a.terminal_id,
+            gymLocationId: a.gym_location_id,
+            notes: a.notes,
           }));
         }
       }
     } catch (err) {
-      console.warn("Failed to fetch attendance", err);
+      console.warn("Failed to fetch attendance history", err);
     }
     return [];
   },
 
-  async getAttendanceSummary(): Promise<{
-    today_total: number;
-    currently_inside: number;
-    peak_hour: string;
-    average_dwell_minutes: number;
-  }> {
+  async getAttendanceSummary(gymLocationId?: string): Promise<ApiAttendanceSummary> {
     try {
-      const res = await fetch(`${API_BASE}/attendance/summary`, {
+      const url = gymLocationId
+        ? `${API_BASE}/attendance/summary?gym_location_id=${gymLocationId}`
+        : `${API_BASE}/attendance/summary`;
+      const res = await fetch(url, {
         headers: { ...getAuthHeader() },
         cache: "no-store",
       });
@@ -277,13 +399,158 @@ export const repsiApi = {
     } catch (err) {
       console.warn("Failed to fetch attendance summary", err);
     }
-    return { today_total: 0, currently_inside: 0, peak_hour: "06:00 – 08:30 AM", average_dwell_minutes: 60 };
+    return {
+      today_total: 0,
+      currently_inside: 0,
+      total_checked_out: 0,
+      peak_hour: "06:00 – 08:30 AM",
+      average_dwell_minutes: 60,
+      abnormal_sessions_count: 0,
+      auto_checkouts_count: 0,
+    };
+  },
+
+  async getCurrentlyInside(gymLocationId?: string): Promise<ApiCurrentlyInside[]> {
+    try {
+      const url = gymLocationId
+        ? `${API_BASE}/attendance/currently-inside?gym_location_id=${gymLocationId}`
+        : `${API_BASE}/attendance/currently-inside`;
+      const res = await fetch(url, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch currently inside", err);
+    }
+    return [];
+  },
+
+  async getActiveQr(gymLocationId?: string): Promise<ApiAttendanceQR> {
+    const url = gymLocationId
+      ? `${API_BASE}/attendance/qr?gym_location_id=${gymLocationId}`
+      : `${API_BASE}/attendance/qr`;
+    const res = await fetch(url, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load active QR code");
+    }
+    return await res.json();
+  },
+
+  async generateQr(data?: { label?: string; gym_location_id?: string; expires_in_hours?: number }): Promise<ApiAttendanceQR> {
+    const res = await fetch(`${API_BASE}/attendance/qr/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data || {}),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to generate QR code");
+    }
+    return await res.json();
+  },
+
+  async toggleQrStatus(qrId: string, isActive: boolean): Promise<ApiAttendanceQR> {
+    const res = await fetch(`${API_BASE}/attendance/qr/${qrId}/toggle`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ is_active: isActive }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to toggle QR code status");
+    }
+    return await res.json();
+  },
+
+  async getAttendanceSettings(gymLocationId?: string): Promise<ApiAttendanceSettings> {
+    const url = gymLocationId
+      ? `${API_BASE}/attendance/settings?gym_location_id=${gymLocationId}`
+      : `${API_BASE}/attendance/settings`;
+    const res = await fetch(url, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load attendance settings");
+    }
+    return await res.json();
+  },
+
+  async updateAttendanceSettings(data: Partial<ApiAttendanceSettings>, gymLocationId?: string): Promise<ApiAttendanceSettings> {
+    const url = gymLocationId
+      ? `${API_BASE}/attendance/settings?gym_location_id=${gymLocationId}`
+      : `${API_BASE}/attendance/settings`;
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update attendance settings");
+    }
+    return await res.json();
+  },
+
+  async getAttendanceAnalytics(days: number = 30): Promise<ApiAttendanceAnalytics> {
+    const res = await fetch(`${API_BASE}/attendance/analytics?days=${days}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load attendance analytics");
+    }
+    return await res.json();
+  },
+
+  async getMemberPersonalAttendance(memberId: string): Promise<ApiMemberPersonalAttendance> {
+    const res = await fetch(`${API_BASE}/attendance/member/${memberId}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load member attendance history");
+    }
+    return await res.json();
+  },
+
+  async getMyPersonalAttendance(): Promise<ApiMemberPersonalAttendance> {
+    const res = await fetch(`${API_BASE}/attendance/member/me`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load my attendance history");
+    }
+    return await res.json();
   },
 
   async checkIn(data: {
     memberId?: string;
     trainerId?: string;
     identifier?: string;
+    qr_token?: string;
+    gym_location_id?: string;
     method?: string;
     terminalId?: string;
   }): Promise<any> {
@@ -297,7 +564,9 @@ export const repsiApi = {
         member_id: data.memberId,
         trainer_id: data.trainerId,
         identifier: data.identifier,
-        method: data.method || "manual",
+        qr_token: data.qr_token,
+        gym_location_id: data.gym_location_id,
+        method: data.method || "qr",
         terminal_id: data.terminalId || "MAIN_DOOR",
       }),
     });
@@ -320,6 +589,7 @@ export const repsiApi = {
       checkInTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "in",
       method: "manual",
+      durationFormatted: "0m",
     };
   },
 
@@ -333,26 +603,28 @@ export const repsiApi = {
       checkInTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "in",
       method: "manual",
+      durationFormatted: "0m",
     };
   },
 
-  async checkOut(attendanceId: string): Promise<void> {
+  async checkOut(attendanceId: string, checkoutType: string = "MANUAL"): Promise<any> {
     const res = await fetch(`${API_BASE}/attendance/check-out`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeader(),
       },
-      body: JSON.stringify({ attendance_id: attendanceId }),
+      body: JSON.stringify({ attendance_id: attendanceId, checkout_type: checkoutType }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Failed to check out");
     }
+    return await res.json();
   },
 
   async checkOutMember(attendanceId: string): Promise<void> {
-    return this.checkOut(attendanceId);
+    return this.checkOut(attendanceId, "STAFF");
   },
 
   async scanQr(identifier: string): Promise<{
@@ -378,6 +650,33 @@ export const repsiApi = {
     }
 
     return await res.json();
+  },
+
+  async triggerAutoCheckout(): Promise<{ auto_checked_out_sessions: number; message: string }> {
+    const res = await fetch(`${API_BASE}/attendance/auto-checkout`, {
+      method: "POST",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to trigger auto checkout");
+    }
+    return await res.json();
+  },
+
+  async getGymLocations(): Promise<ApiGymLocation[]> {
+    try {
+      const res = await fetch(`${API_BASE}/attendance/locations`, {
+        headers: { ...getAuthHeader() },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch gym locations", err);
+    }
+    return [];
   },
 
   // Payments
@@ -934,6 +1233,64 @@ export const repsiApi = {
 
   async verifyRazorpayPayment(data: any): Promise<any> {
     return this.verifyCashfreePayment(data);
+  },
+
+  // Repsi SaaS Billing Architecture
+  async getBillingPlans(): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/plans`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to load billing plans");
+    return await res.json();
+  },
+
+  async getBillingSubscription(): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/subscription`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error("Failed to load subscription details");
+    return await res.json();
+  },
+
+  async createBillingCheckoutSession(data: { plan_code: string; billing_cycle?: string; currency?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to create billing checkout session");
+    return await res.json();
+  },
+
+  async verifyBillingPayment(data: { cashfree_order_id: string; cashfree_payment_id: string; amount: number }): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/verify-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Billing payment verification failed");
+    return await res.json();
+  },
+
+  async changeBillingPlan(data: { target_plan_code: string; billing_cycle?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/change-plan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to update billing plan");
+    return await res.json();
   },
 
   // CRM Endpoints

@@ -19,18 +19,37 @@ class AttendanceService {
   }
 
   Future<AttendanceRecordModel> checkIn({
-    required String memberId,
-    String method = 'QR_SCAN',
+    String? memberId,
+    String? qrToken,
+    String method = 'qr',
   }) async {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.attendanceCheckIn,
         data: {
-          'member_id': memberId,
-          'check_in_method': method,
+          if (memberId != null) 'member_id': memberId,
+          if (qrToken != null) 'qr_token': qrToken,
+          'method': method,
         },
       );
       return AttendanceRecordModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiError.fromDioException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> scanGymQr({
+    required String qrPayload,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/attendance/scan-qr',
+        data: {
+          'identifier': qrPayload,
+          'method': 'qr',
+        },
+      );
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw ApiError.fromDioException(e);
     }
@@ -40,7 +59,7 @@ class AttendanceService {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.attendanceCheckOut,
-        data: {'attendance_id': attendanceId},
+        data: {'attendance_id': attendanceId, 'checkout_type': 'MANUAL'},
       );
       return AttendanceRecordModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

@@ -55,7 +55,7 @@ class AttendanceNotifier extends StateNotifier<AttendanceState> {
     }
   }
 
-  Future<bool> checkInMember(String memberId, {String method = 'QR_SCAN'}) async {
+  Future<bool> checkInMember(String memberId, {String method = 'qr'}) async {
     try {
       final record = await _service.checkIn(memberId: memberId, method: method);
       final currentSummary = state.summary;
@@ -73,6 +73,22 @@ class AttendanceNotifier extends StateNotifier<AttendanceState> {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> scanGymEntrance(String qrPayload) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final result = await _service.scanGymQr(qrPayload: qrPayload);
+      state = state.copyWith(isLoading: false);
+      await fetchSummary();
+      return result;
+    } on ApiError catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Entrance scan failed');
+      rethrow;
     }
   }
 }

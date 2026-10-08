@@ -1,297 +1,371 @@
-from datetime import datetime, timezone
-import json
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, date, timezone
+from typing import Optional, List
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
 from app.core.database import get_db
-from app.models.attendance import Attendance, AttendanceMethod
-from app.models.member import Member, MemberStatus
-from app.models.trainer import Trainer, TrainerStatus
-from app.models.user import User
-from app.schemas.attendance import CheckInRequest, CheckOutRequest, AttendanceResponse, AttendanceSummary
-from app.repositories.attendance import AttendanceRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
+from app.models.user import User
+from app.models.member import Member
+from app.schemas.attendance import (
+    CheckInRequest,
+    CheckOutRequest,
+    AttendanceResponse,
+    AttendanceSummary,
+    CurrentlyInsideMember,
+    AttendanceQRResponse,
+    AttendanceQRGenerateRequest,
+    AttendanceQRToggleRequest,
+    AttendanceSettingsSchema,
+    AttendanceSettingsUpdate,
+    AttendanceAnalyticsResponse,
+    MemberPersonalAttendanceResponse,
+    GymLocationSchema,
+)
+from app.services.attendance import AttendanceService
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
-
-
-def _resolve_person(identifier: str, workspace_id: str, db: Session, user_id: Optional[str] = None):
-    clean = identifier.strip()
-
-    # Try parsing JSON QR payload
-    if clean.startswith("{") and clean.endswith("}"):
-        try:
-            parsed = json.loads(clean)
-            if "member_id" in parsed:
-                m = db.query(Member).filter(Member.id == parsed["member_id"], Member.workspace_id == workspace_id).first()
-                if m:
-                    return {"type": "member", "obj": m}
-            if "trainer_id" in parsed:
-                t = db.query(Trainer).filter(Trainer.id == parsed["trainer_id"], Trainer.workspace_id == workspace_id).first()
-                if t:
-                    return {"type": "trainer", "obj": t}
-            if "id" in parsed:
-                clean = parsed["id"]
-        except Exception:
-            pass
-
-    # Support gym entrance QR scanned by authenticated member mobile app
-    if clean.startswith("repsi://gym/") and user_id:
-        m = db.query(Member).filter(
-            Member.workspace_id == workspace_id,
-            Member.user_id == user_id
-        ).first()
-        if m:
-            return {"type": "member", "obj": m}
-
-    # Strip prefixes like repsi://member/ or repsi://trainer/
-    if clean.startswith("repsi://member/"):
-        clean = clean.replace("repsi://member/", "")
-    elif clean.startswith("repsi://trainer/"):
-        clean = clean.replace("repsi://trainer/", "")
-
-    # Check member by id, email, or phone
-    member = db.query(Member).filter(
-        Member.workspace_id == workspace_id,
-        or_(
-            Member.id == clean,
-            func.lower(Member.email) == clean.lower(),
-            Member.phone == clean,
-            Member.phone.contains(clean.replace(" ", ""))
-        )
-    ).first()
-    if member:
-        return {"type": "member", "obj": member}
-
-    # Check trainer by id, email, or phone
-    trainer = db.query(Trainer).filter(
-        Trainer.workspace_id == workspace_id,
-        or_(
-            Trainer.id == clean,
-            func.lower(Trainer.email) == clean.lower(),
-            Trainer.phone == clean,
-            Trainer.phone.contains(clean.replace(" ", ""))
-        )
-    ).first()
-    if trainer:
-        return {"type": "trainer", "obj": trainer}
-
-    return None
-
-
-def _validate_eligibility(person: dict):
-    if person["type"] == "member":
-        m: Member = person["obj"]
-        if m.status in [MemberStatus.FROZEN, MemberStatus.CANCELLED, MemberStatus.EXPIRED]:
-            status_desc = "suspended" if m.status == MemberStatus.FROZEN else m.status.value
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Check-in blocked: Member is {status_desc.upper()}. Please settle dues or reactivate membership."
-            )
-    elif person["type"] == "trainer":
-        t: Trainer = person["obj"]
-        if t.status in [TrainerStatus.SUSPENDED, TrainerStatus.INACTIVE]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Check-in blocked: Trainer account is suspended or inactive."
-            )
 
 
 @router.post("/check-in", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
 def check_in(
     req: CheckInRequest,
     tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    repo = AttendanceRepository(db, tenant.workspace_id)
-    member_id = req.member_id
-    trainer_id = req.trainer_id
-
-    # If identifier provided, resolve person
-    if req.identifier:
-        person = _resolve_person(req.identifier, tenant.workspace_id, db, user_id=tenant.user_id)
-        if not person:
-            raise HTTPException(status_code=404, detail="No matching member or trainer found in this gym workspace")
-        _validate_eligibility(person)
-        if person["type"] == "member":
-            member_id = person["obj"].id
-        else:
-            trainer_id = person["obj"].id
-
-    if not member_id and not trainer_id:
-        raise HTTPException(status_code=400, detail="Must specify member_id, trainer_id, or valid identifier")
-
-    # Verify entity exists and is eligible in workspace
-    if member_id:
-        m = db.query(Member).filter(Member.id == member_id, Member.workspace_id == tenant.workspace_id).first()
-        if not m:
-            raise HTTPException(status_code=404, detail="Member not found in this gym workspace")
-        _validate_eligibility({"type": "member", "obj": m})
-    elif trainer_id:
-        t = db.query(Trainer).filter(Trainer.id == trainer_id, Trainer.workspace_id == tenant.workspace_id).first()
-        if not t:
-            raise HTTPException(status_code=404, detail="Trainer not found in this gym workspace")
-        _validate_eligibility({"type": "trainer", "obj": t})
-
-    # Prevent duplicate active check-ins
-    active = db.query(Attendance).filter(
-        Attendance.workspace_id == tenant.workspace_id,
-        (Attendance.member_id == member_id) if member_id else (Attendance.trainer_id == trainer_id),
-        Attendance.check_out_time.is_(None)
-    ).first()
-    if active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Person is already checked in. Please check out before checking in again."
-        )
-
-    record = repo.create(
-        member_id=member_id,
-        trainer_id=trainer_id,
+    """
+    Mark member or trainer check-in with server-side validation.
+    Validates membership status, QR token validity, location, and duplicate check-in.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.check_in(
+        user_id=tenant.user_id if tenant.role in ["USER", "MEMBER"] else None,
+        member_id=req.member_id,
+        trainer_id=req.trainer_id,
+        identifier=req.identifier,
+        qr_token=req.qr_token,
+        gym_location_id=req.gym_location_id,
         method=req.method,
-        terminal_id=req.terminal_id or "MAIN_DOOR",
-        check_in_time=datetime.now(timezone.utc)
+        terminal_id=req.terminal_id,
     )
-    return record
-
-
-@router.post("/scan-qr")
-def scan_qr_checkin(
-    req: CheckInRequest,
-    tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
-):
-    """
-    Dedicated endpoint for Turnstile / Tablet QR camera scanner.
-    Toggles check-in or check-out automatically if already on premises.
-    """
-    target = req.identifier or req.member_id or req.trainer_id
-    if not target:
-        raise HTTPException(status_code=400, detail="QR code payload is required")
-
-    person = _resolve_person(target, tenant.workspace_id, db, user_id=tenant.user_id)
-    if not person:
-        raise HTTPException(status_code=404, detail="Unrecognized or invalid QR pass")
-
-    repo = AttendanceRepository(db, tenant.workspace_id)
-    now = datetime.now(timezone.utc)
-
-    # Check if person is currently inside today
-    today_start = datetime.combine(datetime.now(timezone.utc).date(), datetime.min.time()).replace(tzinfo=timezone.utc)
-    query = db.query(Attendance).filter(
-        Attendance.workspace_id == tenant.workspace_id,
-        Attendance.check_in_time >= today_start,
-        Attendance.check_out_time.is_(None)
-    )
-    if person["type"] == "member":
-        active_session = query.filter(Attendance.member_id == person["obj"].id).first()
-    else:
-        active_session = query.filter(Attendance.trainer_id == person["obj"].id).first()
-
-    if active_session:
-        # Check out
-        active_session.check_out_time = now
-        db.commit()
-        db.refresh(active_session)
-        return {
-            "status": "success",
-            "action": "check_out",
-            "person_name": person["obj"].first_name if person["type"] == "member" else person["obj"].name,
-            "person_type": person["type"],
-            "message": f"Goodbye, {person['obj'].first_name if person['type'] == 'member' else person['obj'].name}! Check-out logged.",
-            "record": {
-                "id": active_session.id,
-                "check_in_time": active_session.check_in_time.isoformat(),
-                "check_out_time": active_session.check_out_time.isoformat()
-            }
-        }
-    else:
-        # Check eligibility before new check in
-        _validate_eligibility(person)
-
-        member_id = person["obj"].id if person["type"] == "member" else None
-        trainer_id = person["obj"].id if person["type"] == "trainer" else None
-        record = repo.create(
-            member_id=member_id,
-            trainer_id=trainer_id,
-            method=req.method or AttendanceMethod.QR,
-            terminal_id=req.terminal_id or "QR_ENTRANCE",
-            check_in_time=now
-        )
-        return {
-            "status": "success",
-            "action": "check_in",
-            "person_name": person["obj"].first_name if person["type"] == "member" else person["obj"].name,
-            "person_type": person["type"],
-            "message": f"Welcome back, {person['obj'].first_name if person['type'] == 'member' else person['obj'].name}! Check-in verified.",
-            "record": {
-                "id": record.id,
-                "check_in_time": record.check_in_time.isoformat()
-            }
-        }
 
 
 @router.post("/check-out", response_model=AttendanceResponse)
 def check_out(
     req: CheckOutRequest,
     tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    repo = AttendanceRepository(db, tenant.workspace_id)
-    record = repo.get(req.attendance_id)
-    if not record:
-        raise HTTPException(status_code=404, detail="Attendance check-in record not found")
-    record.check_out_time = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(record)
-    return record
+    """
+    Check out member or trainer.
+    Calculates duration and stores server timestamp.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.check_out(
+        attendance_id=req.attendance_id,
+        member_id=req.member_id,
+        user_id=tenant.user_id if tenant.role in ["USER", "MEMBER"] else None,
+        checkout_type=req.checkout_type,
+    )
 
 
-@router.get("", response_model=list[AttendanceResponse])
-@router.get("/", response_model=list[AttendanceResponse], include_in_schema=False)
-@router.get("/check-in", response_model=list[AttendanceResponse], include_in_schema=False)
-def get_attendance(
+@router.post("/scan-qr")
+def scan_qr_toggle(
+    req: CheckInRequest,
     tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    repo = AttendanceRepository(db, tenant.workspace_id)
-    if tenant.role in ["USER", "MEMBER"]:
-        user = db.query(User).filter(User.id == tenant.user_id).first()
-        if user:
-            m = db.query(Member).filter(
-                Member.workspace_id == tenant.workspace_id,
-                or_(Member.user_id == user.id, Member.email == user.email, Member.phone == user.phone)
-            ).first()
-            if m:
-                return repo.get_multi_by_member(m.id)
-        return []
-    elif tenant.role == "TRAINER":
-        user = db.query(User).filter(User.id == tenant.user_id).first()
-        if user:
-            t = db.query(Trainer).filter(
-                Trainer.workspace_id == tenant.workspace_id,
-                or_(Trainer.user_id == user.id, Trainer.email == user.email, Trainer.phone == user.phone)
-            ).first()
-            if t:
-                return repo.get_multi_by_trainer(t.id)
-        return []
+    """
+    Fast-pass camera scanner endpoint.
+    If the member is currently inside, checks them out.
+    If outside, checks them in.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
 
-    # Owner / Admin gets today's live stream + recent
-    return repo.get_today_attendance()
+    # First check if person has an active inside session
+    person = svc._resolve_person(
+        identifier=req.identifier or req.qr_token,
+        user_id=tenant.user_id if tenant.role in ["USER", "MEMBER"] else None,
+        member_id=req.member_id,
+        trainer_id=req.trainer_id,
+    )
+
+    if person:
+        m_id = person["obj"].id if person["type"] == "member" else None
+        t_id = person["obj"].id if person["type"] == "trainer" else None
+        active = db.query(svc.db.models.Attendance if hasattr(svc.db, "models") else AttendanceService).first()
+        from app.models.attendance import Attendance
+        active = db.query(Attendance).filter(
+            Attendance.workspace_id == tenant.workspace_id,
+            (Attendance.member_id == m_id) if m_id else (Attendance.trainer_id == t_id),
+            Attendance.check_out_time.is_(None),
+        ).first()
+
+        if active:
+            # Check out
+            rec = svc.check_out(attendance_id=active.id, checkout_type="MANUAL")
+            name = person["obj"].first_name if person["type"] == "member" else person["obj"].name
+            return {
+                "status": "success",
+                "action": "check_out",
+                "person_name": name,
+                "message": f"Goodbye, {name}! Total workout duration: {rec.duration_formatted}.",
+                "record": {
+                    "id": rec.id,
+                    "check_in_time": rec.check_in_time.isoformat(),
+                    "check_out_time": rec.check_out_time.isoformat() if rec.check_out_time else None,
+                    "duration_formatted": rec.duration_formatted,
+                },
+            }
+
+    # Not inside -> Perform check in
+    rec = svc.check_in(
+        user_id=tenant.user_id if tenant.role in ["USER", "MEMBER"] else None,
+        member_id=req.member_id,
+        trainer_id=req.trainer_id,
+        identifier=req.identifier,
+        qr_token=req.qr_token,
+        gym_location_id=req.gym_location_id,
+        method=req.method,
+        terminal_id=req.terminal_id,
+    )
+    return {
+        "status": "success",
+        "action": "check_in",
+        "person_name": rec.person_name,
+        "message": f"Welcome, {rec.person_name}! Check-in successful at {rec.check_in_time.strftime('%I:%M %p')}.",
+        "record": {
+            "id": rec.id,
+            "check_in_time": rec.check_in_time.isoformat(),
+            "duration_formatted": rec.duration_formatted,
+        },
+    }
+
+
+@router.post("/auto-checkout")
+def trigger_auto_checkout(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Run the smart auto checkout engine. Checks sessions exceeding max duration or past closing time.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    count = svc.run_smart_auto_checkout()
+    return {
+        "status": "success",
+        "auto_checked_out_sessions": count,
+        "message": f"Processed auto-checkout for {count} sessions based on gym closing hours and maximum duration limit.",
+    }
 
 
 @router.get("/summary", response_model=AttendanceSummary)
 def get_attendance_summary(
+    gym_location_id: Optional[str] = Query(None),
     tenant: TenantContext = Depends(get_current_tenant),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    repo = AttendanceRepository(db, tenant.workspace_id)
-    today = repo.count_today()
-    inside = repo.count_currently_inside()
-    return AttendanceSummary(
-        today_total=today,
-        currently_inside=inside,
-        peak_hour="06:00 – 08:30 AM" if today > 0 else "N/A",
-        average_dwell_minutes=68 if today > 0 else 0
+    """
+    Get live overview metrics for gym owner dashboard.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_owner_summary(gym_location_id=gym_location_id)
+
+
+@router.get("/currently-inside", response_model=List[CurrentlyInsideMember])
+def get_currently_inside(
+    gym_location_id: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get live list of members currently inside the facility.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_currently_inside(gym_location_id=gym_location_id)
+
+
+@router.get("/history", response_model=List[AttendanceResponse])
+def get_attendance_history(
+    search: Optional[str] = Query(None),
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    status: Optional[str] = Query(None),  # "all", "in", "out", "auto"
+    checkout_type: Optional[str] = Query(None),
+    gym_location_id: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Searchable, filterable attendance history logs.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    records = svc.get_attendance_history(
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        status_filter=status,
+        checkout_type=checkout_type,
+        gym_location_id=gym_location_id,
+        skip=skip,
+        limit=limit,
     )
+    return records
+
+
+@router.get("/analytics", response_model=AttendanceAnalyticsResponse)
+def get_attendance_analytics(
+    days: int = Query(30, ge=7, le=90),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Attendance analytics including peak hours, day of week distribution, and retention risks.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_attendance_analytics(days=days)
+
+
+# ─── QR CODE MANAGEMENT ───────────────────────────────────────────────
+
+@router.get("/qr", response_model=AttendanceQRResponse)
+def get_active_qr_code(
+    gym_location_id: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the currently active QR code for gym check-in.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_active_qr(gym_location_id=gym_location_id)
+
+
+@router.post("/qr/generate", response_model=AttendanceQRResponse)
+def generate_or_rotate_qr_code(
+    req: AttendanceQRGenerateRequest = AttendanceQRGenerateRequest(),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate or rotate a secure random QR code. Instantly invalidates previous active QR.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.generate_or_rotate_qr(
+        user_id=tenant.user_id,
+        gym_location_id=req.gym_location_id,
+        label=req.label or "Main Entrance QR",
+        expires_in_hours=req.expires_in_hours,
+    )
+
+
+@router.post("/qr/{qr_id}/toggle", response_model=AttendanceQRResponse)
+def toggle_qr_code_status(
+    qr_id: str,
+    req: AttendanceQRToggleRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Activate or deactivate a specific QR code instantly.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.toggle_qr_status(qr_id, req.is_active)
+
+
+# ─── OWNER SETTINGS ───────────────────────────────────────────────────
+
+@router.get("/settings", response_model=AttendanceSettingsSchema)
+def get_attendance_settings(
+    gym_location_id: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get gym attendance policy settings (max duration, closing time, auto-checkout).
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_or_create_settings(gym_location_id=gym_location_id)
+
+
+@router.put("/settings", response_model=AttendanceSettingsSchema)
+def update_attendance_settings(
+    req: AttendanceSettingsUpdate,
+    gym_location_id: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Update gym attendance settings.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.update_settings(req.model_dump(exclude_unset=True), gym_location_id=gym_location_id)
+
+
+# ─── MEMBER PERSONAL ATTENDANCE ───────────────────────────────────────
+
+@router.get("/member/me", response_model=MemberPersonalAttendanceResponse)
+def get_my_personal_attendance(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get personal attendance stats, streak, calendar visits, and current session for logged in member.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    person = svc._resolve_person(user_id=tenant.user_id)
+    if not person or person["type"] != "member":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member profile not linked to your user account.",
+        )
+    return svc.get_member_personal_stats(person["obj"].id)
+
+
+@router.get("/member/{member_id}", response_model=MemberPersonalAttendanceResponse)
+def get_member_attendance_profile(
+    member_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get personal attendance profile for a specific member (owner or member view).
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_member_personal_stats(member_id)
+
+
+# ─── LOCATIONS ────────────────────────────────────────────────────────
+
+@router.get("/locations", response_model=List[GymLocationSchema])
+def get_gym_locations(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Get available branches/locations for this gym.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    return svc.get_locations()
+
+
+# ─── BACKWARD COMPATIBLE BASE LIST ────────────────────────────────────
+
+@router.get("", response_model=List[AttendanceResponse])
+@router.get("/", response_model=List[AttendanceResponse], include_in_schema=False)
+@router.get("/check-in", response_model=List[AttendanceResponse], include_in_schema=False)
+def list_attendance(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    List attendance for current tenant role (owner sees today's stream, member sees own).
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    if tenant.role in ["USER", "MEMBER"]:
+        person = svc._resolve_person(user_id=tenant.user_id)
+        if person and person["type"] == "member":
+            return svc.get_attendance_history(status_filter="all", limit=50)
+        return []
+    return svc.get_attendance_history(limit=50)
