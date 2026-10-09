@@ -83,31 +83,12 @@ export default function SignupPage() {
     if (!validate()) return;
     setLoading(true);
 
-    try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
-      await fetch(`${apiBase}/auth/register/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: name,
-          email: email.trim().toLowerCase(),
-          password,
-          gym_name: "My Fitness Business",
-          gym_phone: phone.trim() || "+91 98000 00000",
-          gym_city: "India",
-        }),
-      });
-    } catch {
-      // Graceful fallback if backend unavailable
-    }
-
     localStorage.setItem("repsi_pending_email", email.trim().toLowerCase());
     localStorage.setItem("repsi_pending_name", name.trim());
     localStorage.setItem("repsi_pending_password", password);
-    if (phone.trim()) localStorage.setItem("repsi_pending_phone", phone.trim());
 
     setLoading(false);
-    // Launch directly into Step 2 (Email OTP Verification) of Onboarding Wizard!
+    // Proceed to Step 2 (Gym Identity Form) of Onboarding Wizard
     router.push(`/onboarding/wizard?step=2&email=${encodeURIComponent(email.trim().toLowerCase())}&name=${encodeURIComponent(name.trim())}`);
   }
 
@@ -153,7 +134,7 @@ export default function SignupPage() {
               </label>
               {checkingEmail && (
                 <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
+                  <Loader2 className="h-3 w-3 animate-spin" /> Checking...
                 </span>
               )}
             </div>
@@ -173,30 +154,6 @@ export default function SignupPage() {
               required
             />
             {errors.email && <p className="mt-1 text-xs text-rose-600 font-medium">{errors.email}</p>}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-[#111827]">
-                Mobile number <span className="text-[#64748B] font-normal">(Optional)</span>
-              </label>
-              {checkingPhone && (
-                <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
-                </span>
-              )}
-            </div>
-            <PhoneInput
-              value={phone}
-              onChange={(val) => {
-                setPhone(val);
-                if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
-              }}
-              onBlur={handlePhoneBlur}
-              placeholder="98450 12345"
-              error={!!errors.phone}
-            />
-            {errors.phone && <p className="mt-1 text-xs text-rose-600 font-medium">{errors.phone}</p>}
           </div>
 
           <div>

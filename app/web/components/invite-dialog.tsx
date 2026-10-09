@@ -322,7 +322,7 @@ export function InviteDialog({
                 </Label>
                 {checkingEmail && (
                   <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
+                    <Loader2 className="h-3 w-3 animate-spin" /> Checking...
                   </span>
                 )}
               </div>
@@ -392,7 +392,7 @@ export function InviteDialog({
                 </Label>
                 {checkingPhone && (
                   <span className="text-[10px] text-emerald-600 flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Checking DB...
+                    <Loader2 className="h-3 w-3 animate-spin" /> Checking...
                   </span>
                 )}
               </div>
