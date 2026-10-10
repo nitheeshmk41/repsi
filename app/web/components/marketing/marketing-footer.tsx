@@ -47,10 +47,11 @@ export function MarketingFooter() {
             {/* Social Minimal Icons */}
             <div className="flex items-center gap-3.5 pt-3">
               <a
-                href="https://linkedin.com"
+                href="https://linkedin.com/company/repsi"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="LinkedIn"
+                title="LinkedIn: repsi"
                 className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8A9690] hover:text-[#22C55E] hover:bg-white/10 transition-colors"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -58,21 +59,11 @@ export function MarketingFooter() {
                 </svg>
               </a>
               <a
-                href="https://x.com"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Twitter X"
-                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8A9690] hover:text-[#22C55E] hover:bg-white/10 transition-colors"
-              >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
-              <a
-                href="https://instagram.com"
+                href="https://instagram.com/respi.app"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
+                title="Instagram: respi.app"
                 className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8A9690] hover:text-[#22C55E] hover:bg-white/10 transition-colors"
               >
                 <svg className="w-4 h-4 fill-none stroke-current stroke-2 stroke-linecap-round stroke-linejoin-round" viewBox="0 0 24 24">
@@ -82,14 +73,15 @@ export function MarketingFooter() {
                 </svg>
               </a>
               <a
-                href="https://youtube.com"
+                href="https://wa.me/918667783321"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="YouTube"
+                aria-label="WhatsApp"
+                title="WhatsApp: 8667783321"
                 className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#8A9690] hover:text-[#22C55E] hover:bg-white/10 transition-colors"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.15 4.201 4.293-1.126z" />
                 </svg>
               </a>
             </div>

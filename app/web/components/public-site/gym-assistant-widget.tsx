@@ -62,7 +62,7 @@ export function GymAssistantWidget({
   const whatsappPhone =
     website?.assistant_whatsapp ||
     website?.phone ||
-    "919876543210";
+    "918667783321";
   const primaryColor = website?.primary_color || "#16A34A";
 
   const [isOpen, setIsOpen] = useState(false);

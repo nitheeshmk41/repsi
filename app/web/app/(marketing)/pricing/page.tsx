@@ -722,7 +722,7 @@ export default function FullPricingPage() {
               </p>
             </div>
             <a
-              href="https://wa.me/919876543210?text=Hi%20Repsi%20team,%20I'd%20like%20guidance%20on%20choosing%20a%20plan%20for%20my%20gym"
+              href="https://wa.me/918667783321?text=Hi%20Repsi%20team,%20I'd%20like%20guidance%20on%20choosing%20a%20plan%20for%20my%20gym"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition-all shrink-0 shadow-xs flex items-center gap-2"

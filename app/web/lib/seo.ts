@@ -108,13 +108,17 @@ export function getOrganizationSchema() {
     url: SITE_URL,
     logo: `${SITE_URL}/icon.png`,
     sameAs: [
-      "https://twitter.com/repsi_app",
       "https://linkedin.com/company/repsi",
-      "https://instagram.com/repsi.app",
+      "https://instagram.com/respi.app",
     ],
     description: "The modern operating system for gyms, studios, swimming pools, and fitness businesses.",
+    telephone: "+918667783321",
+    email: "contact@repsi.app",
     address: {
       "@type": "PostalAddress",
+      streetAddress: "Gandhimanagar, Peelamedu",
+      addressLocality: "Coimbatore",
+      addressRegion: "Tamil Nadu",
       addressCountry: "IN",
     },
   };

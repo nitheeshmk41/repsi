@@ -52,8 +52,18 @@ export default function ContactPage() {
                       <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Email Sales & Support</div>
-                      <div className="font-medium text-[var(--text)]">contact.repsi@gmail.com</div>
+                      <div className="text-xs text-[var(--text-secondary)]">General / Sales Email</div>
+                      <a href="mailto:contact@repsi.app" className="font-medium text-[var(--text)] hover:text-[var(--accent)] transition-colors">contact@repsi.app</a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--surface-hover)] flex items-center justify-center flex-shrink-0 text-[var(--accent)]">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-[var(--text-secondary)]">Developer Email</div>
+                      <a href="mailto:nitheesh@respi.app" className="font-medium text-[var(--text)] hover:text-[var(--accent)] transition-colors">nitheesh@respi.app</a>
                     </div>
                   </div>
 
@@ -62,8 +72,18 @@ export default function ContactPage() {
                       <Phone className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Call / WhatsApp</div>
-                      <div className="font-medium text-[var(--text)]">+91 866 778 3321</div>
+                      <div className="text-xs text-[var(--text-secondary)]">Phone / WhatsApp CTA</div>
+                      <a href="https://wa.me/918667783321" target="_blank" rel="noreferrer" className="font-medium text-[var(--text)] hover:text-[var(--accent)] transition-colors">8667783321 (+91 8667783321)</a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--surface-hover)] flex items-center justify-center flex-shrink-0 text-[var(--accent)]">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs text-[var(--text-secondary)]">Address</div>
+                      <div className="font-medium text-[var(--text)]">Gandhimanagar, Peelamedu, Coimbatore</div>
                     </div>
                   </div>
 
@@ -74,16 +94,6 @@ export default function ContactPage() {
                     <div>
                       <div className="text-xs text-[var(--text-secondary)]">Support Availability</div>
                       <div className="font-medium text-[var(--text)]">Mon – Sat: 6:00 AM – 10:00 PM IST</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[var(--surface-hover)] flex items-center justify-center flex-shrink-0 text-[var(--accent)]">
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-[var(--text-secondary)]">Offices</div>
-                      <div className="font-medium text-[var(--text)]">HSR Layout, Bangalore & Anna Nagar, Chennai</div>
                     </div>
                   </div>
                 </div>

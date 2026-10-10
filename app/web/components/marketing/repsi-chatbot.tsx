@@ -150,7 +150,7 @@ export function RepsiChatbot() {
       setMascotMood("support");
     } else if (qLower.includes("whatsapp") || qLower.includes("message") || qLower.includes("chat")) {
       reply = "Yes! Repsi integrates with WhatsApp so you can send membership renewal reminders, check-in alerts, and capture prospective leads directly.";
-      action = { label: "Talk to Repsi Team on WhatsApp →", href: "https://wa.me/919876543210" };
+      action = { label: "Talk to Repsi Team on WhatsApp →", href: "https://wa.me/918667783321" };
       setMascotMood("support");
     } else if (qLower.includes("trainer") || qLower.includes("coach") || qLower.includes("staff")) {
       reply = "Trainers get a dedicated Coach Portal where they can view assigned clients, build workout routines, track attendance, and log exercise protocols.";
@@ -373,7 +373,7 @@ export function RepsiChatbot() {
                     </button>
 
                     <a
-                      href="https://wa.me/919876543210?text=Hi%20Repsi%20Team!%20I'd%20like%20to%20know%20more%20about%20Repsi%20gym%20management."
+                      href="https://wa.me/918667783321?text=Hi%20Repsi%20Team!%20I'd%20like%20to%20know%20more%20about%20Repsi%20gym%20management."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full p-3 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950/80 hover:bg-slate-100 dark:hover:bg-zinc-800 text-left transition flex items-center justify-between group"
@@ -710,7 +710,7 @@ export function RepsiChatbot() {
           <div className="h-9 px-4 bg-slate-50 dark:bg-zinc-950 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-[10px] text-slate-400 dark:text-zinc-500 shrink-0 font-medium">
             <span>Repsi • AI Guide • Human support</span>
             <a
-              href="https://wa.me/919876543210"
+              href="https://wa.me/918667783321"
               target="_blank"
               rel="noopener noreferrer"
               className="text-emerald-600 dark:text-emerald-400 hover:underline font-bold"
