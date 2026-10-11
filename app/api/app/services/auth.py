@@ -110,7 +110,7 @@ class AuthService:
             if has_workspaces or existing_user.is_superadmin:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email address already exists.",
+                    detail="An account with this email address already exists. Please sign in instead.",
                 )
             else:
                 self.db.delete(existing_user)

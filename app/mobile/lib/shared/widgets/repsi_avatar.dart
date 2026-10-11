@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_typography.dart';
+import 'repsi_skeleton.dart';
 
 class RepsiAvatar extends StatelessWidget {
   final String name;
@@ -43,12 +45,15 @@ class RepsiAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: imageUrl != null && imageUrl!.isNotEmpty
           ? ClipOval(
-              child: Image.network(
-                imageUrl!,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl!,
                 width: size,
                 height: size,
+                memCacheWidth: (size * 2.5).toInt(),
+                memCacheHeight: (size * 2.5).toInt(),
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _buildInitials(isDark),
+                placeholder: (context, url) => RepsiSkeleton.circular(size: size),
+                errorWidget: (context, error, stackTrace) => _buildInitials(isDark),
               ),
             )
           : _buildInitials(isDark),

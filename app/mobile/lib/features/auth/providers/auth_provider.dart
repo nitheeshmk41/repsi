@@ -90,12 +90,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           activeWorkspaceSlug: workspaceSlug,
         );
 
-        // Background refresh user profile
-        try {
-          final me = await _authService.getMe();
-          await _storage.saveUser(me);
-          state = state.copyWith(user: me);
-        } catch (_) {}
+        // Non-blocking background refresh so startup never waits on network latency
+        _refreshUserProfile();
       } else {
         state = state.copyWith(status: AuthStatus.unauthenticated, clearError: true);
       }
@@ -105,6 +101,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         clearError: true,
       );
     }
+  }
+
+  Future<void> _refreshUserProfile() async {
+    try {
+      final me = await _authService.getMe();
+      await _storage.saveUser(me);
+      if (mounted) {
+        state = state.copyWith(user: me);
+      }
+    } catch (_) {}
   }
 
   Future<bool> login({

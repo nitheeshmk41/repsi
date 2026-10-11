@@ -31,7 +31,7 @@ import { ShinyText } from "@/components/ui/shiny-text";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { BorderBeam } from "@/components/ui/border-beam";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.repsi.app/api/v1";
 
 function maskEmail(emailStr: string) {
   if (!emailStr || !emailStr.includes("@")) return emailStr || "you@gym.com";
@@ -232,9 +232,28 @@ export default function OnboardingWizardPage() {
     return Object.keys(e).length === 0;
   }
 
-  const handleStep1Submit = (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep1()) return;
+
+    // Verify email availability on submit to prevent 409 conflict at step 5
+    setCheckingEmail(true);
+    try {
+      const check = await repsiApi.checkAvailability({ email: email.trim() });
+      if (check.email_exists) {
+        setErrors((prev) => ({
+          ...prev,
+          email: check.email_message || "This email is already registered. Please sign in instead.",
+        }));
+        setCheckingEmail(false);
+        return;
+      }
+    } catch {
+      // Continue if network check fails
+    } finally {
+      setCheckingEmail(false);
+    }
+
     localStorage.setItem("repsi_pending_email", email.trim().toLowerCase());
     localStorage.setItem("repsi_pending_name", fullName.trim());
     localStorage.setItem("repsi_pending_password", password);
@@ -650,7 +669,18 @@ export default function OnboardingWizardPage() {
                     }`}
                     required
                   />
-                  {errors.email && <p className="mt-1 text-xs text-rose-600 font-medium">{errors.email}</p>}
+                  {errors.email && (
+                    <div className="mt-1 text-xs text-rose-600 font-medium space-y-1">
+                      <p>{errors.email}</p>
+                      {errors.email.toLowerCase().includes("already") && (
+                        <p className="pt-0.5">
+                          <Link href="/login" className="inline-flex items-center gap-1 font-semibold text-[#16A34A] hover:underline">
+                            Sign in to your existing account →
+                          </Link>
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1408,6 +1438,35 @@ export default function OnboardingWizardPage() {
               {/* OTP section or Send OTP Trigger */}
               {!otpSent ? (
                 <div className="space-y-4 pt-1">
+                  {otpError && (
+                    <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex flex-col gap-2">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <span className="font-medium">{otpError}</span>
+                      </div>
+                      {otpError.toLowerCase().includes("already") && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-rose-200/60">
+                          <Link
+                            href="/login"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700 transition"
+                          >
+                            Sign In to Existing Account
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOtpError("");
+                              setStep(1);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 font-semibold text-xs hover:bg-rose-100 transition"
+                          >
+                            Change Email
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-[#111827] flex items-start gap-2.5">
                     <ShieldCheck className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" />
                     <div>
