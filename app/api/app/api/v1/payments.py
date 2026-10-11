@@ -44,7 +44,7 @@ def record_payment(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Only gym staff or owners can record payments")
 
     # Generate sequential/unique invoice number
@@ -85,7 +85,7 @@ def get_financial_summary(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can view financial metrics.")
 
     repo = FinanceRepository(db, tenant.workspace_id)

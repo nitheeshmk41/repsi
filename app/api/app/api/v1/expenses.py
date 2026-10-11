@@ -16,7 +16,7 @@ def get_expenses(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can view expenses.")
     repo = BaseTenantRepository[Expense](Expense, db, tenant.workspace_id)
     expenses = repo.get_multi(limit=50)
@@ -29,7 +29,7 @@ def record_expense(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can record expenses.")
     repo = BaseTenantRepository[Expense](Expense, db, tenant.workspace_id)
     return repo.create(

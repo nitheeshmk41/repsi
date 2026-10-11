@@ -53,7 +53,9 @@ export default function OnboardingWizardPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -108,9 +110,14 @@ export default function OnboardingWizardPage() {
       const stepParam = params.get("step");
       const emailParam = params.get("email") || localStorage.getItem("repsi_pending_email");
       const nameParam = params.get("name") || localStorage.getItem("repsi_pending_name");
+      const pwdParam = localStorage.getItem("repsi_pending_password");
 
       if (emailParam) setEmail(emailParam);
       if (nameParam) setFullName(nameParam);
+      if (pwdParam) {
+        setPassword(pwdParam);
+        setConfirmPassword(pwdParam);
+      }
       if (stepParam && !isNaN(Number(stepParam))) {
         setStep(Number(stepParam));
       }
@@ -162,6 +169,8 @@ export default function OnboardingWizardPage() {
     if (!email.trim()) e.email = "Work email is required *";
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Please enter a valid email";
     if (password.length < 8) e.password = "Password must be at least 8 characters";
+    if (!confirmPassword) e.confirmPassword = "Confirm password is required";
+    else if (confirmPassword !== password) e.confirmPassword = "Passwords do not match";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -171,6 +180,7 @@ export default function OnboardingWizardPage() {
     if (!validateStep1()) return;
     localStorage.setItem("repsi_pending_email", email.trim().toLowerCase());
     localStorage.setItem("repsi_pending_name", fullName.trim());
+    localStorage.setItem("repsi_pending_password", password);
     setStep(2);
   };
 
@@ -513,6 +523,35 @@ export default function OnboardingWizardPage() {
                     </button>
                   </div>
                   {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1.5">
+                    Confirm password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Re-enter your password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                      }}
+                      className={`flex h-11 w-full rounded-lg border bg-white px-3.5 pr-10 text-sm text-[#111827] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16A34A] focus-visible:border-[#16A34A] transition-colors ${
+                        errors.confirmPassword ? "border-rose-500" : "border-[#E2E8E5]"
+                      }`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#111827] transition-colors cursor-pointer"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword}</p>}
                 </div>
 
                 <button

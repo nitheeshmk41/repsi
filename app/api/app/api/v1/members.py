@@ -567,7 +567,7 @@ async def import_members_csv(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can import members.")
 
     content = await file.read()
@@ -590,7 +590,7 @@ def import_members_batch(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can import members.")
     return _process_imported_rows(payload, tenant, db)
 

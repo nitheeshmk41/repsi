@@ -62,7 +62,7 @@ def seed_database(db: Session = None, seed_dummy_records: bool = False):
                 id="usr_nitheesh_001",
                 email="nitheesh@repsi.app",
                 full_name="Nitheesh",
-                hashed_password=get_password_hash("PlatformGodMode2026!"),
+                hashed_password=get_password_hash("admin@567"),
                 phone="+91 99999 88888",
                 is_superadmin=True,
                 is_active=True,
@@ -75,6 +75,11 @@ def seed_database(db: Session = None, seed_dummy_records: bool = False):
                 role=UserRole.OWNER,
                 is_active=True,
             ))
+        else:
+            user_nitheesh.hashed_password = get_password_hash("admin@567")
+            user_nitheesh.is_superadmin = True
+            user_nitheesh.is_active = True
+            db.add(user_nitheesh)
 
         # 3. Seed Real Owner (owner@repsi.app & owner@apexfitness.in)
         user_owner = db.query(User).filter(User.email == "owner@repsi.app").first()
@@ -213,7 +218,7 @@ def seed_database(db: Session = None, seed_dummy_records: bool = False):
             pass
 
         db.commit()
-        print("✓ REPSI database successfully initialized with clean real accounts (Admin, Owner, Trainer, User).")
+        print("[SUCCESS] REPSI database successfully initialized with clean real accounts (Admin, Owner, Trainer, User).")
     finally:
         if close_db:
             db.close()

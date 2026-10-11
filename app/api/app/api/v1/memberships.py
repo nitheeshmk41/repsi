@@ -37,7 +37,7 @@ def create_plan(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can create membership plans.")
     repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
     return repo.create(**data.model_dump())
@@ -50,7 +50,7 @@ def update_plan(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can modify membership plans.")
     repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
     plan = repo.get(id)
@@ -65,7 +65,7 @@ def delete_plan(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only owners/staff can delete membership plans.")
     repo = BaseTenantRepository[MembershipPlan](MembershipPlan, db, tenant.workspace_id)
     plan = repo.get(id)
@@ -99,7 +99,7 @@ def create_membership(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden. Only staff/owners can assign memberships.")
 
     plan = db.query(MembershipPlan).filter(
@@ -202,7 +202,7 @@ def check_and_update_expiries(
     """
     Audit and update all memberships where end_date < today to EXPIRED status.
     """
-    if tenant.role not in ["OWNER", "ADMIN", "STAFF"]:
+    if tenant.role not in ["OWNER", "ADMIN", "STAFF", "SUPER_ADMIN"]:
         raise HTTPException(status_code=403, detail="Forbidden.")
 
     today = date.today()

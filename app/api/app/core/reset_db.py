@@ -13,20 +13,20 @@ from app.core.database import engine, Base, SessionLocal
 from app.core.seed import seed_database
 
 def reset_and_seed():
-    print("⚠️  Resetting database: Dropping all tables...")
+    print("[RESET] Resetting database: Dropping all tables...")
     try:
         Base.metadata.drop_all(bind=engine)
-        print("✓ All tables dropped successfully.")
+        print("[SUCCESS] All tables dropped successfully.")
     except Exception as e:
         print(f"Error dropping tables: {e}")
 
-    print("🛠️  Creating fresh database tables...")
+    print("[SCHEMA] Creating fresh database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✓ Fresh schema created successfully.")
+    print("[SUCCESS] Fresh schema created successfully.")
 
-    print("🌱 Seeding fresh initial baseline records...")
+    print("[SEED] Seeding fresh initial baseline records...")
     seed_database()
-    print("✨ Database reset and re-seeded cleanly!")
+    print("[SUCCESS] Database reset and re-seeded cleanly!")
 
 if __name__ == "__main__":
     reset_and_seed()

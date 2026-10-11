@@ -32,8 +32,10 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 10
     OTP_RESEND_COOLDOWN_SECONDS: int = 60
 
-    # Database (PostgreSQL Neon from root .env with SQLite fallback for local test/dev)
+    # Database
     DATABASE_URL: str = "sqlite:///./repsi.db"
+    DATABASE_POOL_SIZE: int = 10
+    DATABASE_MAX_OVERFLOW: int = 20
 
     # Cashfree Payment Gateway
     CASHFREE_APP_ID: str = ""
@@ -53,6 +55,23 @@ class Settings(BaseSettings):
         "https://repsi.vercel.app",
         "https://repsi.fastapicloud.dev",
     ]
+
+    @field_validator("SMTP_PORT", mode="before")
+    @classmethod
+    def assemble_smtp_port(cls, v: object) -> int:
+        if v is None or v == "":
+            return 587
+        return int(v)
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_database_url(cls, v: object) -> str:
+        if isinstance(v, str):
+            v_str = v.strip()
+            if v_str.startswith("postgres://"):
+                return v_str.replace("postgres://", "postgresql://", 1)
+            return v_str
+        return str(v) if v is not None else "sqlite:///./repsi.db"
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
