@@ -26,6 +26,10 @@ import {
 import { loginSession } from "@/lib/auth";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { repsiApi } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShinyText } from "@/components/ui/shiny-text";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
 
@@ -494,15 +498,41 @@ export default function OnboardingWizardPage() {
 
       {/* Main Centered Content */}
       <main className="flex-1 flex flex-col justify-center items-center px-4 -mt-8 sm:-mt-10 pb-8 w-full">
+        {/* Animated Step Progress Bar (Steps 2 through 6) */}
+        {step >= 2 && step <= 6 && (
+          <div className="w-full max-w-[440px] sm:max-w-[460px] mx-auto mb-6 px-1">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#64748B] mb-2">
+              <span className="text-[#111827]">Setup Progress · Step {step - 1} of 5</span>
+              <span className="text-[#16A34A]">{Math.round(((step - 1) / 5) * 100)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-[#E2E8E5] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-[#16A34A] to-[#22C55E] rounded-full"
+                initial={false}
+                animate={{ width: `${((step - 1) / 5) * 100}%` }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+              />
+            </div>
+          </div>
+        )}
+
+        <AnimatePresence mode="wait">
         {/* ======================================================== */}
         {/* STEP 1: CREATE ACCOUNT */}
         {/* ======================================================== */}
         {step === 1 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <motion.div
+            key="step-1"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-[#16A34A] shadow-xs">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>14-Day Free Trial · Growth Plan Unlocked</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#16A34A]" />
+                <ShinyText text="14-Day Free Trial · Growth Plan Unlocked" className="text-xs font-semibold text-[#15803D]" />
               </div>
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#111827] tracking-tight">
                 Create your account
@@ -512,7 +542,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+            >
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-1.5">
@@ -623,7 +656,7 @@ export default function OnboardingWizardPage() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </form>
-            </div>
+            </SpotlightCard>
 
             <p className="text-center text-sm text-[#64748B]">
               Already have an account?{" "}
@@ -631,14 +664,21 @@ export default function OnboardingWizardPage() {
                 Sign in
               </Link>
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 2: GYM IDENTITY (OWNER FORM - STEP 1 OF 5) */}
         {/* ======================================================== */}
         {step === 2 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <motion.div
+            key="step-2"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 1 of 5 · Owner & Gym Setup
@@ -651,7 +691,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)]"
+            >
               <form onSubmit={handleStep2Submit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-1.5">
@@ -732,15 +775,22 @@ export default function OnboardingWizardPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
+            </SpotlightCard>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 3: BUSINESS SETUP (STEP 2 OF 5) */}
         {/* ======================================================== */}
         {step === 3 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <motion.div
+            key="step-3"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 2 of 5 · Business Scale
@@ -753,7 +803,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-[#111827] mb-1.5">
                   Number of locations
@@ -837,15 +890,22 @@ export default function OnboardingWizardPage() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-            </div>
-          </div>
+            </SpotlightCard>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 4: MEMBERSHIPS (STEP 3 OF 5) */}
         {/* ======================================================== */}
         {step === 4 && (
-          <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto space-y-6">
+          <motion.div
+            key="step-4"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[460px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 3 of 5 · Membership Plans
@@ -858,7 +918,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4"
+            >
               <div className="space-y-3">
                 {plans.map((plan) => (
                   <div
@@ -995,7 +1058,7 @@ export default function OnboardingWizardPage() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-            </div>
+            </SpotlightCard>
 
             <div className="text-center">
               <button
@@ -1006,14 +1069,21 @@ export default function OnboardingWizardPage() {
                 Skip for now
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 5: TEAM (STEP 4 OF 5) */}
         {/* ======================================================== */}
         {step === 5 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <motion.div
+            key="step-5"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 4 of 5 · Invite Team
@@ -1026,7 +1096,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4"
+            >
               {/* Owner card */}
               <div className="flex items-center justify-between p-3.5 rounded-lg border border-[#E2E8E5] bg-[#F8FAFC]">
                 <div>
@@ -1135,7 +1208,7 @@ export default function OnboardingWizardPage() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-            </div>
+            </SpotlightCard>
 
             <div className="text-center">
               <button
@@ -1146,14 +1219,21 @@ export default function OnboardingWizardPage() {
                 Skip for now
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 6: OWNER REVIEW & OTP VERIFICATION (LAST STEP!) */}
         {/* ======================================================== */}
         {step === 6 && (
-          <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto space-y-6">
+          <motion.div
+            key="step-6"
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[460px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 5 of 5 · Final Verification
@@ -1166,7 +1246,10 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-5">
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.08)"
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-5"
+            >
               {/* Owner Form Summary Card */}
               <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8E5] space-y-3">
                 <div className="flex items-center justify-between border-b border-[#E2E8E5] pb-2.5">
@@ -1318,15 +1401,22 @@ export default function OnboardingWizardPage() {
                   <span>Back to Team Setup</span>
                 </button>
               </div>
-            </div>
-          </div>
+            </SpotlightCard>
+          </motion.div>
         )}
 
         {/* ======================================================== */}
         {/* STEP 7: LAUNCH & COMPLETE */}
         {/* ======================================================== */}
         {step === 7 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <motion.div
+            key="step-7"
+            initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+          >
             <div className="text-center space-y-1.5">
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#111827] tracking-tight">
                 You&apos;re ready to go.
@@ -1336,11 +1426,20 @@ export default function OnboardingWizardPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] text-center space-y-6">
-              {/* Clean Checkmark */}
-              <div className="w-14 h-14 rounded-full bg-emerald-50 text-[#16A34A] border border-emerald-200 flex items-center justify-center mx-auto">
-                <Check className="w-7 h-7 stroke-[2.5]" />
-              </div>
+            <SpotlightCard
+              spotlightColor="rgba(22, 163, 74, 0.12)"
+              className="relative overflow-hidden bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] text-center space-y-6"
+            >
+              <BorderBeam size={220} duration={7} colorFrom="#16A34A" colorTo="#34D399" />
+              {/* Clean Spring Checkmark */}
+              <motion.div
+                initial={{ scale: 0, rotate: -25 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                className="w-16 h-16 rounded-full bg-emerald-50 text-[#16A34A] border-2 border-emerald-300 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/10"
+              >
+                <Check className="w-8 h-8 stroke-[3]" />
+              </motion.div>
 
               <div className="space-y-2">
                 <h2 className="text-lg font-bold text-[#111827]">
@@ -1355,7 +1454,7 @@ export default function OnboardingWizardPage() {
                 <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
                   <div className="flex items-center gap-1.5 font-bold text-[#15803D]">
                     <Sparkles className="w-4 h-4 text-[#16A34A]" />
-                    <span>Growth Tier — 14 Days Free Active</span>
+                    <ShinyText text="Growth Tier — 14 Days Free Active" className="font-bold text-[#15803D]" />
                   </div>
                   <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-600 text-white tracking-wider">TRIALING</span>
                 </div>
@@ -1400,63 +1499,77 @@ export default function OnboardingWizardPage() {
                   </>
                 )}
               </button>
-            </div>
-          </div>
+            </SpotlightCard>
+          </motion.div>
         )}
+        </AnimatePresence>
       </main>
 
       {/* Confirmation Modal Before Sending OTP */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-[#E2E8E5] pb-3">
-              <div className="flex items-center gap-2 text-[#16A34A]">
-                <ShieldCheck className="w-5 h-5" />
-                <h3 className="font-bold text-base text-[#111827]">Confirm Email Address</h3>
+      <AnimatePresence>
+        {showConfirmModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl border border-[#E2E8E5] p-6 max-w-md w-full shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-[#E2E8E5] pb-3">
+                <div className="flex items-center gap-2 text-[#16A34A]">
+                  <ShieldCheck className="w-5 h-5" />
+                  <h3 className="font-bold text-base text-[#111827]">Confirm Email Address</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  className="text-[#94A3B8] hover:text-[#111827] transition-colors p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="text-[#94A3B8] hover:text-[#111827] transition-colors p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="space-y-3 text-sm text-[#64748B]">
-              <p>
-                We will dispatch a 6-digit verification code to the following work email address:
-              </p>
-              <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8E5] font-mono text-[#111827] font-semibold text-center text-base">
-                {email || "you@gym.com"}
+              <div className="space-y-3 text-sm text-[#64748B]">
+                <p>
+                  We will dispatch a 6-digit verification code to the following work email address:
+                </p>
+                <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8E5] font-mono text-[#111827] font-semibold text-center text-base">
+                  {email || "you@gym.com"}
+                </div>
+                <p className="text-xs text-[#64748B]">
+                  Please confirm this email is correct before requesting the verification code.
+                </p>
               </div>
-              <p className="text-xs text-[#64748B]">
-                Please confirm this email is correct before requesting the verification code.
-              </p>
-            </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  setStep(1);
-                }}
-                className="flex-1 h-10 rounded-lg border border-[#E2E8E5] bg-white text-[#64748B] hover:text-[#111827] text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Edit Email
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmAndSendOtp}
-                className="flex-1 h-10 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Confirm & Send OTP
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setStep(1);
+                  }}
+                  className="flex-1 h-10 rounded-lg border border-[#E2E8E5] bg-white text-[#64748B] hover:text-[#111827] text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Edit Email
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAndSendOtp}
+                  className="flex-1 h-10 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Confirm & Send OTP
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Minimal Footer */}
       <footer className="py-6 text-center text-xs text-[#94A3B8]">

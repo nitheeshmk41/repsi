@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -21,6 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { slugToGymName } from "@/lib/workspace";
 import { repsiApi } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 
 export default function WorkspaceSettingsPage() {
   const router = useRouter();
@@ -112,18 +116,27 @@ export default function WorkspaceSettingsPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                className={`relative w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                   active
                     ? isDanger
-                      ? "bg-rose-500/15 text-rose-500 font-semibold"
-                      : "bg-[var(--primary-soft)] text-[var(--primary-dark)] dark:text-[var(--primary-hover)] font-semibold"
+                      ? "text-rose-500 font-semibold"
+                      : "text-[var(--primary-dark)] dark:text-[var(--primary-hover)] font-semibold"
                     : isDanger
                     ? "text-rose-400 hover:bg-rose-500/10"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)]"
                 }`}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{item.label}</span>
+                {active && (
+                  <motion.span
+                    layoutId="settingsNavActiveIndicator"
+                    className={`absolute inset-0 rounded-lg ${
+                      isDanger ? "bg-rose-500/15" : "bg-[var(--primary-soft)]"
+                    }`}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <Icon className="relative z-10 h-4 w-4 flex-shrink-0" />
+                <span className="relative z-10">{item.label}</span>
               </button>
             );
           })}
@@ -131,15 +144,24 @@ export default function WorkspaceSettingsPage() {
 
         {/* Settings Panel */}
         <div className="flex-1 space-y-6">
-          {activeTab === "general" && (
-            <>
-              <Card className="border-[var(--border)] bg-[var(--surface)]">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">General Information</CardTitle>
-                  <CardDescription>
-                    Your gym's public name, workspace slug, and registered physical address.
-                  </CardDescription>
-                </CardHeader>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+              className="space-y-6"
+            >
+              {activeTab === "general" && (
+                <>
+                  <Card className="border-[var(--border)] bg-[var(--surface)]">
+                    <CardHeader>
+                      <CardTitle className="text-base font-semibold">General Information</CardTitle>
+                      <CardDescription>
+                        Your gym's public name, workspace slug, and registered physical address.
+                      </CardDescription>
+                    </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSave} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -302,108 +324,123 @@ export default function WorkspaceSettingsPage() {
               </CardContent>
             </Card>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Deregister Confirmation Modal */}
-      {showDeregisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-zinc-950 rounded-2xl border border-rose-500/40 p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 text-zinc-100">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center gap-2 text-rose-500">
-                <AlertTriangle className="w-5 h-5" />
-                <h3 className="font-bold text-base">Deregister &quot;{gymProfile.name}&quot;</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDeregisterModal(false)}
-                className="text-zinc-400 hover:text-white transition-colors p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-zinc-300">
-              <p className="text-rose-400 font-semibold">
-                This action will immediately close your gym operations and cancel your active subscription.
-              </p>
-              <p>
-                To confirm you are the authorized owner, please type your gym name{" "}
-                <span className="font-bold font-mono text-white bg-zinc-800 px-1.5 py-0.5 rounded">
-                  {gymProfile.name}
-                </span>{" "}
-                in the box below:
-              </p>
-            </div>
-
-            <form onSubmit={handleDeregisterSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="confirmNameInput" className="text-xs text-zinc-300">
-                  Confirmation Gym Name
-                </Label>
-                <Input
-                  id="confirmNameInput"
-                  value={confirmGymName}
-                  onChange={(e) => setConfirmGymName(e.target.value)}
-                  placeholder={gymProfile.name}
-                  className="bg-zinc-900 border-zinc-700 text-white font-mono text-sm focus:border-rose-500"
-                  autoFocus
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="reasonInput" className="text-xs text-zinc-300">
-                  Reason for closure (optional)
-                </Label>
-                <Input
-                  id="reasonInput"
-                  value={deregisterReason}
-                  onChange={(e) => setDeregisterReason(e.target.value)}
-                  placeholder="e.g. Relocating, closing branch, moving software"
-                  className="bg-zinc-900 border-zinc-700 text-white text-xs"
-                />
-              </div>
-
-              {deregisterError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs font-medium">
-                  {deregisterError}
+      <AnimatePresence>
+        {showDeregisterModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-zinc-950 rounded-2xl border border-rose-500/40 p-6 max-w-lg w-full shadow-2xl space-y-5 text-zinc-100"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2 text-rose-500">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h3 className="font-bold text-base">Deregister &quot;{gymProfile.name}&quot;</h3>
                 </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowDeregisterModal(false)}
-                  disabled={deregisterLoading}
-                  className="flex-1 bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white text-xs"
+                  className="text-zinc-400 hover:text-white transition-colors p-1"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  disabled={deregisterLoading || !confirmGymName.trim()}
-                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold gap-1.5"
-                >
-                  {deregisterLoading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Closing Gym...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Confirm Deregistration
-                    </>
-                  )}
-                </Button>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <div className="space-y-3 text-xs text-zinc-300">
+                <p className="text-rose-400 font-semibold">
+                  This action will immediately close your gym operations and cancel your active subscription.
+                </p>
+                <p>
+                  To confirm you are the authorized owner, please type your gym name{" "}
+                  <span className="font-bold font-mono text-white bg-zinc-800 px-1.5 py-0.5 rounded">
+                    {gymProfile.name}
+                  </span>{" "}
+                  in the box below:
+                </p>
+              </div>
+
+              <form onSubmit={handleDeregisterSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmNameInput" className="text-xs text-zinc-300">
+                    Confirmation Gym Name
+                  </Label>
+                  <Input
+                    id="confirmNameInput"
+                    value={confirmGymName}
+                    onChange={(e) => setConfirmGymName(e.target.value)}
+                    placeholder={gymProfile.name}
+                    className="bg-zinc-900 border-zinc-700 text-white font-mono text-sm focus:border-rose-500"
+                    autoFocus
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="reasonInput" className="text-xs text-zinc-300">
+                    Reason for closure (optional)
+                  </Label>
+                  <Input
+                    id="reasonInput"
+                    value={deregisterReason}
+                    onChange={(e) => setDeregisterReason(e.target.value)}
+                    placeholder="e.g. Relocating, closing branch, moving software"
+                    className="bg-zinc-900 border-zinc-700 text-white text-xs"
+                  />
+                </div>
+
+                {deregisterError && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-xs font-medium">
+                    {deregisterError}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDeregisterModal(false)}
+                    disabled={deregisterLoading}
+                    className="flex-1 bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    disabled={deregisterLoading || !confirmGymName.trim()}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold gap-1.5"
+                  >
+                    {deregisterLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Closing Gym...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Confirm Deregistration
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

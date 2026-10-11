@@ -286,6 +286,15 @@ body {
   transition: none !important;
 }
 
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+.animate-border-beam {
+  animation: border-beam var(--duration, 8s) infinite linear;
+}
+
 /* ─────────────────────────────────────────────────────────────────── */
 /* Accessibility — Reduced Motion                                     */
 /* ─────────────────────────────────────────────────────────────────── */

@@ -29,6 +29,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { repsiApi } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { ShinyText } from "@/components/ui/shiny-text";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 export default function SuperAdminSubscriptionsPage() {
   const [activeTab, setActiveTab] = useState<"gyms" | "plans">("gyms");
@@ -318,7 +322,13 @@ export default function SuperAdminSubscriptionsPage() {
         >
           <Building2 className="w-4 h-4" />
           Gym Tenant Subscriptions ({gyms.length})
-          {activeTab === "gyms" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+          {activeTab === "gyms" && (
+            <motion.div
+              layoutId="superAdminSubTabIndicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 shadow-sm shadow-emerald-500/50"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
         </button>
 
         <button
@@ -329,7 +339,13 @@ export default function SuperAdminSubscriptionsPage() {
         >
           <Sliders className="w-4 h-4" />
           Catalog Plans & Entitlements ({plans.length})
-          {activeTab === "plans" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+          {activeTab === "plans" && (
+            <motion.div
+              layoutId="superAdminSubTabIndicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 shadow-sm shadow-emerald-500/50"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
         </button>
       </div>
 
@@ -573,8 +589,9 @@ export default function SuperAdminSubscriptionsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {plans.map((p) => (
-              <div
+              <SpotlightCard
                 key={p.id}
+                spotlightColor="rgba(16, 185, 129, 0.12)"
                 className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/60 flex flex-col justify-between space-y-4"
               >
                 <div>
@@ -645,7 +662,7 @@ export default function SuperAdminSubscriptionsPage() {
                   <Edit2 className="w-3.5 h-3.5" />
                   Edit Plan Details & Limits
                 </Button>
-              </div>
+              </SpotlightCard>
             ))}
           </div>
         </div>

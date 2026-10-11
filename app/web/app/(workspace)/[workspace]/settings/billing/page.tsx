@@ -27,6 +27,9 @@ import {
   ChevronRight,
   AlertTriangle,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { ShinyText } from "@/components/ui/shiny-text";
 import { repsiApi } from "@/lib/api";
 
 declare global {
@@ -487,10 +490,14 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
 
         {/* 14-DAY TRIAL COUNTDOWN BANNER */}
         {activeSubscription.status === "trialing" && (
-          <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-5 rounded-3xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+          >
             <div className="flex items-start gap-3">
-              <div className="p-3 rounded-2xl bg-[#16A34A] text-white flex-shrink-0 mt-0.5">
-                <Clock className="w-6 h-6" />
+              <div className="p-3 rounded-2xl bg-[#16A34A] text-white flex-shrink-0 mt-0.5 shadow-md shadow-emerald-500/20">
+                <Clock className="w-6 h-6 animate-pulse" />
               </div>
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-text flex items-center gap-2">
@@ -498,7 +505,7 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                     ? "Trial ends tomorrow!"
                     : `${activeSubscription.trial_days_left} Days Remaining in Free Trial`}
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-[#16A34A] text-white">
-                    GROWTH ACCESS
+                    <ShinyText text="GROWTH ACCESS" shimmerColor="rgba(255,255,255,0.9)" />
                   </span>
                 </h3>
                 <p className="text-xs text-text-secondary">
@@ -507,14 +514,16 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
               </div>
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowPlanModal(true)}
               className="px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition shrink-0 shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               <span>Select Paid Plan</span>
               <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         )}
 
         {/* Active Plan Card */}
@@ -598,11 +607,13 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-elevated overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${usage.members.unlimited ? 100 : Math.min(100, usage.members.percentage)}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className={`h-full rounded-full ${
                     usage.members.limit_reached ? "bg-error" : usage.members.warning_triggered ? "bg-warning" : "bg-primary"
                   }`}
-                  style={{ width: `${usage.members.unlimited ? 100 : usage.members.percentage}%` }}
                 />
               </div>
 
@@ -770,233 +781,279 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
       </div>
 
       {/* PLAN CHANGE & CHECKOUT MODAL */}
-      {showPlanModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-3xl max-w-5xl w-full p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[92vh] relative font-sans">
-            <button
-              onClick={() => setShowPlanModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-surface-elevated hover:bg-surface text-text-secondary hover:text-text transition cursor-pointer"
+      <AnimatePresence>
+        {showPlanModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: "spring", stiffness: 320, damping: 28 }}
+              className="bg-surface border border-border rounded-3xl max-w-5xl w-full p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[92vh] relative font-sans"
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-8">
-              <div>
-                <h3 className="text-2xl font-bold text-text flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-primary" />
-                  Upgrade Repsi Subscription
-                </h3>
-                <p className="text-xs text-text-secondary mt-1">
-                  Select a plan to unlock higher member capacities, mobile apps, and multi-branch features.
-                </p>
-              </div>
-
-              {/* Cycle & Currency Selectors */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center p-1 rounded-xl bg-surface-elevated border border-border">
-                  <button
-                    onClick={() => setBillingCycle("monthly")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      billingCycle === "monthly"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-text-secondary hover:text-text"
-                    }`}
-                  >
-                    Monthly
-                  </button>
-                  <button
-                    onClick={() => setBillingCycle("annual")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                      billingCycle === "annual"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-text-secondary hover:text-text"
-                    }`}
-                  >
-                    Annual
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/20 text-white font-extrabold">SAVE ~17%</span>
-                  </button>
-                </div>
-
-                <div className="flex items-center p-1 rounded-xl bg-surface-elevated border border-border">
-                  <button
-                    onClick={() => setCurrency("INR")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      currency === "INR" ? "bg-primary text-primary-foreground" : "text-text-secondary hover:text-text"
-                    }`}
-                  >
-                    ₹ INR
-                  </button>
-                  <button
-                    onClick={() => setCurrency("USD")}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      currency === "USD" ? "bg-primary text-primary-foreground" : "text-text-secondary hover:text-text"
-                    }`}
-                  >
-                    $ USD
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Downgrade Warning Alert */}
-            {downgradeWarning && (
-              <div className="mb-6 p-4 rounded-2xl bg-warning-soft border border-warning/40 text-warning-foreground text-xs space-y-2">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <AlertTriangle className="w-5 h-5 flex-shrink-0 text-warning" />
-                  <span>Downgrade Blocked — Active Limit Exceeded</span>
-                </div>
-                <p className="leading-relaxed">{downgradeWarning.message}</p>
-                <p className="text-[11px] opacity-90">
-                  Note: Repsi never deletes your member records automatically. Please deactivate or archive excess member profiles before switching to a smaller tier.
-                </p>
-              </div>
-            )}
-
-            {checkoutError && (
-              <div className="mb-6 p-4 rounded-xl bg-error-soft border border-error/30 text-error-foreground text-xs flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{checkoutError}</span>
-                </div>
-                <button onClick={() => setCheckoutError(null)} className="underline font-semibold cursor-pointer">
-                  Dismiss
-                </button>
-              </div>
-            )}
-
-            {billingCycle === "annual" && (
-              <div className="mb-4 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary flex items-center gap-2">
-                <Sparkles className="w-4 h-4 flex-shrink-0" />
-                <span>Annual billing rates active. Billed once per year with promotional introductory pricing.</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 my-6">
-              {ALL_PLANS.map((p) => {
-                const isCurrent = activeSubscription.plan?.code === p.code;
-                const isSelected = selectedPlanCode === p.code;
-                const isEnterprise = p.code === "enterprise";
-                let price = 0;
-                if (!isEnterprise) {
-                  if (currency === "INR") {
-                    price = billingCycle === "annual" ? p.priceInrAnnual : p.priceInrMonthly;
-                  } else {
-                    price = billingCycle === "annual" ? p.priceUsdAnnual : p.priceUsdMonthly;
-                  }
-                }
-
-                return (
-                  <div
-                    key={p.code}
-                    onClick={() => setSelectedPlanCode(p.code)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
-                      isSelected
-                        ? "bg-primary-soft/30 border-primary shadow-xl ring-1 ring-primary/40"
-                        : "bg-surface-elevated border-border hover:border-border/80"
-                    }`}
-                  >
-                    {p.badge && (
-                      <span className="absolute -top-3 right-3 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-md">
-                        {p.badge}
-                      </span>
-                    )}
-
-                    <div>
-                      <div className="font-bold text-base text-text mb-1 flex items-center justify-between">
-                        {p.name}
-                        {isCurrent && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-success-soft text-success border border-success/30 font-semibold">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-text-secondary mb-3 min-h-[32px]">{p.description}</div>
-
-                      <div className="flex items-baseline gap-1 mb-3">
-                        {isEnterprise ? (
-                          <span className="text-xl font-black text-text">Custom</span>
-                        ) : (
-                          <>
-                            <span className="text-2xl font-black text-text">
-                              {currency === "INR" ? `₹${price.toLocaleString()}` : `$${price}`}
-                            </span>
-                            <span className="text-[10px] text-text-muted">/ {billingCycle === "annual" ? "yr" : "mo"}</span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="text-[10px] font-mono text-primary font-bold mb-3">
-                        Limit: {p.memberLimit < 0 ? (isEnterprise ? "Custom" : "Unlimited") : `${p.memberLimit} Members`}
-                      </div>
-
-                      <div className="space-y-1.5 pt-3 border-t border-border mb-4">
-                        {p.features.map((f, i) => (
-                          <div key={i} className="flex items-start gap-1.5 text-[10px] text-text-secondary">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
-                            <span>{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      {isCurrent ? (
-                        <button
-                          disabled
-                          className="w-full py-2 rounded-xl bg-surface text-text-muted border border-border text-xs font-bold text-center cursor-not-allowed"
-                        >
-                          Current Plan
-                        </button>
-                      ) : isEnterprise ? (
-                        <a
-                          href="mailto:sales@repsi.app?subject=Enterprise%20Plan%20Inquiry"
-                          className="w-full py-2.5 rounded-xl bg-surface hover:bg-surface-elevated border border-primary text-primary text-xs font-bold transition flex items-center justify-center gap-1.5 text-center"
-                        >
-                          Contact Sales
-                        </a>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCashfreeSaaSCheckout(p.code);
-                          }}
-                          disabled={isProcessingCheckout}
-                          className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          {isProcessingCheckout && selectedPlanCode === p.code ? (
-                            <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <span>Select Plan</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border text-xs text-text-muted">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-primary" />
-                <span>256-Bit SSL Encrypted Payment via Cashfree Subscriptions</span>
-              </div>
               <button
                 onClick={() => setShowPlanModal(false)}
-                className="px-5 py-2 rounded-xl bg-surface-elevated hover:bg-surface text-text-secondary text-xs font-semibold transition border border-border cursor-pointer"
+                className="absolute top-6 right-6 p-2 rounded-full bg-surface-elevated hover:bg-surface text-text-secondary hover:text-text transition cursor-pointer"
               >
-                Close
+                <X className="w-5 h-5" />
               </button>
-            </div>
-          </div>
-        </div>
-      )}
+
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pr-8">
+                <div>
+                  <h3 className="text-2xl font-bold text-text flex items-center gap-2">
+                    <Zap className="w-6 h-6 text-primary" />
+                    Upgrade Repsi Subscription
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Select a plan to unlock higher member capacities, mobile apps, and multi-branch features.
+                  </p>
+                </div>
+
+                {/* Cycle & Currency Selectors with Motion layoutId */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center p-1 rounded-xl bg-surface-elevated border border-border relative">
+                    <button
+                      onClick={() => setBillingCycle("monthly")}
+                      className={`relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer z-10 ${
+                        billingCycle === "monthly" ? "text-primary-foreground" : "text-text-secondary hover:text-text"
+                      }`}
+                    >
+                      {billingCycle === "monthly" && (
+                        <motion.div
+                          layoutId="billingCyclePill"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-sm -z-10"
+                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      Monthly
+                    </button>
+                    <button
+                      onClick={() => setBillingCycle("annual")}
+                      className={`relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer z-10 ${
+                        billingCycle === "annual" ? "text-primary-foreground" : "text-text-secondary hover:text-text"
+                      }`}
+                    >
+                      {billingCycle === "annual" && (
+                        <motion.div
+                          layoutId="billingCyclePill"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-sm -z-10"
+                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      Annual
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/25 text-white font-extrabold">SAVE ~17%</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center p-1 rounded-xl bg-surface-elevated border border-border relative">
+                    <button
+                      onClick={() => setCurrency("INR")}
+                      className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer z-10 ${
+                        currency === "INR" ? "text-primary-foreground" : "text-text-secondary hover:text-text"
+                      }`}
+                    >
+                      {currency === "INR" && (
+                        <motion.div
+                          layoutId="currencyPill"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-sm -z-10"
+                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      ₹ INR
+                    </button>
+                    <button
+                      onClick={() => setCurrency("USD")}
+                      className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer z-10 ${
+                        currency === "USD" ? "text-primary-foreground" : "text-text-secondary hover:text-text"
+                      }`}
+                    >
+                      {currency === "USD" && (
+                        <motion.div
+                          layoutId="currencyPill"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-sm -z-10"
+                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      $ USD
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Downgrade Warning Alert */}
+              {downgradeWarning && (
+                <div className="mb-6 p-4 rounded-2xl bg-warning-soft border border-warning/40 text-warning-foreground text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0 text-warning" />
+                    <span>Downgrade Blocked — Active Limit Exceeded</span>
+                  </div>
+                  <p className="leading-relaxed">{downgradeWarning.message}</p>
+                  <p className="text-[11px] opacity-90">
+                    Note: Repsi never deletes your member records automatically. Please deactivate or archive excess member profiles before switching to a smaller tier.
+                  </p>
+                </div>
+              )}
+
+              {checkoutError && (
+                <div className="mb-6 p-4 rounded-xl bg-error-soft border border-error/30 text-error-foreground text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{checkoutError}</span>
+                  </div>
+                  <button onClick={() => setCheckoutError(null)} className="underline font-semibold cursor-pointer">
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              {billingCycle === "annual" && (
+                <div className="mb-4 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 flex-shrink-0" />
+                  <span>Annual billing rates active. Billed once per year with promotional introductory pricing.</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 my-6">
+                {ALL_PLANS.map((p) => {
+                  const isCurrent = activeSubscription.plan?.code === p.code;
+                  const isSelected = selectedPlanCode === p.code;
+                  const isEnterprise = p.code === "enterprise";
+                  let price = 0;
+                  if (!isEnterprise) {
+                    if (currency === "INR") {
+                      price = billingCycle === "annual" ? p.priceInrAnnual : p.priceInrMonthly;
+                    } else {
+                      price = billingCycle === "annual" ? p.priceUsdAnnual : p.priceUsdMonthly;
+                    }
+                  }
+
+                  return (
+                    <motion.div
+                      key={p.code}
+                      whileHover={{ y: -4 }}
+                      transition={{ duration: 0.2 }}
+                      className="h-full"
+                    >
+                      <SpotlightCard
+                        onClick={() => setSelectedPlanCode(p.code)}
+                        spotlightColor="rgba(34, 197, 94, 0.18)"
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between h-full ${
+                          isSelected
+                            ? "bg-primary-soft/30 border-primary shadow-xl ring-1 ring-primary/40"
+                            : "bg-surface-elevated border-border hover:border-border/80"
+                        }`}
+                      >
+                        {p.badge && (
+                          <span className="absolute -top-3 right-3 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-md">
+                            <ShinyText text={p.badge} shimmerColor="rgba(255,255,255,0.85)" />
+                          </span>
+                        )}
+
+                        <div>
+                          <div className="font-bold text-base text-text mb-1 flex items-center justify-between">
+                            {p.name}
+                            {isCurrent && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-success-soft text-success border border-success/30 font-semibold">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-text-secondary mb-3 min-h-[32px]">{p.description}</div>
+
+                          <div className="flex items-baseline gap-1 mb-3">
+                            {isEnterprise ? (
+                              <span className="text-xl font-black text-text">Custom</span>
+                            ) : (
+                              <>
+                                <span className="text-2xl font-black text-text">
+                                  {currency === "INR" ? `₹${price.toLocaleString()}` : `$${price}`}
+                                </span>
+                                <span className="text-[10px] text-text-muted">/ {billingCycle === "annual" ? "yr" : "mo"}</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="text-[10px] font-mono text-primary font-bold mb-3">
+                            Limit: {p.memberLimit < 0 ? (isEnterprise ? "Custom" : "Unlimited") : `${p.memberLimit} Members`}
+                          </div>
+
+                          <div className="space-y-1.5 pt-3 border-t border-border mb-4">
+                            {p.features.map((f, i) => (
+                              <div key={i} className="flex items-start gap-1.5 text-[10px] text-text-secondary">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                                <span>{f}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          {isCurrent ? (
+                            <button
+                              disabled
+                              className="w-full py-2 rounded-xl bg-surface text-text-muted border border-border text-xs font-bold text-center cursor-not-allowed"
+                            >
+                              Current Plan
+                            </button>
+                          ) : isEnterprise ? (
+                            <a
+                              href="mailto:sales@repsi.app?subject=Enterprise%20Plan%20Inquiry"
+                              className="w-full py-2.5 rounded-xl bg-surface hover:bg-surface-elevated border border-primary text-primary text-xs font-bold transition flex items-center justify-center gap-1.5 text-center"
+                            >
+                              Contact Sales
+                            </a>
+                          ) : (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCashfreeSaaSCheckout(p.code);
+                              }}
+                              disabled={isProcessingCheckout}
+                              className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              {isProcessingCheckout && selectedPlanCode === p.code ? (
+                                <>
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <span>Select Plan</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </>
+                              )}
+                            </motion.button>
+                          )}
+                        </div>
+                      </SpotlightCard>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border text-xs text-text-muted">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  <span>256-Bit SSL Encrypted Payment via Cashfree Subscriptions</span>
+                </div>
+                <button
+                  onClick={() => setShowPlanModal(false)}
+                  className="px-5 py-2 rounded-xl bg-surface-elevated hover:bg-surface text-text-secondary text-xs font-semibold transition border border-border cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* TAX INVOICE RECEIPT MODAL */}
       {selectedInvoice && (
