@@ -9,9 +9,10 @@ from app.api.v1.router import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables and seed deterministic records
+    # Initialize database tables and run safe schema migrations
     try:
-        Base.metadata.create_all(bind=engine)
+        from app.core.migrations import run_database_migrations
+        run_database_migrations()
     except Exception as e:
         print(f"Database initialization note: {e}")
     yield

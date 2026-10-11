@@ -8,9 +8,13 @@ from app.models.base import TimestampMixin
 class SubscriptionStatus(str, enum.Enum):
     TRIALING = "trialing"
     ACTIVE = "active"
-    PAST_DUE = "past_due"
-    CANCELED = "canceled"
+    GRACE_PERIOD = "grace_period"
     EXPIRED = "expired"
+    SUSPENDED = "suspended"
+    CANCELLED = "cancelled"
+    CANCELED = "canceled"
+    PENDING_PAYMENT = "pending_payment"
+    PAST_DUE = "past_due"
 
 class BillingCycle(str, enum.Enum):
     MONTHLY = "monthly"
@@ -26,7 +30,7 @@ class SubscriptionPlan(Base, TimestampMixin):
     __tablename__ = "subscription_plans"
 
     id = Column(String(36), primary_key=True)
-    code = Column(String(50), unique=True, nullable=False, index=True) # starter, basic, growth, pro, business
+    code = Column(String(50), unique=True, nullable=False, index=True) # basic, growth, premium, pro, pro_plus, enterprise
     name = Column(String(100), nullable=False)
     tagline = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
@@ -36,14 +40,17 @@ class SubscriptionPlan(Base, TimestampMixin):
     monthly_price_usd = Column(Float, nullable=False, default=0.0)
     annual_price_usd = Column(Float, nullable=False, default=0.0)
 
-    member_limit = Column(Integer, nullable=False, default=5) # -1 for unlimited
+    member_limit = Column(Integer, nullable=False, default=10) # -1 for unlimited
     trainer_limit = Column(Integer, nullable=False, default=1) # -1 for unlimited
+    staff_limit = Column(Integer, nullable=False, default=2) # -1 for unlimited
     branch_limit = Column(Integer, nullable=False, default=1) # -1 for unlimited
 
     is_popular = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True) # For enabling/disabling new signups
+    contact_sales = Column(Boolean, default=False) # For custom enterprise pricing
     display_order = Column(Integer, default=0)
 
-    # Feature flags dict, e.g. {"mobile_app": True, "sales_crm": True, ...}
+    # Feature flags dict, e.g. {"member_management": True, "diet_plans": True, ...}
     features = Column(JSON, nullable=False, default=dict)
 
     subscriptions = relationship("GymSubscription", back_populates="plan")
@@ -52,17 +59,33 @@ class GymSubscription(Base, TimestampMixin):
     __tablename__ = "gym_subscriptions"
 
     id = Column(String(36), primary_key=True)
-    workspace_id = Column(String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    workspace_id = Column(String(64), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     plan_id = Column(String(36), ForeignKey("subscription_plans.id"), nullable=False)
 
-    status = Column(SQLEnum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.TRIALING)
-    billing_cycle = Column(SQLEnum(BillingCycle), nullable=False, default=BillingCycle.MONTHLY)
+    status = Column(String(50), nullable=False, default="trialing")
+    billing_cycle = Column(String(50), nullable=False, default="monthly")
     currency = Column(String(10), nullable=False, default="INR")
 
     trial_start = Column(DateTime, nullable=True)
     trial_end = Column(DateTime, nullable=True)
     current_period_start = Column(DateTime, nullable=True)
     current_period_end = Column(DateTime, nullable=True)
+
+    # Per-Gym Overrides
+    custom_member_limit = Column(Integer, nullable=True)
+    custom_trainer_limit = Column(Integer, nullable=True)
+    custom_staff_limit = Column(Integer, nullable=True)
+    custom_branch_limit = Column(Integer, nullable=True)
+    custom_features = Column(JSON, nullable=True, default=dict)
+
+    # Complimentary Access
+    is_complimentary = Column(Boolean, default=False)
+    complimentary_until = Column(DateTime, nullable=True)
+
+    # Suspension & Notes
+    suspended_at = Column(DateTime, nullable=True)
+    suspension_reason = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
 
     cashfree_subscription_id = Column(String(100), nullable=True, index=True)
     cashfree_mandate_id = Column(String(100), nullable=True)
@@ -72,6 +95,18 @@ class GymSubscription(Base, TimestampMixin):
     plan = relationship("SubscriptionPlan", back_populates="subscriptions")
     payments = relationship("SubscriptionPayment", back_populates="subscription", cascade="all, delete-orphan")
     invoices = relationship("BillingInvoice", back_populates="subscription", cascade="all, delete-orphan")
+
+class SubscriptionAuditLog(Base, TimestampMixin):
+    __tablename__ = "subscription_audit_logs"
+
+    id = Column(String(36), primary_key=True)
+    workspace_id = Column(String(64), nullable=False, index=True)
+    actor_user_id = Column(String(64), nullable=True)
+    action = Column(String(100), nullable=False) # trial_extension, plan_change, complimentary_grant, override_updated, status_change
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    reason = Column(Text, nullable=True)
+
 
 class SubscriptionPayment(Base, TimestampMixin):
     __tablename__ = "subscription_payments"

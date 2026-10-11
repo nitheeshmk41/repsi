@@ -21,6 +21,7 @@ import {
   MapPin,
   AlertCircle,
   X,
+  Sparkles,
 } from "lucide-react";
 import { loginSession } from "@/lib/auth";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -498,12 +499,16 @@ export default function OnboardingWizardPage() {
         {/* ======================================================== */}
         {step === 1 && (
           <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
-            <div className="text-center space-y-1.5">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-[#16A34A] shadow-xs">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>14-Day Free Trial · Growth Plan Unlocked</span>
+              </div>
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#111827] tracking-tight">
                 Create your account
               </h1>
               <p className="text-sm text-[#64748B]">
-                Start your 14-day free trial. No credit card required.
+                Start with 14 days of Growth features & up to 35 members. No credit card required.
               </p>
             </div>
 
@@ -1343,6 +1348,25 @@ export default function OnboardingWizardPage() {
                 </h2>
                 <p className="text-sm text-[#64748B] max-w-xs mx-auto leading-relaxed">
                   Everything is set up to run members, attendance, and payments from day one.
+                </p>
+              </div>
+
+              <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200/80 text-left text-xs space-y-2.5">
+                <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+                  <div className="flex items-center gap-1.5 font-bold text-[#15803D]">
+                    <Sparkles className="w-4 h-4 text-[#16A34A]" />
+                    <span>Growth Tier — 14 Days Free Active</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-600 text-white tracking-wider">TRIALING</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-[#334155] pt-0.5">
+                  <div>• Active Member Capacity: <strong className="text-[#0F172A]">35 Members</strong></div>
+                  <div>• Trainer Management: <strong className="text-[#0F172A]">Unlocked</strong></div>
+                  <div>• Attendance Reports & QR: <strong className="text-[#0F172A]">Unlocked</strong></div>
+                  <div>• Workout Schedules: <strong className="text-[#0F172A]">Unlocked</strong></div>
+                </div>
+                <p className="text-[11px] text-emerald-800/80 pt-1 border-t border-emerald-200/40">
+                  Zero automatic charge at trial expiry. Your data is 100% preserved.
                 </p>
               </div>
 

@@ -53,65 +53,71 @@ interface PlanTier {
 
 const ALL_PLANS: PlanTier[] = [
   {
-    id: "starter",
-    code: "starter",
-    name: "Starter",
-    priceInrMonthly: 129,
-    priceInrAnnual: 1299,
-    priceUsdMonthly: 1.99,
-    priceUsdAnnual: 14.49,
-    description: "Designed for very small or new gyms getting started.",
-    memberLimit: 5,
-    trainerLimit: 1,
-    branchLimit: 1,
-    features: [
-      "Up to 5 active members",
-      "1 trainer account",
-      "Web access & dashboard",
-      "Basic gym management",
-      "Membership plans",
-    ],
-  },
-  {
     id: "basic",
     code: "basic",
     name: "Basic",
-    priceInrMonthly: 499,
-    priceInrAnnual: 4999,
-    priceUsdMonthly: 5.99,
-    priceUsdAnnual: 55.99,
-    description: "Designed for small gyms building core operations.",
-    memberLimit: 40,
-    trainerLimit: 3,
+    priceInrMonthly: 149,
+    priceInrAnnual: 129,
+    priceUsdMonthly: 2.49,
+    priceUsdAnnual: 1.99,
+    description: "Essential gym management for small studios & personal gyms.",
+    memberLimit: 10,
+    trainerLimit: 1,
     branchLimit: 1,
     features: [
-      "Up to 40 active members",
-      "3 trainer accounts",
-      "Attendance & QR check-in",
-      "Payment tracking & receipts",
-      "Lead management & notifications",
+      "Maximum 10 active members",
+      "Member registration & profiles",
+      "Membership records & expiry tracking",
+      "QR attendance check-in",
+      "Manual payment & fee records",
+      "Basic workout scheduling",
+      "Basic dashboard & essential reminders",
     ],
   },
   {
     id: "growth",
     code: "growth",
     name: "Growth",
-    priceInrMonthly: 1299,
-    priceInrAnnual: 12999,
-    priceUsdMonthly: 14.99,
-    priceUsdAnnual: 144.49,
+    priceInrMonthly: 499,
+    priceInrAnnual: 469,
+    priceUsdMonthly: 6.99,
+    priceUsdAnnual: 5.99,
     badge: "MOST POPULAR",
-    description: "Designed for growing gyms with member & trainer mobile apps.",
-    memberLimit: 100,
+    description: "Designed for growing gyms with trainer assignments & attendance reports.",
+    memberLimit: 35,
     trainerLimit: 5,
     branchLimit: 1,
     features: [
-      "Up to 100 active members",
-      "5 trainer accounts",
-      "Member & Trainer Mobile Apps",
-      "Workout plans & progress tracking",
-      "Sales CRM & Lead pipeline",
-      "Google Fit integration",
+      "Maximum 35 active members",
+      "Everything in Basic",
+      "Trainer accounts & member assignments",
+      "Structured workout schedules",
+      "Attendance reports & export",
+      "Membership expiry notifications",
+      "Fee collection summaries & analytics",
+    ],
+  },
+  {
+    id: "premium",
+    code: "premium",
+    name: "Premium",
+    priceInrMonthly: 1299,
+    priceInrAnnual: 1099,
+    priceUsdMonthly: 16.99,
+    priceUsdAnnual: 13.99,
+    badge: "BEST VALUE",
+    description: "Comprehensive nutrition, diet planning, and personalized workouts.",
+    memberLimit: 100,
+    trainerLimit: 15,
+    branchLimit: 1,
+    features: [
+      "Maximum 100 active members",
+      "Everything in Growth",
+      "Manual diet & nutrition plan creation",
+      "Assign diet plans to members",
+      "Personalized workout plans",
+      "Member progress tracking & history",
+      "Trainer workload overview & reports",
     ],
   },
   {
@@ -119,43 +125,66 @@ const ALL_PLANS: PlanTier[] = [
     code: "pro",
     name: "Pro",
     priceInrMonthly: 2499,
-    priceInrAnnual: 24999,
-    priceUsdMonthly: 29.99,
-    priceUsdAnnual: 277.99,
-    badge: "UNLIMITED MEMBERS",
-    description: "Designed for established gyms needing unlimited members & analytics.",
-    memberLimit: -1,
-    trainerLimit: 10,
+    priceInrAnnual: 2149,
+    priceUsdMonthly: 32.99,
+    priceUsdAnnual: 27.99,
+    description: "Advanced business analytics, automated workflows, and data exports.",
+    memberLimit: 250,
+    trainerLimit: 35,
     branchLimit: 1,
     features: [
-      "Unlimited active members",
-      "10 trainer accounts",
-      "Advanced revenue analytics",
-      "Retention radar & alerts",
-      "Custom CSV data exports",
-      "Priority 24/7 support",
+      "Maximum 250 active members",
+      "Everything in Premium",
+      "Advanced business & revenue analytics",
+      "Detailed revenue & dues reports",
+      "Data export (CSV / Excel)",
+      "Workout & diet templates",
+      "Granular staff permissions",
     ],
   },
   {
-    id: "business",
-    code: "business",
-    name: "Business",
+    id: "pro_plus",
+    code: "pro_plus",
+    name: "Pro Plus+",
     priceInrMonthly: 4999,
-    priceInrAnnual: 49999,
-    priceUsdMonthly: 59.99,
-    priceUsdAnnual: 555.99,
-    badge: "MULTI-BRANCH",
-    description: "Designed for multi-branch gym chains and franchises.",
+    priceInrAnnual: 4599,
+    priceUsdMonthly: 64.99,
+    priceUsdAnnual: 58.99,
+    badge: "UNLIMITED MEMBERS",
+    description: "Unlimited members with bulk operations and priority concierge support.",
+    memberLimit: -1,
+    trainerLimit: 100,
+    branchLimit: 1,
+    features: [
+      "Unlimited active members (fair-use policy)",
+      "Everything in Pro",
+      "Advanced staff roles & permissions",
+      "Custom reporting & dashboards",
+      "Bulk member operations & imports",
+      "Enhanced audit logs",
+      "Priority 24/7 support & onboarding",
+    ],
+  },
+  {
+    id: "enterprise",
+    code: "enterprise",
+    name: "Enterprise",
+    priceInrMonthly: 0,
+    priceInrAnnual: 0,
+    priceUsdMonthly: 0,
+    priceUsdAnnual: 0,
+    badge: "CUSTOM",
+    description: "Custom limits, multi-branch consolidated reporting, and dedicated SLA.",
     memberLimit: -1,
     trainerLimit: -1,
     branchLimit: -1,
     features: [
-      "Unlimited members & trainers",
-      "Multi-branch dashboards",
-      "Centralized member database",
-      "Owner hierarchy & permissions",
-      "REST API access & webhooks",
-      "Dedicated account concierge",
+      "Everything in Pro Plus+",
+      "Custom member and staff limits",
+      "Multi-branch management & consolidated reports",
+      "Centralized administration",
+      "Custom integrations & dedicated API access",
+      "Tailored onboarding & SLA arrangements",
     ],
   },
 ];
@@ -835,35 +864,45 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 my-6">
+            {billingCycle === "annual" && (
+              <div className="mb-4 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-[11px] text-primary flex items-center gap-2">
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                <span>Annual billing rates active. Billed once per year with promotional introductory pricing.</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 my-6">
               {ALL_PLANS.map((p) => {
                 const isCurrent = activeSubscription.plan?.code === p.code;
                 const isSelected = selectedPlanCode === p.code;
+                const isEnterprise = p.code === "enterprise";
                 let price = 0;
-                if (currency === "INR") {
-                  price = billingCycle === "annual" ? p.priceInrAnnual : p.priceInrMonthly;
-                } else {
-                  price = billingCycle === "annual" ? p.priceUsdAnnual : p.priceUsdMonthly;
+                if (!isEnterprise) {
+                  if (currency === "INR") {
+                    price = billingCycle === "annual" ? p.priceInrAnnual : p.priceInrMonthly;
+                  } else {
+                    price = billingCycle === "annual" ? p.priceUsdAnnual : p.priceUsdMonthly;
+                  }
                 }
 
                 return (
                   <div
                     key={p.code}
                     onClick={() => setSelectedPlanCode(p.code)}
-                    className={`p-5 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
                       isSelected
                         ? "bg-primary-soft/30 border-primary shadow-xl ring-1 ring-primary/40"
                         : "bg-surface-elevated border-border hover:border-border/80"
                     }`}
                   >
                     {p.badge && (
-                      <span className="absolute -top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground shadow-md">
+                      <span className="absolute -top-3 right-3 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-md">
                         {p.badge}
                       </span>
                     )}
 
                     <div>
-                      <div className="font-bold text-lg text-text mb-1 flex items-center justify-between">
+                      <div className="font-bold text-base text-text mb-1 flex items-center justify-between">
                         {p.name}
                         {isCurrent && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded bg-success-soft text-success border border-success/30 font-semibold">
@@ -874,19 +913,25 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                       <div className="text-[11px] text-text-secondary mb-3 min-h-[32px]">{p.description}</div>
 
                       <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-2xl font-black text-text">
-                          {currency === "INR" ? `₹${price.toLocaleString()}` : `$${price}`}
-                        </span>
-                        <span className="text-[10px] text-text-muted">/ {billingCycle === "annual" ? "yr" : "mo"}</span>
+                        {isEnterprise ? (
+                          <span className="text-xl font-black text-text">Custom</span>
+                        ) : (
+                          <>
+                            <span className="text-2xl font-black text-text">
+                              {currency === "INR" ? `₹${price.toLocaleString()}` : `$${price}`}
+                            </span>
+                            <span className="text-[10px] text-text-muted">/ {billingCycle === "annual" ? "yr" : "mo"}</span>
+                          </>
+                        )}
                       </div>
 
                       <div className="text-[10px] font-mono text-primary font-bold mb-3">
-                        Limit: {p.memberLimit < 0 ? "Unlimited" : `${p.memberLimit} Members`}
+                        Limit: {p.memberLimit < 0 ? (isEnterprise ? "Custom" : "Unlimited") : `${p.memberLimit} Members`}
                       </div>
 
-                      <div className="space-y-2 pt-3 border-t border-border mb-4">
+                      <div className="space-y-1.5 pt-3 border-t border-border mb-4">
                         {p.features.map((f, i) => (
-                          <div key={i} className="flex items-start gap-1.5 text-[11px] text-text-secondary">
+                          <div key={i} className="flex items-start gap-1.5 text-[10px] text-text-secondary">
                             <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                             <span>{f}</span>
                           </div>
@@ -902,6 +947,13 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                         >
                           Current Plan
                         </button>
+                      ) : isEnterprise ? (
+                        <a
+                          href="mailto:sales@repsi.app?subject=Enterprise%20Plan%20Inquiry"
+                          className="w-full py-2.5 rounded-xl bg-surface hover:bg-surface-elevated border border-primary text-primary text-xs font-bold transition flex items-center justify-center gap-1.5 text-center"
+                        >
+                          Contact Sales
+                        </a>
                       ) : (
                         <button
                           onClick={(e) => {
@@ -914,11 +966,11 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                           {isProcessingCheckout && selectedPlanCode === p.code ? (
                             <>
                               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              <span>Cashfree...</span>
+                              Processing...
                             </>
                           ) : (
                             <>
-                              <span>Choose {p.name}</span>
+                              <span>Select Plan</span>
                               <ChevronRight className="w-3.5 h-3.5" />
                             </>
                           )}

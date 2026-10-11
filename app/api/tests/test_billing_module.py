@@ -38,13 +38,14 @@ def test_get_subscription_plans():
     response = client.get("/api/v1/billing/plans")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 5
+    assert len(data) == 6
     codes = [p["code"] for p in data]
-    assert "starter" in codes
     assert "basic" in codes
     assert "growth" in codes
+    assert "premium" in codes
     assert "pro" in codes
-    assert "business" in codes
+    assert "pro_plus" in codes
+    assert "enterprise" in codes
 
 def test_get_workspace_subscription_default_trial():
     response = client.get("/api/v1/billing/subscription", headers={"X-Workspace-Id": "test-gym"})
@@ -63,14 +64,14 @@ def test_create_checkout_session():
     data = response.json()
     assert "payment_session_id" in data
     assert "order_id" in data
-    assert data["amount"] == 13188.0
+    assert data["amount"] == 469.0
     assert data["currency"] == "INR"
 
 def test_verify_and_activate_payment():
     payload = {
         "cashfree_order_id": "cf_ord_98124",
         "cashfree_payment_id": "cf_pay_12345",
-        "amount": 1299.0
+        "amount": 499.0
     }
     response = client.post("/api/v1/billing/verify-payment", json=payload, headers={"X-Workspace-Id": "test-gym"})
     assert response.status_code == 200
@@ -79,8 +80,8 @@ def test_verify_and_activate_payment():
     assert data["status"] == "active"
 
 def test_check_feature_entitlement():
-    # Growth plan has mobile_app = True
-    response = client.get("/api/v1/billing/entitlements/mobile_app", headers={"X-Workspace-Id": "test-gym"})
+    # Growth plan has trainer_management = True
+    response = client.get("/api/v1/billing/entitlements/trainer_management", headers={"X-Workspace-Id": "test-gym"})
     assert response.status_code == 200
     assert response.json()["has_access"] is True
 
@@ -90,8 +91,8 @@ def test_check_feature_entitlement():
     assert response.json()["has_access"] is False
 
 def test_change_plan_validation():
-    # Downgrade attempt to Starter (limit 5 members)
-    payload = {"target_plan_code": "starter", "billing_cycle": "monthly"}
+    # Switch to Basic plan
+    payload = {"target_plan_code": "basic", "billing_cycle": "monthly"}
     response = client.post("/api/v1/billing/change-plan", json=payload, headers={"X-Workspace-Id": "test-gym"})
     assert response.status_code == 200
     assert response.json()["success"] is True

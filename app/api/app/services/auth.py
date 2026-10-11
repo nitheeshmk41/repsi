@@ -84,6 +84,10 @@ class AuthService:
         self.db.refresh(user)
         self.db.refresh(workspace)
 
+        # Initialize 14-day Free Trial (Growth tier) for the newly registered gym
+        from app.services.billing import BillingService
+        BillingService.get_or_create_workspace_subscription(self.db, workspace.id)
+
         token = create_access_token(
             subject=user.id, workspace_id=workspace.id, role=UserRole.OWNER.value
         )

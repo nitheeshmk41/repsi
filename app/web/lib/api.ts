@@ -1246,7 +1246,7 @@ export const repsiApi = {
   },
 
   async getBillingSubscription(): Promise<any> {
-    const res = await fetch(`${API_BASE}/billing/subscription`, {
+    const res = await fetch(`${API_BASE}/workspaces/billing`, {
       headers: { ...getAuthHeader() },
       cache: "no-store",
     });
@@ -2211,6 +2211,173 @@ export const repsiApi = {
     } catch {
       return { query: q, role: "OWNER", members: [], trainers: [], features: [] };
     }
+  },
+
+  // -------------------------------------------------------------
+  // Subscription & Entitlements
+  // -------------------------------------------------------------
+
+  async getWorkspaceEntitlements(): Promise<any> {
+    const res = await fetch(`${API_BASE}/workspaces/entitlements`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      throw new Error("Failed to load workspace entitlements");
+    }
+    return await res.json();
+  },
+
+  async deregisterWorkspace(gymNameConfirmation: string, reason?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/workspaces/deregister`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({
+        gym_name_confirmation: gymNameConfirmation,
+        reason: reason || "Owner requested gym deregistration",
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to deregister workspace");
+    }
+    return await res.json();
+  },
+
+  // Super Admin Subscriptions
+  async getSuperAdminSubscriptionPlans(): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/plans`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async updateSuperAdminSubscriptionPlan(planId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/plans/${planId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update plan");
+    }
+    return await res.json();
+  },
+
+  async getSuperAdminGymSubscriptions(params?: { q?: string; status?: string; plan?: string }): Promise<any[]> {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set("q", params.q);
+    if (params?.status && params.status !== "all") sp.set("status", params.status);
+    if (params?.plan && params.plan !== "all") sp.set("plan", params.plan);
+    const query = sp.toString() ? `?${sp.toString()}` : "";
+
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms${query}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async getSuperAdminGymSubscription(workspaceId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load gym subscription details");
+    }
+    return await res.json();
+  },
+
+  async extendSuperAdminGymTrial(workspaceId: string, days: number, reason: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}/extend-trial`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ days, reason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to extend trial");
+    }
+    return await res.json();
+  },
+
+  async changeSuperAdminGymPlan(workspaceId: string, data: { plan_code: string; billing_cycle?: string; reason?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}/change-plan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to change gym plan");
+    }
+    return await res.json();
+  },
+
+  async grantSuperAdminComplimentary(workspaceId: string, data: { days?: number; is_permanent?: boolean; reason: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}/complimentary`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to grant complimentary access");
+    }
+    return await res.json();
+  },
+
+  async setSuperAdminGymOverride(workspaceId: string, data: any): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}/override`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to set gym overrides");
+    }
+    return await res.json();
+  },
+
+  async updateSuperAdminGymSubscriptionStatus(workspaceId: string, data: { status: string; reason: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms/${workspaceId}/status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update subscription status");
+    }
+    return await res.json();
   },
 };
 

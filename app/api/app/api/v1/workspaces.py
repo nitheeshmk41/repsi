@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime, timedelta, timezone
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -8,10 +9,17 @@ from app.models.member import Member, MembershipPlan, Membership, MemberStatus
 from app.models.attendance import Attendance, AttendanceMethod
 from app.models.finance import Payment, Expense, PaymentMethod, PaymentStatus
 from app.models.trainer import Trainer, GymClass
+from app.models.billing import GymSubscription, SubscriptionStatus
+from app.services.billing import BillingService
 from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse
 from app.middleware.tenant import get_current_tenant, TenantContext
 
 router = APIRouter(prefix="/workspaces", tags=["Workspaces"])
+
+
+class DeregisterGymRequest(BaseModel):
+    gym_name_confirmation: str
+    reason: Optional[str] = None
 
 
 @router.get("/", response_model=List[WorkspaceResponse])
@@ -28,47 +36,104 @@ def get_workspace_entitlements(
     db: Session = Depends(get_db)
 ):
     """
-    Returns feature entitlements and operational limits for the active gym workspace.
-    Determines capabilities for Website Builder, CRM, custom domains, and staff/member limits.
+    Returns live feature entitlements and operational limits for the active gym workspace.
+    Backed centrally by BillingService and subscription state.
     """
     ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
     if not ws:
         raise HTTPException(status_code=404, detail="Workspace not found")
 
-    plan = getattr(ws, "plan", "growth") or "growth"
-    plan_lower = plan.lower()
+    sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+    usage = BillingService.get_workspace_usage(db, ws.id)
+    limits = BillingService.get_effective_limits(db, ws.id)
+    features = BillingService.get_effective_features(db, ws.id)
+
+    now = datetime.now(timezone.utc)
+    trial_days_remaining = 0
+    if sub.status == SubscriptionStatus.TRIALING and sub.trial_end:
+        t_end = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
+        trial_days_remaining = max(0, (t_end - now).days)
 
     return {
         "workspace_id": ws.id,
         "workspace_name": ws.name,
-        "plan": plan_lower,
-        "plan_display_name": "Growth Tier (Founding Gym Offer)" if plan_lower == "growth" else f"{plan.capitalize()} Tier",
-        "status": "active",
-        "billing_cycle": "monthly",
-        "trial_active": True,
-        "trial_days_remaining": 82,
-        "features": {
-            "website_builder": True,
-            "repsi_subdomain": True,
-            "custom_domain": plan_lower in ["pro", "enterprise"],
-            "crm": plan_lower in ["growth", "pro", "enterprise"],
-            "advanced_analytics": plan_lower in ["pro", "enterprise"],
-            "automated_followups": True,
-            "qr_attendance": True,
-            "unlimited_workouts": True,
-        },
-        "limits": {
-            "max_members": 500 if plan_lower == "pro" else 300 if plan_lower == "growth" else 100,
-            "max_staff": 25 if plan_lower == "pro" else 10 if plan_lower == "growth" else 3,
-            "max_websites": 1,
-            "max_custom_domains": 1 if plan_lower in ["pro", "enterprise"] else 0,
-        },
+        "plan": sub.plan.code,
+        "plan_name": sub.plan.name,
+        "plan_display_name": f"{sub.plan.name} Tier",
+        "status": sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+        "billing_cycle": sub.billing_cycle.value if hasattr(sub.billing_cycle, "value") else str(sub.billing_cycle),
+        "trial_active": sub.status == SubscriptionStatus.TRIALING,
+        "trial_days_remaining": trial_days_remaining,
+        "trial_end": sub.trial_end.isoformat() if sub.trial_end else None,
+        "features": features,
+        "limits": limits,
         "current_usage": {
-            "members": db.query(Member).filter(Member.workspace_id == ws.id).count(),
-            "staff": db.query(Trainer).filter(Trainer.workspace_id == ws.id).count(),
-            "websites": 1,
-            "custom_domains": 0,
-        }
+            "members": usage["members"]["current"],
+            "trainers": usage["trainers"]["current"],
+            "staff": usage["staff"]["current"],
+            "branches": usage["branches"]["current"],
+        },
+    }
+
+
+@router.post("/deregister", tags=["Workspaces"])
+def deregister_workspace(
+    req: DeregisterGymRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """
+    Allows a verified gym OWNER to safely deregister / close their gym workspace.
+    Safety constraint: caller must have OWNER role, and must type the exact gym name to confirm.
+    """
+    if tenant.role != "OWNER" and tenant.role != "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the registered gym owner can deregister this gym workspace."
+        )
+
+    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Gym workspace not found.")
+
+    # Validate exact gym name confirmation
+    if req.gym_name_confirmation.strip().lower() != ws.name.strip().lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Confirmation name '{req.gym_name_confirmation}' does not match gym name '{ws.name}'. Deregistration cancelled."
+        )
+
+    # 1. Soft-deactivate the workspace
+    ws.is_active = False
+
+    # 2. Mark subscription as CANCELLED
+    sub = db.query(GymSubscription).filter(GymSubscription.workspace_id == ws.id).first()
+    if sub:
+        sub.status = SubscriptionStatus.CANCELLED
+        sub.canceled_at = datetime.now(timezone.utc)
+        sub.notes = f"Deregistered by Owner. Reason: {req.reason or 'Not specified'}"
+
+    # 3. Deactivate membership associations
+    db.query(WorkspaceMember).filter(WorkspaceMember.workspace_id == ws.id).update(
+        {"is_active": False}, synchronize_session=False
+    )
+
+    # 4. Record audit log
+    BillingService.log_subscription_audit(
+        db,
+        workspace_id=ws.id,
+        actor_user_id=tenant.user_id,
+        action="gym_deregistration",
+        old_value=f"name={ws.name}, is_active=True",
+        new_value="is_active=False, subscription=cancelled",
+        reason=req.reason or "Owner confirmed deregistration",
+    )
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Gym workspace '{ws.name}' has been successfully deregistered."
     }
 
 
@@ -282,8 +347,13 @@ def complete_onboarding(
         ws.onboarding_step = payload.get("step", 14)
         db.commit()
 
+        # Initialize/Guarantee 14-day Free Trial on Growth tier
+        sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+
     return {
         "status": "success",
-        "message": "Workspace initialized successfully",
-        "workspace_id": tenant.workspace_id
+        "message": "Workspace initialized successfully with 14-day Free Trial",
+        "workspace_id": tenant.workspace_id,
+        "trial_active": True,
+        "trial_days": 14,
     }

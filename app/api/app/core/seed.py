@@ -7,12 +7,14 @@ from app.models.member import Member, MembershipPlan, Membership, MemberStatus
 from app.models.attendance import Attendance, AttendanceMethod
 from app.models.finance import Payment, Expense, PaymentMethod, PaymentStatus
 from app.models.trainer import Trainer, GymClass
+from app.services.billing import BillingService
 
 
 def seed_database(db: Session = None, seed_dummy_records: bool = False):
     close_db = False
     if db is None:
-        Base.metadata.create_all(bind=engine)
+        from app.core.migrations import run_database_migrations
+        run_database_migrations()
         db = SessionLocal()
         close_db = True
 
@@ -213,12 +215,16 @@ def seed_database(db: Session = None, seed_dummy_records: bool = False):
                     is_active=True,
                 ))
 
+        # 7. Seed SaaS Subscription Plans & Default 14-day Growth Trial
+        BillingService.ensure_default_plans(db)
+        BillingService.get_or_create_workspace_subscription(db, workspace.id)
+
         if seed_dummy_records:
             # Optional sample records for demo mode
             pass
 
         db.commit()
-        print("[SUCCESS] REPSI database successfully initialized with clean real accounts (Admin, Owner, Trainer, User).")
+        print("[SUCCESS] REPSI database successfully initialized with clean real accounts and SaaS subscription catalog.")
     finally:
         if close_db:
             db.close()

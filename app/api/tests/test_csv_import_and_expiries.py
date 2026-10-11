@@ -41,7 +41,18 @@ def test_csv_import_expiries_and_security():
     assert res_dup.json()["duplicates"] == 3
     assert res_dup.json()["imported"] == 0
 
-    # 3. Test CSV Export
+    # 3. Test CSV Export feature gating:
+    # A) Growth trial does NOT include data_export -> returns 403 FEATURE_NOT_IN_PLAN
+    res_blocked = client.get("/api/v1/members/export-csv", headers=headers)
+    assert res_blocked.status_code == 403
+    assert res_blocked.json()["detail"]["error_code"] == "FEATURE_NOT_IN_PLAN"
+
+    # B) Upgrade to Pro (includes data_export) -> returns 200 text/csv
+    from tests.conftest import TestingSessionLocal
+    from app.services.billing import BillingService
+    with TestingSessionLocal() as db:
+        BillingService.change_gym_plan(db, ws_id, "pro")
+
     res_export = client.get("/api/v1/members/export-csv", headers=headers)
     assert res_export.status_code == 200
     assert "text/csv" in res_export.headers.get("content-type", "")

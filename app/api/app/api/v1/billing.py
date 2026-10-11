@@ -98,7 +98,7 @@ def get_current_subscription(
     return {
         "subscription": sub_schema,
         "usage": usage,
-        "features": p.features or {},
+        "features": BillingService.get_effective_features(db, workspace_id),
     }
 
 @router.post("/create-checkout-session", response_model=CheckoutSessionResponse)

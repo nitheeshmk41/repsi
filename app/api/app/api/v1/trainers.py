@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.middleware.tenant import get_current_tenant, TenantContext
+from app.middleware.entitlements import check_trainer_capacity, require_feature
 from app.models.trainer import (
     Trainer,
     TrainerStatus,
@@ -58,6 +59,8 @@ def get_trainers(
 def create_trainer(
     data: TrainerCreate,
     tenant: TenantContext = Depends(get_current_tenant),
+    _feat: bool = Depends(require_feature("trainer_management")),
+    _cap: bool = Depends(check_trainer_capacity),
     db: Session = Depends(get_db)
 ):
     if tenant.role not in ["OWNER", "SUPER_ADMIN", "ADMIN", "MANAGER"]:

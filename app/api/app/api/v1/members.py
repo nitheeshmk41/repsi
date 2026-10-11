@@ -13,6 +13,7 @@ from app.models.user import User, WorkspaceMember, UserRole
 from app.schemas.member import MemberCreate, MemberUpdate, MemberResponse, MemberListResponse, CheckContactRequest, CheckContactResponse
 from app.repositories.member import MemberRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
+from app.middleware.entitlements import check_member_capacity, require_feature
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
@@ -61,6 +62,7 @@ def list_members(
 @router.get("/export-csv")
 def export_members_csv(
     tenant: TenantContext = Depends(get_current_tenant),
+    _feat: bool = Depends(require_feature("data_export")),
     db: Session = Depends(get_db)
 ):
     repo = MemberRepository(db, tenant.workspace_id)
@@ -141,6 +143,7 @@ def get_member(
 def create_member(
     data: MemberCreate,
     tenant: TenantContext = Depends(require_member_mutation_access),
+    _cap: bool = Depends(check_member_capacity),
     db: Session = Depends(get_db)
 ):
     clean_email = data.email.strip().lower() if data.email else None

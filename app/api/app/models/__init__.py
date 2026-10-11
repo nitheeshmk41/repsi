@@ -33,6 +33,7 @@ from app.models.website import Website
 from app.models.billing import (
     SubscriptionPlan,
     GymSubscription,
+    SubscriptionAuditLog,
     SubscriptionPayment,
     BillingInvoice,
     BillingWebhookEvent,

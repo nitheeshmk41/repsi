@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.models.workout import Workout, WorkoutPlan
 from app.repositories.base import BaseTenantRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
+from app.middleware.entitlements import require_feature
 
 router = APIRouter(prefix="/workouts", tags=["Workouts"])
 
@@ -42,6 +43,7 @@ def get_workouts(
 def create_workout(
     data: WorkoutCreate,
     tenant: TenantContext = Depends(get_current_tenant),
+    _feat: bool = Depends(require_feature("basic_workouts")),
     db: Session = Depends(get_db)
 ):
     repo = BaseTenantRepository[Workout](Workout, db, tenant.workspace_id)

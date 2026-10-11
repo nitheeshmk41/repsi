@@ -22,6 +22,8 @@ from app.models.machine import GymMachine
 from app.models.invitation import GymInvitation
 from app.models.website import Website
 from app.models.system import AuditLog, Notification
+from app.models.billing import SubscriptionPlan, GymSubscription, SubscriptionAuditLog, SubscriptionStatus, BillingCycle
+from app.services.billing import BillingService
 
 router = APIRouter(prefix="/superadmin", tags=["Super Admin"])
 
@@ -1116,3 +1118,387 @@ def broadcast_platform_announcement(
         "status": "success",
         "message": f"Broadcast '{req.subject}' queued for delivery to target audience '{req.target_audience}'."
     }
+
+
+# ----------------------------------------------------
+# 12. SUBSCRIPTION MANAGEMENT & SUPER ADMIN CONTROLS
+# ----------------------------------------------------
+
+class PlanUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    tagline: Optional[str] = None
+    description: Optional[str] = None
+    monthly_price_inr: Optional[float] = None
+    annual_price_inr: Optional[float] = None
+    member_limit: Optional[int] = None
+    trainer_limit: Optional[int] = None
+    staff_limit: Optional[int] = None
+    branch_limit: Optional[int] = None
+    is_active: Optional[bool] = None
+    is_popular: Optional[bool] = None
+    contact_sales: Optional[bool] = None
+    features: Optional[Dict[str, bool]] = None
+
+
+class ExtendTrialRequest(BaseModel):
+    days: int
+    reason: str
+
+
+class AdminChangePlanRequest(BaseModel):
+    plan_code: str
+    billing_cycle: Optional[str] = "monthly"
+    reason: str
+
+
+class ComplimentaryAccessRequest(BaseModel):
+    days: Optional[int] = None
+    exact_date: Optional[datetime] = None
+    is_indefinite: Optional[bool] = False
+    reason: str
+
+
+class GymOverridesRequest(BaseModel):
+    custom_member_limit: Optional[int] = None
+    custom_trainer_limit: Optional[int] = None
+    custom_staff_limit: Optional[int] = None
+    custom_branch_limit: Optional[int] = None
+    custom_features: Optional[Dict[str, bool]] = None
+    reason: str
+
+
+class SubscriptionStatusRequest(BaseModel):
+    status: str
+    reason: str
+
+
+@router.get("/subscriptions/plans")
+def list_subscription_plans(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Lists all configurable SaaS subscription plans."""
+    check_superadmin(tenant, db)
+    plans = BillingService.ensure_default_plans(db)
+    return [
+        {
+            "id": p.id,
+            "code": p.code,
+            "name": p.name,
+            "tagline": p.tagline,
+            "description": p.description,
+            "monthly_price_inr": p.monthly_price_inr,
+            "annual_price_inr": p.annual_price_inr,
+            "member_limit": p.member_limit,
+            "trainer_limit": p.trainer_limit,
+            "staff_limit": getattr(p, "staff_limit", 2),
+            "branch_limit": p.branch_limit,
+            "is_popular": p.is_popular,
+            "is_active": getattr(p, "is_active", True),
+            "contact_sales": getattr(p, "contact_sales", False),
+            "display_order": p.display_order,
+            "features": p.features or {},
+        }
+        for p in plans
+    ]
+
+
+@router.put("/subscriptions/plans/{plan_id}")
+def update_subscription_plan(
+    plan_id: str,
+    req: PlanUpdateRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Updates plan definitions, prices, limits, and feature flags."""
+    admin_user = check_superadmin(tenant, db)
+    plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Subscription plan not found.")
+
+    if req.name is not None:
+        plan.name = req.name
+    if req.tagline is not None:
+        plan.tagline = req.tagline
+    if req.description is not None:
+        plan.description = req.description
+    if req.monthly_price_inr is not None:
+        plan.monthly_price_inr = req.monthly_price_inr
+    if req.annual_price_inr is not None:
+        plan.annual_price_inr = req.annual_price_inr
+    if req.member_limit is not None:
+        plan.member_limit = req.member_limit
+    if req.trainer_limit is not None:
+        plan.trainer_limit = req.trainer_limit
+    if req.staff_limit is not None:
+        plan.staff_limit = req.staff_limit
+    if req.branch_limit is not None:
+        plan.branch_limit = req.branch_limit
+    if req.is_active is not None:
+        plan.is_active = req.is_active
+    if req.is_popular is not None:
+        plan.is_popular = req.is_popular
+    if req.contact_sales is not None:
+        plan.contact_sales = req.contact_sales
+    if req.features is not None:
+        plan.features = req.features
+
+    db.commit()
+    db.refresh(plan)
+
+    log_audit_event(
+        db, admin_user.id, "UPDATE_SUBSCRIPTION_PLAN",
+        f"Updated plan {plan.code} ({plan.name})"
+    )
+
+    return {"status": "success", "message": f"Plan '{plan.name}' updated successfully."}
+
+
+@router.get("/subscriptions/gyms")
+def list_gym_subscriptions(
+    query: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(None),
+    plan_filter: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Search and list gym workspaces with live subscription status and usage meters."""
+    check_superadmin(tenant, db)
+    BillingService.ensure_default_plans(db)
+
+    q = db.query(Workspace).order_by(Workspace.created_at.desc())
+    if query:
+        term = f"%{query.strip()}%"
+        q = q.filter(or_(Workspace.name.ilike(term), Workspace.slug.ilike(term), Workspace.email.ilike(term)))
+
+    workspaces = q.all()
+    results = []
+    now = datetime.now(timezone.utc)
+
+    for ws in workspaces:
+        sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+        if status_filter and sub.status.value != status_filter and str(sub.status) != status_filter:
+            continue
+        if plan_filter and sub.plan.code != plan_filter:
+            continue
+
+        usage = BillingService.get_workspace_usage(db, ws.id)
+        owner_member = db.query(WorkspaceMember).filter(
+            WorkspaceMember.workspace_id == ws.id,
+            WorkspaceMember.role == UserRole.OWNER
+        ).first()
+        owner_user = db.query(User).filter(User.id == owner_member.user_id).first() if owner_member else None
+
+        trial_days_remaining = None
+        if sub.status == SubscriptionStatus.TRIALING and sub.trial_end:
+            t_end = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
+            trial_days_remaining = max(0, (t_end - now).days)
+
+        results.append({
+            "workspace_id": ws.id,
+            "gym_name": ws.name,
+            "gym_slug": ws.slug,
+            "gym_email": ws.email,
+            "gym_city": ws.city,
+            "is_active": ws.is_active,
+            "owner_name": owner_user.full_name if owner_user else "N/A",
+            "owner_email": owner_user.email if owner_user else "N/A",
+            "subscription": {
+                "id": sub.id,
+                "plan_code": sub.plan.code,
+                "plan_name": sub.plan.name,
+                "status": sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+                "billing_cycle": sub.billing_cycle.value if hasattr(sub.billing_cycle, "value") else str(sub.billing_cycle),
+                "trial_end": sub.trial_end.isoformat() if sub.trial_end else None,
+                "trial_days_remaining": trial_days_remaining,
+                "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end else None,
+                "is_complimentary": sub.is_complimentary,
+                "complimentary_until": sub.complimentary_until.isoformat() if sub.complimentary_until else None,
+            },
+            "usage": usage,
+            "created_at": ws.created_at.isoformat() if ws.created_at else None,
+        })
+
+    return results
+
+
+@router.get("/subscriptions/gyms/{workspace_id}")
+def get_gym_subscription_detail(
+    workspace_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Detailed gym subscription overview including limits, overrides, and audit history."""
+    check_superadmin(tenant, db)
+    ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Gym workspace not found.")
+
+    sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+    usage = BillingService.get_workspace_usage(db, ws.id)
+    limits = BillingService.get_effective_limits(db, ws.id)
+    features = BillingService.get_effective_features(db, ws.id)
+
+    # History
+    audit_logs = db.query(SubscriptionAuditLog).filter(
+        SubscriptionAuditLog.workspace_id == ws.id
+    ).order_by(SubscriptionAuditLog.created_at.desc()).limit(50).all()
+
+    now = datetime.now(timezone.utc)
+    trial_days_left = None
+    if sub.status == SubscriptionStatus.TRIALING and sub.trial_end:
+        t_end = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
+        trial_days_left = max(0, (t_end - now).days)
+
+    return {
+        "workspace": {
+            "id": ws.id,
+            "name": ws.name,
+            "slug": ws.slug,
+            "email": ws.email,
+            "phone": ws.phone,
+            "city": ws.city,
+            "is_active": ws.is_active,
+        },
+        "subscription": {
+            "id": sub.id,
+            "plan_code": sub.plan.code,
+            "plan_name": sub.plan.name,
+            "status": sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+            "billing_cycle": sub.billing_cycle.value if hasattr(sub.billing_cycle, "value") else str(sub.billing_cycle),
+            "trial_start": sub.trial_start.isoformat() if sub.trial_start else None,
+            "trial_end": sub.trial_end.isoformat() if sub.trial_end else None,
+            "trial_days_remaining": trial_days_left,
+            "current_period_start": sub.current_period_start.isoformat() if sub.current_period_start else None,
+            "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end else None,
+            "is_complimentary": sub.is_complimentary,
+            "complimentary_until": sub.complimentary_until.isoformat() if sub.complimentary_until else None,
+            "suspended_at": sub.suspended_at.isoformat() if sub.suspended_at else None,
+            "suspension_reason": sub.suspension_reason,
+            "notes": sub.notes,
+            "custom_member_limit": sub.custom_member_limit,
+            "custom_trainer_limit": sub.custom_trainer_limit,
+            "custom_staff_limit": sub.custom_staff_limit,
+            "custom_branch_limit": sub.custom_branch_limit,
+            "custom_features": sub.custom_features or {},
+        },
+        "limits": limits,
+        "features": features,
+        "usage": usage,
+        "history": [
+            {
+                "id": l.id,
+                "action": l.action,
+                "old_value": l.old_value,
+                "new_value": l.new_value,
+                "reason": l.reason,
+                "created_at": l.created_at.isoformat() if l.created_at else None,
+            }
+            for l in audit_logs
+        ]
+    }
+
+
+@router.post("/subscriptions/gyms/{workspace_id}/extend-trial")
+def admin_extend_gym_trial(
+    workspace_id: str,
+    req: ExtendTrialRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Extends gym trial by N days with reason logging."""
+    admin_user = check_superadmin(tenant, db)
+    sub = BillingService.extend_trial(
+        db, workspace_id, days=req.days, actor_user_id=admin_user.id, reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": f"Trial extended by {req.days} days successfully.",
+        "trial_end": sub.trial_end.isoformat() if sub.trial_end else None,
+    }
+
+
+@router.post("/subscriptions/gyms/{workspace_id}/change-plan")
+def admin_change_gym_plan(
+    workspace_id: str,
+    req: AdminChangePlanRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Directly switches a gym to a designated plan tier."""
+    admin_user = check_superadmin(tenant, db)
+    sub = BillingService.change_gym_plan(
+        db, workspace_id, new_plan_code=req.plan_code, billing_cycle=req.billing_cycle or "monthly",
+        actor_user_id=admin_user.id, reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": f"Gym plan updated to {sub.plan.name}.",
+        "plan_code": sub.plan.code,
+    }
+
+
+@router.post("/subscriptions/gyms/{workspace_id}/complimentary")
+def admin_grant_complimentary_access(
+    workspace_id: str,
+    req: ComplimentaryAccessRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Grants complimentary SaaS access without corrupting payment history."""
+    admin_user = check_superadmin(tenant, db)
+    sub = BillingService.grant_complimentary_access(
+        db, workspace_id, days=req.days, exact_date=req.exact_date, is_indefinite=req.is_indefinite,
+        actor_user_id=admin_user.id, reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": "Complimentary access granted successfully.",
+        "complimentary_until": sub.complimentary_until.isoformat() if sub.complimentary_until else "indefinite",
+    }
+
+
+@router.post("/subscriptions/gyms/{workspace_id}/override")
+def admin_set_gym_overrides(
+    workspace_id: str,
+    req: GymOverridesRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Sets per-gym custom limits (members, trainers, staff) or feature flag overrides."""
+    admin_user = check_superadmin(tenant, db)
+    sub = BillingService.set_gym_overrides(
+        db, workspace_id,
+        custom_member_limit=req.custom_member_limit,
+        custom_trainer_limit=req.custom_trainer_limit,
+        custom_staff_limit=req.custom_staff_limit,
+        custom_branch_limit=req.custom_branch_limit,
+        custom_features=req.custom_features,
+        actor_user_id=admin_user.id,
+        reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": "Custom overrides applied successfully.",
+        "limits": BillingService.get_effective_limits(db, workspace_id),
+    }
+
+
+@router.post("/subscriptions/gyms/{workspace_id}/status")
+def admin_set_gym_subscription_status(
+    workspace_id: str,
+    req: SubscriptionStatusRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """Suspends, reactivates, or cancels a gym subscription."""
+    admin_user = check_superadmin(tenant, db)
+    sub = BillingService.set_subscription_status(
+        db, workspace_id, new_status=req.status, actor_user_id=admin_user.id, reason=req.reason
+    )
+    return {
+        "status": "success",
+        "message": f"Subscription status changed to '{req.status}'.",
+        "status": sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+    }
+
