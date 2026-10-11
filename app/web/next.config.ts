@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, "../../"),
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/backend/:path*",
+        destination: "http://api.repsi.app/api/v1/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

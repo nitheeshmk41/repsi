@@ -74,12 +74,13 @@ export default function OnboardingWizardPage() {
 
   // Step 4: Memberships
   const [plans, setPlans] = useState([
-    { id: "1", name: "Monthly", price: "₹1,299", duration: "1 month", active: true },
-    { id: "2", name: "Quarterly", price: "₹3,499", duration: "3 months", active: true },
-    { id: "3", name: "Annual", price: "₹11,999", duration: "12 months", active: true },
+    { id: "1", name: "Monthly", price: "1299", duration: "1 month", active: true },
+    { id: "2", name: "Quarterly", price: "3499", duration: "3 months", active: true },
+    { id: "3", name: "Annual", price: "11999", duration: "12 months", active: true },
   ]);
   const [customPlanName, setCustomPlanName] = useState("");
   const [customPlanPrice, setCustomPlanPrice] = useState("");
+  const [customPlanDuration, setCustomPlanDuration] = useState("");
   const [showAddCustomPlan, setShowAddCustomPlan] = useState(false);
 
   // Step 5: Team
@@ -199,6 +200,26 @@ export default function OnboardingWizardPage() {
     setStep(3);
   };
 
+  // Helper to call backend with automatic fallback to Next.js proxy if direct SSL is refused
+  async function callBackend(endpoint: string, options: RequestInit) {
+    try {
+      const directUrl = `${API_BASE}${endpoint}`;
+      const res = await fetch(directUrl, options);
+      return res;
+    } catch (directErr) {
+      if (typeof window !== "undefined") {
+        try {
+          const fallbackUrl = `/api/backend${endpoint}`;
+          const fallbackRes = await fetch(fallbackUrl, options);
+          return fallbackRes;
+        } catch {
+          throw directErr;
+        }
+      }
+      throw directErr;
+    }
+  }
+
   // Dispatch OTP after user confirmation modal
   const handleConfirmAndSendOtp = async () => {
     setShowConfirmModal(false);
@@ -206,7 +227,7 @@ export default function OnboardingWizardPage() {
     setOtpError("");
 
     try {
-      await fetch(`${API_BASE}/auth/register/request-otp`, {
+      const response = await callBackend("/auth/register/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -218,13 +239,23 @@ export default function OnboardingWizardPage() {
           gym_city: gymCity.trim() || "City",
         }),
       });
-    } catch {
-      // Dev mode / network fallback
-    }
 
-    setOtpSent(true);
-    setResendTimer(29);
-    setIsSendingOtp(false);
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setOtpError(errorBody.detail || "Unable to send verification code. Please try again.");
+        setIsSendingOtp(false);
+        return;
+      }
+
+      setOtpSent(true);
+      setResendTimer(29);
+    } catch (err: any) {
+      setOtpError(
+        "Unable to reach server (" + (err?.message || "Connection refused") + "). Please verify server connection or check your network."
+      );
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   // OTP Handling logic
@@ -275,7 +306,7 @@ export default function OnboardingWizardPage() {
     setOtpError("");
 
     try {
-      const response = await fetch(`${API_BASE}/auth/register/verify-otp`, {
+      const response = await callBackend("/auth/register/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -332,14 +363,19 @@ export default function OnboardingWizardPage() {
     setIsSendingOtp(true);
     setOtpError("");
     try {
-      await fetch(`${API_BASE}/auth/register/resend-otp`, {
+      const response = await callBackend("/auth/register/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setOtpError(errorBody.detail || "Unable to resend verification code.");
+        return;
+      }
       setResendTimer(29);
-    } catch {
-      setResendTimer(29);
+    } catch (err: any) {
+      setOtpError("Unable to resend code: " + (err?.message || "Failed to contact server"));
     } finally {
       setIsSendingOtp(false);
     }
@@ -351,21 +387,34 @@ export default function OnboardingWizardPage() {
     );
   };
 
+  const updatePlanPrice = (id: string, newPrice: string) => {
+    const cleanNum = newPrice.replace(/[^\d]/g, "");
+    setPlans((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, price: cleanNum } : p))
+    );
+  };
+
+  const removePlan = (id: string) => {
+    setPlans((prev) => prev.filter((p) => p.id !== id));
+  };
+
   const handleAddCustomPlan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customPlanName.trim() || !customPlanPrice.trim()) return;
+    const cleanPrice = customPlanPrice.replace(/[^\d]/g, "");
     setPlans((prev) => [
       ...prev,
       {
         id: "plan_" + Date.now(),
         name: customPlanName.trim(),
-        price: customPlanPrice.startsWith("₹") ? customPlanPrice.trim() : `₹${customPlanPrice.trim()}`,
-        duration: "Custom",
+        price: cleanPrice || "0",
+        duration: customPlanDuration.trim() || "Custom",
         active: true,
       },
     ]);
     setCustomPlanName("");
     setCustomPlanPrice("");
+    setCustomPlanDuration("");
     setShowAddCustomPlan(false);
   };
 
@@ -390,7 +439,7 @@ export default function OnboardingWizardPage() {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("repsi_auth_token") : null;
       if (token) {
-        await fetch(`${API_BASE}/workspaces/onboarding/complete`, {
+        await callBackend("/workspaces/onboarding/complete", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -403,7 +452,14 @@ export default function OnboardingWizardPage() {
             approx_members: approxMembers,
             currency,
             timezone,
-            plans: JSON.stringify(plans.filter((p) => p.active)),
+            plans: JSON.stringify(
+              plans
+                .filter((p) => p.active)
+                .map((p) => ({
+                  ...p,
+                  price: p.price.startsWith("₹") ? p.price : `₹${p.price || "0"}`,
+                }))
+            ),
             team_count: teamMembers.length + 1,
             step: 7,
           }),
@@ -784,7 +840,7 @@ export default function OnboardingWizardPage() {
         {/* STEP 4: MEMBERSHIPS (STEP 3 OF 5) */}
         {/* ======================================================== */}
         {step === 4 && (
-          <div className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6">
+          <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto space-y-6">
             <div className="text-center space-y-1.5">
               <p className="text-xs font-semibold text-[#16A34A] uppercase tracking-wider">
                 Step 3 of 5 · Membership Plans
@@ -793,23 +849,25 @@ export default function OnboardingWizardPage() {
                 Add your memberships
               </h1>
               <p className="text-sm text-[#64748B]">
-                Starter plans ready for day one. Edit or add more anytime.
+                Enter membership fees for your gym. Edit or add more anytime.
               </p>
             </div>
 
             <div className="bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4">
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    onClick={() => togglePlan(plan.id)}
-                    className={`flex items-center justify-between p-3.5 rounded-lg border transition-all cursor-pointer ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
                       plan.active
                         ? "border-[#16A34A] bg-[#16A34A]/5 text-[#111827]"
-                        : "border-[#E2E8E5] bg-white text-[#64748B] hover:border-zinc-300"
+                        : "border-[#E2E8E5] bg-white text-[#64748B] opacity-75"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div
+                      onClick={() => togglePlan(plan.id)}
+                      className="flex items-center gap-2.5 cursor-pointer select-none flex-1"
+                    >
                       <div
                         className={`w-4 h-4 rounded flex items-center justify-center border text-white transition-colors ${
                           plan.active ? "bg-[#16A34A] border-[#16A34A]" : "border-[#CBD5E1] bg-white"
@@ -822,35 +880,75 @@ export default function OnboardingWizardPage() {
                         <p className="text-xs text-[#64748B]">{plan.duration}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-[#111827]">{plan.price}</span>
+
+                    <div className="flex items-center gap-2">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 bg-white border border-[#E2E8E5] rounded-lg px-2.5 py-1.5 focus-within:border-[#16A34A] focus-within:ring-2 focus-within:ring-[#16A34A]/20 transition-all shadow-2xs"
+                      >
+                        <span className="text-xs font-semibold text-[#64748B]">₹</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={plan.price}
+                          onChange={(e) => updatePlanPrice(plan.id, e.target.value)}
+                          placeholder="Price"
+                          className="w-20 text-sm font-bold text-[#111827] text-right focus:outline-none placeholder:text-[#94A3B8] placeholder:font-normal"
+                        />
+                      </div>
+                      {plans.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removePlan(plan.id);
+                          }}
+                          className="text-[#94A3B8] hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                          title="Remove plan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
 
               {showAddCustomPlan ? (
-                <form onSubmit={handleAddCustomPlan} className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8E5] space-y-2.5 pt-3">
-                  <p className="text-xs font-semibold text-[#111827]">New plan</p>
+                <form onSubmit={handleAddCustomPlan} className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2E8E5] space-y-3">
+                  <p className="text-xs font-semibold text-[#111827]">New membership plan</p>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
                       placeholder="e.g. 6 Months"
                       value={customPlanName}
                       onChange={(e) => setCustomPlanName(e.target.value)}
-                      className="h-9 px-2.5 rounded border border-[#E2E8E5] bg-white text-xs text-[#111827]"
+                      className="h-9 px-2.5 rounded-lg border border-[#E2E8E5] bg-white text-xs text-[#111827] focus:border-[#16A34A] outline-none"
                       autoFocus
                     />
-                    <input
-                      type="text"
-                      placeholder="Price (e.g. 5999)"
-                      value={customPlanPrice}
-                      onChange={(e) => setCustomPlanPrice(e.target.value)}
-                      className="h-9 px-2.5 rounded border border-[#E2E8E5] bg-white text-xs text-[#111827]"
-                    />
+                    <div className="flex items-center gap-1 bg-white border border-[#E2E8E5] rounded-lg px-2.5 h-9 focus-within:border-[#16A34A]">
+                      <span className="text-xs font-semibold text-[#64748B]">₹</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Price (e.g. 5999)"
+                        value={customPlanPrice}
+                        onChange={(e) => setCustomPlanPrice(e.target.value)}
+                        className="w-full text-xs font-semibold text-[#111827] outline-none placeholder:font-normal"
+                      />
+                    </div>
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Duration (e.g. 6 months, 24 sessions)"
+                    value={customPlanDuration}
+                    onChange={(e) => setCustomPlanDuration(e.target.value)}
+                    className="h-9 w-full px-2.5 rounded-lg border border-[#E2E8E5] bg-white text-xs text-[#111827] focus:border-[#16A34A] outline-none"
+                  />
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="submit"
-                      className="h-8 px-3 rounded bg-[#16A34A] text-white text-xs font-semibold cursor-pointer"
+                      className="h-8 px-3 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-semibold cursor-pointer transition-colors"
                     >
                       Add Plan
                     </button>
@@ -867,10 +965,10 @@ export default function OnboardingWizardPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddCustomPlan(true)}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#16A34A] hover:bg-[#16A34A]/5 rounded-lg border border-dashed border-[#16A34A]/40 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-[#16A34A] hover:bg-[#16A34A]/5 rounded-xl border border-dashed border-[#16A34A]/40 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add custom membership</span>
+                  <span>+ Add custom membership</span>
                 </button>
               )}
 
