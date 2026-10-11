@@ -4,9 +4,9 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _CURRENT_DIR = Path(__file__).resolve().parent
-_ROOT_ENV = _CURRENT_DIR.parent.parent.parent / ".env"
+_API_ENV = _CURRENT_DIR.parent.parent / ".env"
 _REPO_ENV = _CURRENT_DIR.parent.parent.parent.parent / ".env"
-_ENV_FILES = [str(_REPO_ENV), str(_ROOT_ENV), ".env"]
+_ENV_FILES = [str(_REPO_ENV), str(_API_ENV), ".env"]
 
 
 class Settings(BaseSettings):
