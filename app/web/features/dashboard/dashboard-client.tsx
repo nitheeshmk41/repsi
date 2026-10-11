@@ -209,9 +209,9 @@ export function DashboardClient({ workspace }: { workspace: string }) {
 
       {/* Adaptive Setup Checklist Banner (when in setup phase) */}
       {isSetupMode ? (
-        <div className="rounded-2xl border-2 border-[#16A34A]/30 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] dark:from-[#081b10] dark:via-[#05110a] dark:to-[#081b10] p-6 sm:p-7 shadow-md">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-5 text-left w-full md:w-auto">
+        <div className="rounded-2xl border-2 border-[#16A34A]/30 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] dark:from-[#081b10] dark:via-[#05110a] dark:to-[#081b10] p-4 sm:p-7 shadow-md">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-left w-full md:w-auto">
               <RepsiMascot pose="onboarding" size="md" animate={false} />
               <div className="space-y-1.5">
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#16A34A] bg-[#16A34A]/10 px-2.5 py-0.5 rounded">

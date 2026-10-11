@@ -187,11 +187,11 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
   }, []);
 
   return (
-    <header className="flex h-14 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 sm:px-6">
+    <header className="flex h-14 items-center justify-between gap-2 sm:gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-3 sm:px-6">
       {/* Mobile menu trigger */}
       {mobileMenuButton}
       {/* Left: Breadcrumbs */}
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0 max-w-[130px] xs:max-w-[180px] sm:max-w-none">
         {breadcrumbs && breadcrumbs.length > 0 ? (
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
             {breadcrumbs.map((crumb, i) => (
@@ -213,7 +213,7 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
             ))}
           </nav>
         ) : title ? (
-          <h1 className="text-sm font-semibold text-[var(--text)]">{title}</h1>
+          <h1 className="text-sm font-semibold text-[var(--text)] truncate">{title}</h1>
         ) : null}
       </div>
 

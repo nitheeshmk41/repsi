@@ -57,22 +57,22 @@ export function QuickActions({ workspace = "default" }: QuickActionsProps) {
   ];
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xs">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-bold text-[var(--text)] tracking-tight">Quick Actions</h2>
-        <span className="text-[11px] font-semibold text-[#16A34A] bg-[#16A34A]/10 px-2.5 py-0.5 rounded-full">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 shadow-xs">
+      <div className="flex items-center justify-between mb-3.5 sm:mb-4">
+        <h2 className="text-sm sm:text-base font-bold text-[var(--text)] tracking-tight">Quick Actions</h2>
+        <span className="text-[10px] sm:text-[11px] font-semibold text-[#16A34A] bg-[#16A34A]/10 px-2 sm:px-2.5 py-0.5 rounded-full">
           Shortcuts
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
             <Link
               key={action.label}
               href={action.href}
-              className={`flex items-center gap-3 rounded-xl p-3 text-left transition-all duration-150 border cursor-pointer ${
+              className={`flex items-center gap-2.5 sm:gap-3 rounded-xl p-2.5 sm:p-3 text-left transition-all duration-150 border cursor-pointer ${
                 action.primary
                   ? "bg-[#16A34A]/10 border-[#16A34A]/40 hover:bg-[#16A34A]/20 hover:border-[#16A34A]"
                   : "bg-[var(--background)] border-[var(--border)] hover:bg-[var(--surface-hover)] hover:border-[#16A34A]/30"

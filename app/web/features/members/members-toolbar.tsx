@@ -65,9 +65,9 @@ export function MembersToolbar({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: Search + Filters */}
-      <div className="flex flex-1 items-center gap-2 max-w-xl">
+      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:flex-1 max-w-xl">
         {/* Search */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-[140px]">
           <Input
             placeholder="Search members..."
             value={search}

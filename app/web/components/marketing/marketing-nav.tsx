@@ -162,7 +162,7 @@ export function MarketingNav() {
 
         {/* Mobile menu and mobile theme toggle */}
         <div className="md:hidden flex items-center gap-2">
-          <ThemeToggle isHome={isHome} />
+          <ThemeToggle isHome={isHome} compact />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className={`p-2 rounded-lg transition-colors ${

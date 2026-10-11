@@ -34,7 +34,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Scrollable Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1440px] px-4 sm:px-6 py-6 sm:py-8">
+          <div className="mx-auto max-w-[1440px] px-3 sm:px-6 py-4 sm:py-8">
             {children}
           </div>
         </main>

@@ -54,7 +54,7 @@ export function RevenueChart({ data }: { data?: Array<{ label: string; value: nu
   ];
 
   return (
-    <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#22332a] bg-white dark:bg-[#101b16] dark:bg-gradient-to-b dark:from-[#12221a] dark:to-[#0e1713] p-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+    <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#22332a] bg-white dark:bg-[#101b16] dark:bg-gradient-to-b dark:from-[#12221a] dark:to-[#0e1713] p-4 sm:p-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

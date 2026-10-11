@@ -41,6 +41,7 @@ import { HeroDashboardPreview } from "@/components/ui/hero-dashboard-preview";
 import { PricingSection } from "@/components/ui/pricing-section";
 import { BackToTop } from "@/components/ui/back-to-top";
 import { ImageTrail } from "@/components/ui/image-trail";
+import { RepsiLottieLoader } from "@/components/ui/repsi-lottie-loader";
 
 // Dynamically import heavy WebGL and interactive components to optimize FCP and TTI
 const GradientWaves = dynamic(
@@ -176,7 +177,7 @@ export default function MarketingLandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#111714] font-sans antialiased selection:bg-[#16A34A] selection:text-white">
-      {/* HOMEPAGE LIGHTWEIGHT INTELLIGENT LOADING SCREEN */}
+      {/* HOMEPAGE LIGHTWEIGHT INTELLIGENT LOADING SCREEN WITH REPSI LOTTIE ANIMATION */}
       <AnimatePresence>
         {isPageLoading && (
           <motion.div
@@ -184,27 +185,24 @@ export default function MarketingLandingPage() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.22, ease: "easeOut" } }}
             onClick={() => setIsPageLoading(false)}
-            className="fixed inset-0 z-[9999] bg-[#050B07] flex flex-col items-center justify-center space-y-5 cursor-pointer select-none"
+            className="fixed inset-0 z-[9999] bg-[#050B07] flex flex-col items-center justify-center space-y-4 cursor-pointer select-none px-4"
             title="Click anywhere to enter immediately"
           >
+            {/* Lottie Animation in Repsi Themed Colors */}
             <div className="relative flex items-center justify-center">
-              {/* Pulsing emerald ring */}
-              <div className="w-16 h-16 rounded-full border-2 border-[#16A34A]/25 animate-ping absolute" />
-              {/* Spinning gradient ring */}
-              <div className="w-16 h-16 rounded-full border-3 border-transparent border-t-[#16A34A] border-r-[#22C55E] animate-spin" />
-              {/* Inner branded core */}
-              <div className="absolute w-8 h-8 rounded-full bg-[#16A34A]/20 flex items-center justify-center">
-                <div className="w-3.5 h-3.5 rounded-full bg-[#16A34A] animate-pulse" />
-              </div>
+              <div className="absolute w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+              <RepsiLottieLoader width={260} height={180} />
             </div>
+
             <div className="flex flex-col items-center space-y-1.5 text-center px-4">
-              <span className="font-black text-sm tracking-[0.25em] text-white uppercase font-sans">
+              <span className="font-black text-sm tracking-[0.28em] text-white uppercase font-sans">
                 REPSI
               </span>
               <span className="text-[11px] font-medium text-emerald-400/90 tracking-wider transition-all duration-200">
                 {loadingState === "starting" ? "Preparing your workspace…" : "Loading gym platform…"}
               </span>
             </div>
+
             <div className="text-[10px] text-zinc-500 font-mono tracking-wider pt-2 opacity-70 hover:opacity-100 transition-opacity">
               Tap anywhere to enter
             </div>
