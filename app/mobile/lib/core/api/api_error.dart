@@ -36,13 +36,29 @@ class ApiError implements Exception {
     if (response != null && response.data is Map<String, dynamic>) {
       final data = response.data as Map<String, dynamic>;
       
-      // Standard FastAPI detail string
-      if (data.containsKey('detail') && data['detail'] is String) {
-        return ApiError(
-          message: data['detail'] as String,
-          statusCode: response.statusCode,
-          code: 'API_ERROR',
-        );
+      // Standard FastAPI detail
+      if (data.containsKey('detail')) {
+        final detail = data['detail'];
+        if (detail is String) {
+          return ApiError(
+            message: detail,
+            statusCode: response.statusCode,
+            code: 'API_ERROR',
+          );
+        } else if (detail is List && detail.isNotEmpty) {
+          final messages = detail.map((item) {
+            if (item is Map && item.containsKey('msg')) {
+              return item['msg'].toString();
+            }
+            return item.toString();
+          }).join(', ');
+          return ApiError(
+            message: messages.isNotEmpty ? messages : 'Validation error occurred.',
+            statusCode: response.statusCode ?? 422,
+            code: 'VALIDATION_ERROR',
+            details: detail,
+          );
+        }
       }
 
       // Structured error format

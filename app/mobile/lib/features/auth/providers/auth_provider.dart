@@ -142,7 +142,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       if (user == null) {
-        final roleStr = response.role?.name.toUpperCase() ?? 'OWNER';
+        final roleStr = response.role?.dbValue ?? 'OWNER';
         user = UserModel(
           id: 'usr_${email.split('@').first}',
           email: email,
@@ -241,7 +241,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             fullName: googleUser.displayName ?? 'Google User',
             isSuperadmin: false,
             isActive: true,
-            role: response.role?.name.toUpperCase() ?? 'OWNER',
+            role: response.role?.dbValue ?? 'OWNER',
             workspaceId: response.workspaceId,
           );
           await _storage.saveUser(user);

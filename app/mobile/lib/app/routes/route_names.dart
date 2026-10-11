@@ -17,16 +17,19 @@ class RouteNames {
   static const String adminDashboard = '/admin/dashboard';
 
   static String roleDashboard(String? role) {
-    switch (role?.toUpperCase()) {
+    final clean = role?.replaceAll('_', '')?.toUpperCase();
+    switch (clean) {
       case 'ADMIN':
-      case 'SUPER_ADMIN':
+      case 'SUPERADMIN':
         return adminDashboard;
       case 'TRAINER':
+      case 'STAFF':
         return trainerDashboard;
       case 'USER':
       case 'MEMBER':
         return userDashboard;
       case 'OWNER':
+      case 'MANAGER':
       default:
         return ownerDashboard;
     }

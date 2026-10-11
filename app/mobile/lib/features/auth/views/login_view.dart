@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,8 +24,8 @@ class LoginView extends ConsumerStatefulWidget {
 
 class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController(text: 'admin@repsi.app');
-  final _passwordController = TextEditingController(text: 'admin567');
+  final _identifierController = TextEditingController(text: kDebugMode ? 'admin@repsi.app' : '');
+  final _passwordController = TextEditingController(text: kDebugMode ? 'admin567' : '');
 
   @override
   void dispose() {

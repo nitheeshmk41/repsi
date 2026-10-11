@@ -7,8 +7,28 @@ enum UserRole {
   user,
   superAdmin;
 
+  String get dbValue {
+    switch (this) {
+      case UserRole.superAdmin:
+        return 'SUPER_ADMIN';
+      case UserRole.owner:
+        return 'OWNER';
+      case UserRole.admin:
+        return 'ADMIN';
+      case UserRole.manager:
+        return 'MANAGER';
+      case UserRole.trainer:
+        return 'TRAINER';
+      case UserRole.staff:
+        return 'STAFF';
+      case UserRole.user:
+        return 'USER';
+    }
+  }
+
   static UserRole fromString(String value) {
-    switch (value.toUpperCase()) {
+    final clean = value.replaceAll('_', '').toUpperCase();
+    switch (clean) {
       case 'ADMIN':
         return UserRole.admin;
       case 'MANAGER':
@@ -20,7 +40,7 @@ enum UserRole {
       case 'USER':
       case 'MEMBER':
         return UserRole.user;
-      case 'SUPER_ADMIN':
+      case 'SUPERADMIN':
         return UserRole.superAdmin;
       default:
         return UserRole.owner;

@@ -61,7 +61,7 @@ class SecureStorageService {
   }
 
   String? getActiveWorkspaceSlug() {
-    return _prefs?.getString(_workspaceSlugKey) ?? _memory[_workspaceSlugKey] as String? ?? 'apex-fitness';
+    return _prefs?.getString(_workspaceSlugKey) ?? _memory[_workspaceSlugKey] as String?;
   }
 
   // User details cache

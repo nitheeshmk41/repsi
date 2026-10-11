@@ -19,18 +19,18 @@ class AppConfig {
     if (definedUrl.isNotEmpty) return definedUrl;
     // 2. Web platform
     if (kIsWeb) {
-      return 'https://repsi.fastapicloud.dev/api/v1';
+      return 'https://api.repsi.app/api/v1';
     }
 
     // 3. Android mobile
     try {
       if (Platform.isAndroid) {
-        return 'https://repsi.fastapicloud.dev/api/v1';
+        return 'https://api.repsi.app/api/v1';
       }
     } catch (_) {}
 
     // 4. Default fallback to production cloud API
-    return 'https://repsi.fastapicloud.dev/api/v1';
+    return 'https://api.repsi.app/api/v1';
   }
 
   static const Duration connectTimeout = Duration(seconds: 15);
