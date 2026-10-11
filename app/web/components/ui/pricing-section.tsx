@@ -14,19 +14,19 @@ export function PricingSection() {
 
   const tiers = [
     {
-      id: "starter",
-      name: "Starter",
-      description: "For very small or new gyms getting started",
+      id: "basic",
+      name: "Basic",
+      description: "Essential operations for small studios & personal gyms",
       badge: null,
       highlight: false,
-      ctaText: "Start with Starter",
-      memberLimit: "5 Active Members",
+      ctaText: "Choose Basic",
+      memberLimit: "10 Active Members",
       trainerLimit: "1 Trainer",
       branchLimit: "1 Branch",
       pricing: {
         INR: {
-          monthly: { displayPrice: "₹129", period: "/month", billedText: "Billed monthly", savings: null },
-          annual: { displayPrice: "₹109", period: "/month", billedText: "Billed ₹1,308/year", savings: "Save ₹240/year" },
+          monthly: { displayPrice: "₹149", period: "/month", billedText: "Billed monthly", savings: null },
+          annual: { displayPrice: "₹129", period: "/month", billedText: "Billed ₹1,548/year", savings: "Save ₹240/year" },
         },
         USD: {
           monthly: { displayPrice: "$1.99", period: "/month", billedText: "Billed monthly", savings: null },
@@ -34,53 +34,52 @@ export function PricingSection() {
         },
       },
       keyFeatures: [
-        "Up to 5 active members",
+        "Up to 10 active members",
         "1 trainer account",
-        "1 gym location / branch",
-        "Web access & dashboard",
-        "Basic gym management",
-        "Membership plans & tracking",
-      ],
-    },
-    {
-      id: "basic",
-      name: "Basic",
-      description: "For small gyms building core operations",
-      badge: null,
-      highlight: false,
-      ctaText: "Choose Basic",
-      memberLimit: "40 Active Members",
-      trainerLimit: "3 Trainers",
-      branchLimit: "1 Branch",
-      pricing: {
-        INR: {
-          monthly: { displayPrice: "₹499", period: "/month", billedText: "Billed monthly", savings: null },
-          annual: { displayPrice: "₹449", period: "/month", billedText: "Billed ₹5,388/year", savings: "Save ₹600/year" },
-        },
-        USD: {
-          monthly: { displayPrice: "$5.99", period: "/month", billedText: "Billed monthly", savings: null },
-          annual: { displayPrice: "$5.49", period: "/month", billedText: "Billed $65.88/year", savings: "Save $6.00/year" },
-        },
-      },
-      keyFeatures: [
-        "Up to 40 active members",
-        "3 trainer accounts",
-        "Attendance & QR check-in",
-        "Payment tracking & receipts",
+        "QR attendance check-in",
+        "Payment & fee logging",
+        "Basic workout scheduling",
         "Membership expiry tracking",
-        "Basic reports & dashboard",
-        "Lead management & alerts",
       ],
     },
     {
       id: "growth",
       name: "Growth",
-      description: "For growing gyms scaling sales & engagement",
+      description: "For fitness centers scaling trainer workflows & reports",
       badge: "MOST POPULAR ★",
       highlight: true,
       ctaText: "Choose Growth",
-      memberLimit: "100 Active Members",
+      memberLimit: "35 Active Members",
       trainerLimit: "5 Trainers",
+      branchLimit: "1 Branch",
+      pricing: {
+        INR: {
+          monthly: { displayPrice: "₹499", period: "/month", billedText: "Billed monthly", savings: null },
+          annual: { displayPrice: "₹469", period: "/month", billedText: "Billed ₹5,628/year", savings: "Save ₹360/year" },
+        },
+        USD: {
+          monthly: { displayPrice: "$6.49", period: "/month", billedText: "Billed monthly", savings: null },
+          annual: { displayPrice: "$5.99", period: "/month", billedText: "Billed $71.88/year", savings: "Save $6.00/year" },
+        },
+      },
+      keyFeatures: [
+        "Up to 35 active members",
+        "Everything in Basic",
+        "Trainer accounts & assignment",
+        "Structured workout schedules",
+        "Attendance reports & analytics",
+        "Fee collection summaries",
+      ],
+    },
+    {
+      id: "premium",
+      name: "Premium",
+      description: "Diet plans, nutrition planning & personalized workouts",
+      badge: "BEST VALUE",
+      highlight: false,
+      ctaText: "Choose Premium",
+      memberLimit: "100 Active Members",
+      trainerLimit: "15 Trainers",
       branchLimit: "1 Branch",
       pricing: {
         INR: {
@@ -88,25 +87,23 @@ export function PricingSection() {
           annual: { displayPrice: "₹1,099", period: "/month", billedText: "Billed ₹13,188/year", savings: "Save ₹2,400/year" },
         },
         USD: {
-          monthly: { displayPrice: "$14.99", period: "/month", billedText: "Billed monthly", savings: null },
-          annual: { displayPrice: "$12.99", period: "/month", billedText: "Billed $155.88/year", savings: "Save $24/year" },
+          monthly: { displayPrice: "$15.99", period: "/month", billedText: "Billed monthly", savings: null },
+          annual: { displayPrice: "$13.99", period: "/month", billedText: "Billed $167.88/year", savings: "Save $24/year" },
         },
       },
       keyFeatures: [
         "Up to 100 active members",
-        "5 trainer accounts",
-        "Member Mobile App (iOS & Android)",
-        "Trainer Mobile App",
-        "Push notifications & alerts",
-        "Workout plans & progress tracking",
-        "Sales CRM & lead pipeline",
-        "Google Fit integration",
+        "Everything in Growth",
+        "Manual diet plan creation",
+        "Assign diet plans to members",
+        "Personalized workout plans",
+        "Member progress history",
       ],
     },
   ];
 
   const recommendedTier =
-    memberCalcCount <= 5 ? "Starter" : memberCalcCount <= 40 ? "Basic" : "Growth";
+    memberCalcCount <= 10 ? "Basic" : memberCalcCount <= 35 ? "Growth" : "Premium";
 
   return (
     <section id="pricing" className="py-20 md:py-28 relative overflow-hidden font-sans">

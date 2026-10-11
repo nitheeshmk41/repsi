@@ -105,9 +105,60 @@ export default function OnboardingWizardPage() {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [resendTimer, setResendTimer] = useState(29);
 
-  const slug = gymName
-    ? gymName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-    : "fitzone-fitness";
+  const [workspaceSlug, setWorkspaceSlug] = useState("");
+  const [isSlugCustomized, setIsSlugCustomized] = useState(false);
+  const [checkingSlug, setCheckingSlug] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [slugError, setSlugError] = useState("");
+
+  // Post-verification plan selection
+  const [chosenPlanType, setChosenPlanType] = useState<"trial" | "paid">("trial");
+  const [selectedPaidPlanCode, setSelectedPaidPlanCode] = useState<string>("growth");
+  const [chosenBillingCycle, setChosenBillingCycle] = useState<"monthly" | "annual">("annual");
+
+  const effectiveSlug = (
+    workspaceSlug ||
+    (gymName ? gymName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "fitzone-fitness")
+  ).replace(/[^a-z0-9-]/g, "");
+
+  // Auto-sync slug from gymName when user hasn't typed a custom slug
+  useEffect(() => {
+    if (!isSlugCustomized && gymName) {
+      const derived = gymName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      setWorkspaceSlug(derived);
+    }
+  }, [gymName, isSlugCustomized]);
+
+  // Debounced check availability for workspace slug
+  useEffect(() => {
+    if (!workspaceSlug || workspaceSlug.length < 3) {
+      setSlugAvailable(null);
+      setSlugError("");
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setCheckingSlug(true);
+      try {
+        const res = await repsiApi.checkAvailability({ slug: workspaceSlug });
+        if (res.slug_exists) {
+          setSlugAvailable(false);
+          setSlugError(res.slug_message || "This workspace URL is already taken.");
+        } else {
+          setSlugAvailable(true);
+          setSlugError("");
+        }
+      } catch {
+        // network fallback
+      } finally {
+        setCheckingSlug(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [workspaceSlug]);
 
   // Parse URL search parameters on mount
   useEffect(() => {
@@ -194,6 +245,11 @@ export default function OnboardingWizardPage() {
   function validateStep2() {
     const e: Record<string, string> = {};
     if (!gymName.trim()) e.gymName = "Gym / Business name is required";
+    if (!effectiveSlug.trim() || effectiveSlug.length < 3) {
+      e.slug = "Workspace URL must be at least 3 characters";
+    } else if (slugAvailable === false) {
+      e.slug = slugError || "This workspace URL is already taken. Please choose another.";
+    }
     if (!gymPhone.trim()) e.gymPhone = "Contact phone number is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -333,10 +389,10 @@ export default function OnboardingWizardPage() {
           name: fullName || "Owner",
           email: email,
           role: "OWNER",
-          workspaceSlug: slug,
+          workspaceSlug: effectiveSlug,
           gymName: gymName,
         },
-        slug
+        effectiveSlug
       );
       setStep(7); // Advance to final Launch Complete step
     } catch (err: any) {
@@ -349,10 +405,10 @@ export default function OnboardingWizardPage() {
             name: fullName || "Owner",
             email: email,
             role: "OWNER",
-            workspaceSlug: slug,
+            workspaceSlug: effectiveSlug,
             gymName: gymName,
           },
-          slug
+          effectiveSlug
         );
         setStep(7);
       } else {
@@ -441,6 +497,7 @@ export default function OnboardingWizardPage() {
 
   const handleFinishLaunch = async () => {
     setLoading(true);
+    const finalSlug = effectiveSlug || "fitzone-fitness";
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("repsi_auth_token") : null;
       if (token) {
@@ -452,11 +509,14 @@ export default function OnboardingWizardPage() {
           },
           body: JSON.stringify({
             business_name: gymName,
+            slug: finalSlug,
             business_type: businessType,
             locations_count: locationsCount,
             approx_members: approxMembers,
             currency,
             timezone,
+            chosen_plan: chosenPlanType === "trial" ? "free_trial" : selectedPaidPlanCode,
+            billing_cycle: chosenBillingCycle,
             plans: JSON.stringify(
               plans
                 .filter((p) => p.active)
@@ -474,10 +534,10 @@ export default function OnboardingWizardPage() {
       // Fallback
     }
 
-    localStorage.setItem("repsi_workspace_slug", slug);
+    localStorage.setItem("repsi_workspace_slug", finalSlug);
     localStorage.setItem("repsi_onboarding_completed", "true");
     setLoading(false);
-    router.push(`/${slug}/dashboard`);
+    router.push(`/${finalSlug}/dashboard`);
   };
 
   return (
@@ -713,6 +773,55 @@ export default function OnboardingWizardPage() {
                   {errors.gymName && <p className="mt-1 text-xs text-rose-600 font-medium">{errors.gymName}</p>}
                 </div>
 
+                {/* Workspace Slug / URL with Live Availability Check */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-[#111827]">
+                      Workspace URL / Slug <span className="text-red-500">*</span>
+                    </label>
+                    {checkingSlug ? (
+                      <span className="text-[11px] text-emerald-600 flex items-center gap-1 font-medium">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Checking availability...
+                      </span>
+                    ) : slugAvailable === true ? (
+                      <span className="text-[11px] text-emerald-600 flex items-center gap-1 font-semibold">
+                        <Check className="h-3.5 w-3.5 stroke-[3]" /> Available
+                      </span>
+                    ) : slugAvailable === false ? (
+                      <span className="text-[11px] text-rose-600 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="h-3.5 w-3.5" /> Taken
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className={`flex items-center rounded-lg border bg-white overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-[#16A34A] focus-within:border-[#16A34A] ${
+                    errors.slug || slugAvailable === false ? "border-rose-500" : "border-[#E2E8E5]"
+                  }`}>
+                    <span className="pl-3 pr-1 text-xs font-semibold text-[#64748B] select-none bg-[#F8FAFC] py-3 border-r border-[#E2E8E5]">
+                      repsi.app/
+                    </span>
+                    <input
+                      type="text"
+                      value={workspaceSlug}
+                      onChange={(e) => {
+                        setIsSlugCustomized(true);
+                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                        setWorkspaceSlug(val);
+                      }}
+                      placeholder="fitzone-fitness"
+                      required
+                      className="flex-1 h-11 px-3 text-sm font-semibold text-[#111827] placeholder:text-[#94A3B8] bg-transparent outline-none lowercase"
+                    />
+                  </div>
+                  {errors.slug || slugError ? (
+                    <p className="mt-1 text-xs text-rose-600 font-medium">{errors.slug || slugError}</p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-[#64748B]">
+                      Your custom web portal will be: <strong className="font-mono text-[#111827]">{effectiveSlug || "your-gym"}.repsi.app</strong>
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-1.5">
                     Business type
@@ -738,6 +847,9 @@ export default function OnboardingWizardPage() {
                   <PhoneInput
                     value={gymPhone}
                     onChange={(val) => setGymPhone(val)}
+                    onCountryChange={(item) => {
+                      setCurrency(item.currency);
+                    }}
                     placeholder="98765 43210"
                     error={!!errors.gymPhone}
                   />
@@ -1406,7 +1518,7 @@ export default function OnboardingWizardPage() {
         )}
 
         {/* ======================================================== */}
-        {/* STEP 7: LAUNCH & COMPLETE */}
+        {/* STEP 7: PLAN SELECTION & LAUNCH (TRIAL OR PAID PLAN) */}
         {/* ======================================================== */}
         {step === 7 && (
           <motion.div
@@ -1415,86 +1527,252 @@ export default function OnboardingWizardPage() {
             animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="w-full max-w-[420px] sm:max-w-[440px] mx-auto space-y-6"
+            className="w-full max-w-[440px] sm:max-w-[540px] mx-auto space-y-5"
           >
             <div className="text-center space-y-1.5">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-[#16A34A]">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Email Verified Successfully
+              </span>
               <h1 className="text-2xl sm:text-[28px] font-bold text-[#111827] tracking-tight">
-                You&apos;re ready to go.
+                Choose your starting plan
               </h1>
-              <p className="text-sm text-[#64748B]">
-                Your gym workspace is ready.
+              <p className="text-xs sm:text-sm text-[#64748B]">
+                Start with a 14-day Growth trial or select a subscription to proceed immediately.
               </p>
             </div>
 
             <SpotlightCard
               spotlightColor="rgba(22, 163, 74, 0.12)"
-              className="relative overflow-hidden bg-white rounded-2xl border border-[#E2E8E5] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] text-center space-y-6"
+              className="relative overflow-hidden bg-white rounded-2xl border border-[#E2E8E5] p-5 sm:p-7 shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-5"
             >
               <BorderBeam size={220} duration={7} colorFrom="#16A34A" colorTo="#34D399" />
-              {/* Clean Spring Checkmark */}
-              <motion.div
-                initial={{ scale: 0, rotate: -25 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 22 }}
-                className="w-16 h-16 rounded-full bg-emerald-50 text-[#16A34A] border-2 border-emerald-300 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/10"
-              >
-                <Check className="w-8 h-8 stroke-[3]" />
-              </motion.div>
 
-              <div className="space-y-2">
-                <h2 className="text-lg font-bold text-[#111827]">
-                  {gymName || "FitZone"} is operational
-                </h2>
-                <p className="text-sm text-[#64748B] max-w-xs mx-auto leading-relaxed">
-                  Everything is set up to run members, attendance, and payments from day one.
-                </p>
+              {/* Mode Selector Tabs: 14-Day Trial vs Paid Plans */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8E5]">
+                <button
+                  type="button"
+                  onClick={() => setChosenPlanType("trial")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    chosenPlanType === "trial"
+                      ? "bg-white text-[#16A34A] shadow-xs"
+                      : "text-[#64748B] hover:text-[#111827]"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>14-Day Free Trial</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChosenPlanType("paid")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    chosenPlanType === "paid"
+                      ? "bg-white text-[#16A34A] shadow-xs"
+                      : "text-[#64748B] hover:text-[#111827]"
+                  }`}
+                >
+                  <span>Select Paid Plan</span>
+                </button>
               </div>
 
-              <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200/80 text-left text-xs space-y-2.5">
-                <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
-                  <div className="flex items-center gap-1.5 font-bold text-[#15803D]">
-                    <Sparkles className="w-4 h-4 text-[#16A34A]" />
-                    <ShinyText text="Growth Tier — 14 Days Free Active" className="font-bold text-[#15803D]" />
+              {/* OPTION A: 14-DAY FREE TRIAL (GROWTH FEATURES) */}
+              {chosenPlanType === "trial" && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-emerald-50/80 rounded-xl border border-emerald-200/90 text-left text-xs space-y-3">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-emerald-200/60">
+                      <div>
+                        <span className="font-bold text-sm text-[#15803D] block">Growth Tier Access</span>
+                        <span className="text-[11px] text-[#166534]">14 Calendar Days · No Credit Card Required</span>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded font-bold text-[10px] bg-emerald-600 text-white tracking-wider">
+                        FREE TRIAL
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-[#334155]">
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
+                        <span>Up to <strong>35 Members</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
+                        <span>Trainer Accounts</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
+                        <span>Attendance Reports & QR</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
+                        <span>Workout Schedules</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-emerald-200/50 flex items-center justify-between text-[11px] text-emerald-800">
+                      <span>Workspace URL: <strong className="font-mono text-[#111827]">{effectiveSlug}.repsi.app</strong></span>
+                      <span className="text-[10px] font-semibold text-[#15803D]">Zero auto-charge</span>
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-600 text-white tracking-wider">TRIALING</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-[#334155] pt-0.5">
-                  <div>• Active Member Capacity: <strong className="text-[#0F172A]">35 Members</strong></div>
-                  <div>• Trainer Management: <strong className="text-[#0F172A]">Unlocked</strong></div>
-                  <div>• Attendance Reports & QR: <strong className="text-[#0F172A]">Unlocked</strong></div>
-                  <div>• Workout Schedules: <strong className="text-[#0F172A]">Unlocked</strong></div>
-                </div>
-                <p className="text-[11px] text-emerald-800/80 pt-1 border-t border-emerald-200/40">
-                  Zero automatic charge at trial expiry. Your data is 100% preserved.
-                </p>
-              </div>
 
-              <div className="p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2E8E5] text-left text-xs space-y-2">
-                <div className="flex items-center gap-2 text-[#111827] font-medium">
-                  <Check className="w-4 h-4 text-[#16A34A] shrink-0" />
-                  <span>Email verified & owner credentials active</span>
+                  <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2E8E5] text-[11px] text-[#64748B] space-y-1">
+                    <p className="text-[#111827] font-semibold">✓ Zero Risk Commitment</p>
+                    <p>At trial end, choose any plan. Your member, attendance, and workout data is 100% preserved.</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-[#111827] font-medium">
-                  <Check className="w-4 h-4 text-[#16A34A] shrink-0" />
-                  <span>Membership plans configured</span>
-                </div>
-                <div className="flex items-center gap-2 text-[#111827] font-medium">
-                  <Check className="w-4 h-4 text-[#16A34A] shrink-0" />
-                  <span>Workspace address: {slug}.repsi.app</span>
-                </div>
-              </div>
+              )}
 
+              {/* OPTION B: SELECT PAID PLAN */}
+              {chosenPlanType === "paid" && (
+                <div className="space-y-3.5">
+                  {/* Monthly vs Annual Toggle */}
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-semibold text-[#111827]">Billing cycle:</span>
+                    <div className="inline-flex p-0.5 rounded-lg bg-[#F1F5F9] border border-[#E2E8E5] text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setChosenBillingCycle("monthly")}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                          chosenBillingCycle === "monthly"
+                            ? "bg-white text-[#111827] shadow-2xs"
+                            : "text-[#64748B]"
+                        }`}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setChosenBillingCycle("annual")}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                          chosenBillingCycle === "annual"
+                            ? "bg-[#16A34A] text-white shadow-2xs"
+                            : "text-[#64748B]"
+                        }`}
+                      >
+                        <span>Annual</span>
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-white/20 text-white font-extrabold">SAVE</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 6 Paid Plans Catalog */}
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {[
+                      {
+                        code: "basic",
+                        name: "Basic",
+                        monthlyPrice: "₹149/mo",
+                        annualPrice: "₹129/mo",
+                        members: "10 Members",
+                        desc: "Member records, QR attendance & basic workouts",
+                        badge: null,
+                      },
+                      {
+                        code: "growth",
+                        name: "Growth",
+                        monthlyPrice: "₹499/mo",
+                        annualPrice: "₹469/mo",
+                        members: "35 Members",
+                        desc: "Trainer accounts, attendance reports & structured workouts",
+                        badge: "MOST POPULAR",
+                      },
+                      {
+                        code: "premium",
+                        name: "Premium",
+                        monthlyPrice: "₹1,299/mo",
+                        annualPrice: "₹1,099/mo",
+                        members: "100 Members",
+                        desc: "Diet plans, personalized workouts & progress tracking",
+                        badge: "BEST VALUE",
+                      },
+                      {
+                        code: "pro",
+                        name: "Pro",
+                        monthlyPrice: "₹2,499/mo",
+                        annualPrice: "₹2,149/mo",
+                        members: "250 Members",
+                        desc: "Revenue reports, data exports & workout templates",
+                        badge: null,
+                      },
+                      {
+                        code: "pro_plus",
+                        name: "Pro Plus+",
+                        monthlyPrice: "₹4,999/mo",
+                        annualPrice: "₹4,599/mo",
+                        members: "Unlimited",
+                        desc: "Unlimited members, bulk operations & priority SLA",
+                        badge: "UNLIMITED",
+                      },
+                      {
+                        code: "enterprise",
+                        name: "Enterprise",
+                        monthlyPrice: "Contact Sales",
+                        annualPrice: "Contact Sales",
+                        members: "Custom",
+                        desc: "Multi-branch consolidated reporting, custom API",
+                        badge: "CUSTOM",
+                      },
+                    ].map((p) => {
+                      const isSelected = selectedPaidPlanCode === p.code;
+                      const price = chosenBillingCycle === "annual" ? p.annualPrice : p.monthlyPrice;
+                      return (
+                        <div
+                          key={p.code}
+                          onClick={() => setSelectedPaidPlanCode(p.code)}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left ${
+                            isSelected
+                              ? "border-[#16A34A] bg-[#16A34A]/5 ring-2 ring-[#16A34A]/20"
+                              : "border-[#E2E8E5] bg-white hover:border-[#16A34A]/50"
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-[#111827]">{p.name}</span>
+                              <span className="text-[10px] font-semibold text-[#16A34A] bg-[#16A34A]/10 px-1.5 py-0.2 rounded">
+                                {p.members}
+                              </span>
+                              {p.badge && (
+                                <span className="text-[9px] font-bold text-white bg-[#111827] px-1.5 py-0.2 rounded">
+                                  {p.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[#64748B]">{p.desc}</p>
+                          </div>
+
+                          <div className="text-right shrink-0 ml-3">
+                            <span className="font-bold text-xs text-[#111827] block">{price}</span>
+                            <div className="flex items-center justify-end mt-1">
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                isSelected ? "border-[#16A34A] bg-[#16A34A]" : "border-[#CBD5E1]"
+                              }`}>
+                                {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Button */}
               <button
                 type="button"
                 onClick={handleFinishLaunch}
                 disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-lg bg-[#16A34A] hover:bg-[#15803D] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <span className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : chosenPlanType === "trial" ? (
+                  <>
+                    <span>Start 14-Day Free Trial & Enter Dashboard</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
                 ) : (
                   <>
-                    <span>Enter your dashboard</span>
+                    <span>Proceed with {selectedPaidPlanCode === "enterprise" ? "Enterprise" : selectedPaidPlanCode.toUpperCase()} Plan</span>
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}

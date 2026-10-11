@@ -22,6 +22,7 @@ from app.models.machine import GymMachine
 from app.models.invitation import GymInvitation
 from app.models.website import Website
 from app.models.system import AuditLog, Notification
+from app.models.auth import PendingRegistration
 from app.models.billing import SubscriptionPlan, GymSubscription, SubscriptionAuditLog, SubscriptionStatus, BillingCycle
 from app.services.billing import BillingService
 
@@ -523,6 +524,15 @@ def delete_workspace_permanently(
 
     # 4. Perform Transactional Cascading Deletion across all workspace tables
     try:
+        # Collect all users associated with this workspace
+        affil_user_ids = [
+            r[0] for r in db.query(WorkspaceMember.user_id).filter(WorkspaceMember.workspace_id == id).all()
+        ]
+
+        # Delete billing subscriptions & logs
+        db.query(GymSubscription).filter(GymSubscription.workspace_id == id).delete(synchronize_session=False)
+        db.query(SubscriptionAuditLog).filter(SubscriptionAuditLog.workspace_id == id).delete(synchronize_session=False)
+
         db.query(Attendance).filter(Attendance.workspace_id == id).delete(synchronize_session=False)
         db.query(ClassAttendance).filter(ClassAttendance.workspace_id == id).delete(synchronize_session=False)
         db.query(ClientNote).filter(ClientNote.workspace_id == id).delete(synchronize_session=False)
@@ -546,6 +556,18 @@ def delete_workspace_permanently(
         db.query(Website).filter(Website.workspace_id == id).delete(synchronize_session=False)
         db.query(WorkspaceMember).filter(WorkspaceMember.workspace_id == id).delete(synchronize_session=False)
         db.query(Workspace).filter(Workspace.id == id).delete(synchronize_session=False)
+
+        # Cascade delete users who solely belonged to this workspace (and are not superadmins)
+        for u_id in affil_user_ids:
+            remaining_workspaces = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == u_id).count()
+            if remaining_workspaces == 0:
+                user_obj = db.query(User).filter(User.id == u_id).first()
+                if user_obj and not user_obj.is_superadmin:
+                    db.query(PendingRegistration).filter(
+                        func.lower(PendingRegistration.email) == func.lower(user_obj.email)
+                    ).delete(synchronize_session=False)
+                    db.delete(user_obj)
+
         db.commit()
     except Exception as e:
         db.rollback()
@@ -917,6 +939,40 @@ def get_all_global_users(
         ))
 
     return results
+
+
+@router.delete("/users/{user_id}")
+def delete_user_permanently(
+    user_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    admin_user = check_superadmin(tenant, db)
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if target_user.is_superadmin and target_user.id == admin_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own super admin account.")
+
+    user_email = target_user.email
+
+    # Log audit event
+    log_audit_event(
+        db, admin_user.id, "PERMANENT_DELETE_USER",
+        f"Permanently deleted user '{user_email}' (ID: {user_id})"
+    )
+
+    # Remove workspace memberships
+    db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user_id).delete(synchronize_session=False)
+    # Remove pending registrations
+    db.query(PendingRegistration).filter(
+        func.lower(PendingRegistration.email) == func.lower(user_email)
+    ).delete(synchronize_session=False)
+    # Remove user record
+    db.delete(target_user)
+    db.commit()
+
+    return {"status": "success", "message": f"User '{user_email}' was permanently deleted from the database."}
 
 
 class AuditLogResponse(BaseModel):

@@ -329,6 +329,7 @@ def complete_onboarding(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
+    import re
     ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
     if ws:
         if "business_types" in payload:
@@ -343,17 +344,44 @@ def complete_onboarding(
             ws.checkin_method = str(payload["checkin_method"])
         if "brand_color" in payload:
             ws.brand_color = str(payload["brand_color"])
+        
+        # If user customized their workspace slug
+        custom_slug = payload.get("slug")
+        if custom_slug and custom_slug.strip():
+            clean_slug = re.sub(r"[^a-zA-Z0-9]+", "-", custom_slug.strip().lower()).strip("-")
+            if clean_slug and clean_slug != ws.slug.lower():
+                existing_slug = db.query(Workspace).filter(Workspace.slug == clean_slug, Workspace.id != ws.id).first()
+                if not existing_slug:
+                    ws.slug = clean_slug
+
         ws.onboarding_completed = True
         ws.onboarding_step = payload.get("step", 14)
         db.commit()
 
-        # Initialize/Guarantee 14-day Free Trial on Growth tier
-        sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+        chosen_plan = payload.get("chosen_plan")
+        if chosen_plan and chosen_plan != "free_trial" and chosen_plan != "growth_trial":
+            try:
+                sub = BillingService.change_gym_plan(
+                    db,
+                    ws.id,
+                    new_plan_code=chosen_plan,
+                    billing_cycle=payload.get("billing_cycle", "monthly"),
+                    actor_user_id=tenant.user_id,
+                    reason=f"Selected {chosen_plan} plan during onboarding",
+                )
+            except Exception:
+                sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
+        else:
+            # Default to 14-day Free Trial on Growth tier
+            sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
 
     return {
         "status": "success",
-        "message": "Workspace initialized successfully with 14-day Free Trial",
+        "message": "Workspace initialized successfully",
         "workspace_id": tenant.workspace_id,
-        "trial_active": True,
+        "workspace_slug": ws.slug if ws else None,
+        "plan": sub.plan.code if ws and sub else "growth",
+        "trial_active": sub.status == SubscriptionStatus.TRIALING if ws and sub else True,
         "trial_days": 14,
     }
+

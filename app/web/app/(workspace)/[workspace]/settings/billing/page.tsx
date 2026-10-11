@@ -56,6 +56,28 @@ interface PlanTier {
 
 const ALL_PLANS: PlanTier[] = [
   {
+    id: "free_trial",
+    code: "free_trial",
+    name: "Free Trial (Growth features)",
+    priceInrMonthly: 0,
+    priceInrAnnual: 0,
+    priceUsdMonthly: 0,
+    priceUsdAnnual: 0,
+    badge: "14 DAYS FREE",
+    description: "14-day access to Growth tier features for eligible new gym workspaces.",
+    memberLimit: 35,
+    trainerLimit: 5,
+    branchLimit: 1,
+    features: [
+      "14 days of calendar access",
+      "Maximum 35 active members",
+      "Trainer accounts & member assignment",
+      "Attendance reports & QR check-in",
+      "Structured workout schedules",
+      "Zero automatic charge at expiry",
+    ],
+  },
+  {
     id: "basic",
     code: "basic",
     name: "Basic",

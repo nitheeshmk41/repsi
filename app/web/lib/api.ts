@@ -1406,17 +1406,18 @@ export const repsiApi = {
     return await res.json();
   },
 
-  async checkAvailability(params: { email?: string; phone?: string }): Promise<{ email_exists: boolean; phone_exists: boolean; email_message?: string; phone_message?: string }> {
+  async checkAvailability(params: { email?: string; phone?: string; slug?: string }): Promise<{ email_exists: boolean; phone_exists: boolean; slug_exists?: boolean; email_message?: string; phone_message?: string; slug_message?: string }> {
     const query = new URLSearchParams();
     if (params.email) query.append("email", params.email);
     if (params.phone) query.append("phone", params.phone);
+    if (params.slug) query.append("slug", params.slug);
 
     try {
       const res = await fetch(`${API_BASE}/auth/check-availability?${query.toString()}`);
-      if (!res.ok) return { email_exists: false, phone_exists: false };
+      if (!res.ok) return { email_exists: false, phone_exists: false, slug_exists: false };
       return await res.json();
     } catch {
-      return { email_exists: false, phone_exists: false };
+      return { email_exists: false, phone_exists: false, slug_exists: false };
     }
   },
 
@@ -2121,6 +2122,18 @@ export const repsiApi = {
     } catch {
       return [];
     }
+  },
+
+  async deleteSuperAdminUser(id: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/users/${id}`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to permanently delete user");
+    }
+    return await res.json();
   },
 
   async getSuperAdminSystemHealth(): Promise<any> {

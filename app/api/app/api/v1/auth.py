@@ -1,6 +1,6 @@
 from app.core.database import get_db
 from app.middleware.tenant import TenantContext, get_current_tenant
-from app.models.user import User, WorkspaceMember
+from app.models.user import User, WorkspaceMember, Workspace
 from app.schemas.auth import (
     LoginRequest,
     GoogleLoginRequest,
@@ -16,6 +16,7 @@ from app.schemas.auth import (
 from app.services.auth import AuthService
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -141,6 +142,7 @@ def logout():
 def check_availability(
     email: str = None,
     phone: str = None,
+    slug: str = None,
     db: Session = Depends(get_db)
 ):
     from app.models.member import Member
@@ -148,13 +150,40 @@ def check_availability(
 
     email_exists = False
     phone_exists = False
+    slug_exists = False
+
+    if slug and slug.strip():
+        clean_slug = slug.strip().lower()
+        reserved_slugs = {
+            "api", "superadmin", "auth", "onboarding", "admin", "dashboard",
+            "billing", "settings", "login", "register", "pricing", "help",
+            "docs", "site", "features", "solutions", "contact", "about"
+        }
+        if clean_slug in reserved_slugs:
+            slug_exists = True
+        else:
+            w_match = db.query(Workspace).filter(func.lower(Workspace.slug) == clean_slug).first()
+            if w_match:
+                slug_exists = True
 
     if email and email.strip():
         clean_email = email.strip().lower()
-        if (
-            db.query(User).filter(User.email == clean_email).first()
-            or db.query(Member).filter(Member.email == clean_email).first()
-            or db.query(Trainer).filter(Trainer.email == clean_email).first()
+        u = db.query(User).filter(func.lower(User.email) == clean_email).first()
+        if u:
+            if u.is_superadmin:
+                email_exists = True
+            else:
+                has_workspaces = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == u.id).count() > 0
+                if has_workspaces:
+                    email_exists = True
+                else:
+                    # Clean up orphaned user record whose gym was deleted
+                    db.delete(u)
+                    db.commit()
+
+        if not email_exists and (
+            db.query(Member).filter(func.lower(Member.email) == clean_email).first()
+            or db.query(Trainer).filter(func.lower(Trainer.email) == clean_email).first()
         ):
             email_exists = True
 
@@ -164,14 +193,24 @@ def check_availability(
         digits_phone = "".join(filter(str.isdigit, clean_phone))
         if len(digits_phone) >= 7:
             user_match = db.query(User).filter(User.phone.like(f"%{digits_phone[-10:]}%")).first()
-            member_match = db.query(Member).filter(Member.phone.like(f"%{digits_phone[-10:]}%")).first()
-            trainer_match = db.query(Trainer).filter(Trainer.phone.like(f"%{digits_phone[-10:]}%")).first()
-            if user_match or member_match or trainer_match:
-                phone_exists = True
+            if user_match:
+                if user_match.is_superadmin or db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user_match.id).count() > 0:
+                    phone_exists = True
+                else:
+                    db.delete(user_match)
+                    db.commit()
+            if not phone_exists:
+                member_match = db.query(Member).filter(Member.phone.like(f"%{digits_phone[-10:]}%")).first()
+                trainer_match = db.query(Trainer).filter(Trainer.phone.like(f"%{digits_phone[-10:]}%")).first()
+                if member_match or trainer_match:
+                    phone_exists = True
 
     return {
         "email_exists": email_exists,
         "phone_exists": phone_exists,
+        "slug_exists": slug_exists,
         "email_message": "Email is already registered" if email_exists else None,
         "phone_message": "Mobile number is already registered" if phone_exists else None,
+        "slug_message": "Workspace URL is already taken" if slug_exists else None,
     }
+

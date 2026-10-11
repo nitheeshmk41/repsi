@@ -35,10 +35,15 @@ class AuthService:
             .first()
         )
         if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="An account with this email address already exists.",
-            )
+            has_workspaces = self.db.query(WorkspaceMember).filter(WorkspaceMember.user_id == existing_user.id).count() > 0
+            if has_workspaces or existing_user.is_superadmin:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="An account with this email address already exists.",
+                )
+            else:
+                self.db.delete(existing_user)
+                self.db.flush()
 
         # Create User
         user = User(
@@ -99,11 +104,17 @@ class AuthService:
 
     def request_registration_otp(self, req: RegisterRequest) -> None:
         email = str(req.email).strip().lower()
-        if self.db.query(User).filter(func.lower(User.email) == email).first():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="An account with this email address already exists.",
-            )
+        existing_user = self.db.query(User).filter(func.lower(User.email) == email).first()
+        if existing_user:
+            has_workspaces = self.db.query(WorkspaceMember).filter(WorkspaceMember.user_id == existing_user.id).count() > 0
+            if has_workspaces or existing_user.is_superadmin:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email address already exists.",
+                )
+            else:
+                self.db.delete(existing_user)
+                self.db.flush()
 
         now = datetime.now(timezone.utc)
         pending = (

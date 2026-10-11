@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   CheckCircle2,
@@ -69,6 +69,14 @@ const LanyardSection = dynamic(
 );
 
 export default function MarketingLandingPage() {
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 550);
+    return () => clearTimeout(timer);
+  }, []);
 
   const stepsData = [
     {
@@ -140,6 +148,37 @@ export default function MarketingLandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#111714] font-sans antialiased selection:bg-[#16A34A] selection:text-white">
+      {/* HOMEPAGE LOADING SPINNER */}
+      <AnimatePresence>
+        {isPageLoading && (
+          <motion.div
+            key="homepage-loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.35, ease: "easeInOut" } }}
+            className="fixed inset-0 z-[9999] bg-[#050B07] flex flex-col items-center justify-center space-y-5"
+          >
+            <div className="relative flex items-center justify-center">
+              {/* Pulsing emerald ring */}
+              <div className="w-16 h-16 rounded-full border-2 border-[#16A34A]/25 animate-ping absolute" />
+              {/* Spinning gradient ring */}
+              <div className="w-16 h-16 rounded-full border-3 border-transparent border-t-[#16A34A] border-r-[#22C55E] animate-spin" />
+              {/* Inner branded core */}
+              <div className="absolute w-8 h-8 rounded-full bg-[#16A34A]/20 flex items-center justify-center">
+                <div className="w-3.5 h-3.5 rounded-full bg-[#16A34A] animate-pulse" />
+              </div>
+            </div>
+            <div className="flex flex-col items-center space-y-1.5 text-center">
+              <span className="font-black text-sm tracking-[0.25em] text-white uppercase font-sans">
+                REPSI
+              </span>
+              <span className="text-[11px] font-medium text-emerald-400/90 tracking-wider">
+                Loading gym management platform...
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 01. TRANSPARENT HERO NAVBAR */}
       <MarketingNav />
 

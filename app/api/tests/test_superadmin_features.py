@@ -142,19 +142,50 @@ def test_superadmin_global_management_and_cascading_deletion():
     })
     assert good_gym_del.status_code == 200
 
-    # Verify workspace and workspace members are completely cleaned up
+    # Verify workspace and workspace members and affiliated sole owner are completely cleaned up
     db = TestingSessionLocal()
     try:
         ws_check = db.query(Workspace).filter(Workspace.id == gym_id).first()
         assert ws_check is None
         wm_check = db.query(WorkspaceMember).filter(WorkspaceMember.workspace_id == gym_id).all()
         assert len(wm_check) == 0
+        owner_check = db.query(User).filter(User.email == "owner.cascade@test.com").first()
+        assert owner_check is None, "Owner user should be cascade deleted when gym is deleted"
     finally:
         db.close()
 
-    # 9. Verify Audit Trail captured the events
+    # Verify check-availability reports email as free
+    check_free = client.get("/api/v1/auth/check-availability?email=owner.cascade@test.com")
+    assert check_free.status_code == 200
+    assert check_free.json()["email_exists"] is False
+
+    # 9. Super Admin Delete User Endpoint test
+    db = TestingSessionLocal()
+    try:
+        temp_user = User(
+            email="to.delete@repsi.com",
+            full_name="To Delete",
+            hashed_password=get_password_hash("Password123!"),
+            is_active=True
+        )
+        db.add(temp_user)
+        db.commit()
+        temp_id = temp_user.id
+    finally:
+        db.close()
+
+    del_user_res = client.delete(f"/api/v1/superadmin/users/{temp_id}", headers=headers)
+    assert del_user_res.status_code == 200
+    db = TestingSessionLocal()
+    try:
+        assert db.query(User).filter(User.id == temp_id).first() is None
+    finally:
+        db.close()
+
+    # 10. Verify Audit Trail captured the events
     audit_res = client.get("/api/v1/superadmin/audit-logs", headers=headers)
     assert audit_res.status_code == 200
     logs = audit_res.json()
     assert any("PERMANENT_DELETE_WORKSPACE" in l["action"] for l in logs)
     assert any("PERMANENT_DELETE_MEMBER" in l["action"] for l in logs)
+    assert any("PERMANENT_DELETE_USER" in l["action"] for l in logs)
