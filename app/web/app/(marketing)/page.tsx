@@ -70,12 +70,40 @@ const LanyardSection = dynamic(
 
 export default function MarketingLandingPage() {
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [loadingState, setLoadingState] = useState<"starting" | "ready">("starting");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Check if user already saw the splash in this browser session
+    if (typeof window !== "undefined") {
+      const alreadyVisited = sessionStorage.getItem("repsi_visited");
+      if (alreadyVisited) {
+        setIsPageLoading(false);
+        return;
+      }
+    }
+
+    // Dynamic progressive states without blocking
+    const t1 = setTimeout(() => {
+      setLoadingState("ready");
+    }, 180);
+
+    const t2 = setTimeout(() => {
       setIsPageLoading(false);
-    }, 550);
-    return () => clearTimeout(timer);
+      try {
+        sessionStorage.setItem("repsi_visited", "true");
+      } catch {}
+    }, 280);
+
+    // Guaranteed fail-safe: dismiss after 450ms under all conditions
+    const safety = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 450);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(safety);
+    };
   }, []);
 
   const stepsData = [
@@ -148,14 +176,16 @@ export default function MarketingLandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#111714] font-sans antialiased selection:bg-[#16A34A] selection:text-white">
-      {/* HOMEPAGE LOADING SPINNER */}
+      {/* HOMEPAGE LIGHTWEIGHT INTELLIGENT LOADING SCREEN */}
       <AnimatePresence>
         {isPageLoading && (
           <motion.div
             key="homepage-loader"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.35, ease: "easeInOut" } }}
-            className="fixed inset-0 z-[9999] bg-[#050B07] flex flex-col items-center justify-center space-y-5"
+            exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.22, ease: "easeOut" } }}
+            onClick={() => setIsPageLoading(false)}
+            className="fixed inset-0 z-[9999] bg-[#050B07] flex flex-col items-center justify-center space-y-5 cursor-pointer select-none"
+            title="Click anywhere to enter immediately"
           >
             <div className="relative flex items-center justify-center">
               {/* Pulsing emerald ring */}
@@ -167,13 +197,16 @@ export default function MarketingLandingPage() {
                 <div className="w-3.5 h-3.5 rounded-full bg-[#16A34A] animate-pulse" />
               </div>
             </div>
-            <div className="flex flex-col items-center space-y-1.5 text-center">
+            <div className="flex flex-col items-center space-y-1.5 text-center px-4">
               <span className="font-black text-sm tracking-[0.25em] text-white uppercase font-sans">
                 REPSI
               </span>
-              <span className="text-[11px] font-medium text-emerald-400/90 tracking-wider">
-                Loading gym management platform...
+              <span className="text-[11px] font-medium text-emerald-400/90 tracking-wider transition-all duration-200">
+                {loadingState === "starting" ? "Preparing your workspace…" : "Loading gym platform…"}
               </span>
+            </div>
+            <div className="text-[10px] text-zinc-500 font-mono tracking-wider pt-2 opacity-70 hover:opacity-100 transition-opacity">
+              Tap anywhere to enter
             </div>
           </motion.div>
         )}

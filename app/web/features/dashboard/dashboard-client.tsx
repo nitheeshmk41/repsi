@@ -154,11 +154,11 @@ export function DashboardClient({ workspace }: { workspace: string }) {
       {/* ─────────────────────────────────────────────────────────────────────────────
           IMMEDIATE DASHBOARD SHELL HEADER (Renders instantly without blocking)
       ───────────────────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E5E7EB] dark:border-zinc-800 pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E5E7EB] dark:border-[#22332a] pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-md bg-[#ECFDF3] dark:bg-emerald-950/60 text-[#15803D] dark:text-emerald-400 border border-[#B7E4C7] dark:border-emerald-800/40 inline-flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full bg-[#16A34A] ${revalidating ? "animate-ping" : "animate-pulse"}`} />
+            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-md bg-[#ECFDF3] dark:bg-emerald-500/10 text-[#15803D] dark:text-[#25d979] border border-[#B7E4C7] dark:border-emerald-500/25 inline-flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full bg-[#16A34A] dark:bg-[#25d979] ${revalidating ? "animate-ping" : "animate-pulse"}`} />
               WORKSPACE: /{workspace}
             </span>
             {revalidating && (
@@ -167,10 +167,10 @@ export function DashboardClient({ workspace }: { workspace: string }) {
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#172033] dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#172033] dark:text-[#f4f8f6] tracking-tight">
             {greeting}, Owner
           </h1>
-          <p className="text-xs sm:text-sm font-medium text-[#64748B] dark:text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#889b90] mt-1">
             {isSetupMode ? "Let's finish setting up your gym." : "Today's overview — " + today}
           </p>
         </div>
@@ -180,9 +180,9 @@ export function DashboardClient({ workspace }: { workspace: string }) {
             variant="outline"
             size="sm"
             onClick={() => setShowGettingStartedModal(true)}
-            className="border-[#D1D5DB] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-[#F8FAF9] dark:hover:bg-zinc-800 text-[#16A34A] rounded-xl font-bold shadow-2xs"
+            className="border-[#D1D5DB] dark:border-[#22332a] bg-white dark:bg-[#101b16] hover:bg-[#F8FAF9] dark:hover:bg-[#16261f] text-[#16A34A] dark:text-[#25d979] rounded-xl font-bold shadow-2xs"
           >
-            <Sparkles className="h-4 w-4 mr-1.5 text-[#16A34A]" />
+            <Sparkles className="h-4 w-4 mr-1.5 text-[#16A34A] dark:text-[#25d979]" />
             Getting Started
           </Button>
 
@@ -192,7 +192,7 @@ export function DashboardClient({ workspace }: { workspace: string }) {
             onClick={handleSeedDemoData}
             disabled={seeding}
             title="Load sample demo records specifically for testing your gym"
-            className="border-[#D1D5DB] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-[#F8FAF9] dark:hover:bg-zinc-800 text-[#64748B] dark:text-zinc-300 rounded-xl font-semibold shadow-2xs"
+            className="border-[#D1D5DB] dark:border-[#22332a] bg-white dark:bg-[#101b16] hover:bg-[#F8FAF9] dark:hover:bg-[#16261f] text-[#64748B] dark:text-[#aab8b1] rounded-xl font-semibold shadow-2xs"
           >
             <Database className="h-3.5 w-3.5 mr-1.5" />
             {seeding ? "Seeding..." : "Load Demo Records"}
@@ -284,10 +284,10 @@ export function DashboardClient({ workspace }: { workspace: string }) {
       {loading && !metrics ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse space-y-3">
-              <div className="h-3.5 w-24 bg-slate-200 dark:bg-zinc-800 rounded-md" />
-              <div className="h-8 w-32 bg-slate-200 dark:bg-zinc-800 rounded-lg" />
-              <div className="h-3 w-20 bg-slate-200 dark:bg-zinc-800 rounded-md" />
+            <div key={i} className="p-5 rounded-2xl border border-slate-200 dark:border-[#22332a] bg-white dark:bg-[#101b16] animate-pulse space-y-3">
+              <div className="h-3.5 w-24 bg-slate-200 dark:bg-white/[0.08] rounded-md" />
+              <div className="h-8 w-32 bg-slate-200 dark:bg-white/[0.08] rounded-lg" />
+              <div className="h-3 w-20 bg-slate-200 dark:bg-white/[0.08] rounded-md" />
             </div>
           ))}
         </div>
