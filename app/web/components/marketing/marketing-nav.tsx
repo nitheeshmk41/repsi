@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ArrowRight, ChevronDown } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 export function MarketingNav() {
   const pathname = usePathname();
@@ -69,9 +70,9 @@ export function MarketingNav() {
   // Colors & styling: Home top is transparent dark hero overlay, on scroll or on inner pages dark/light theme
   const headerClass = isHome
     ? isScrolled
-      ? "fixed top-0 z-50 w-full bg-[#050B07]/80 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/30 transition-all duration-300"
+      ? "fixed top-0 z-50 w-full bg-[#050B07]/80 dark:bg-[#050B07]/90 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/30 transition-all duration-300"
       : "fixed top-0 z-50 w-full bg-transparent border-b border-transparent transition-all duration-300"
-    : "relative z-50 w-full bg-white border-b border-[#E5EAE6] text-[#111714]";
+    : "relative z-50 w-full bg-white dark:bg-[#08110d] border-b border-[#E5EAE6] dark:border-[#263831] text-[#111714] dark:text-[#f4f8f6]";
 
   const logoSrc = isHome
     ? "/logos/dark_logo_trans.png"
@@ -79,15 +80,15 @@ export function MarketingNav() {
 
   const linkTextClass = isHome
     ? "text-[#F5F7F5]/80 hover:text-white"
-    : "text-[#111714] hover:text-[#16A34A]";
+    : "text-[#111714] dark:text-[#f4f8f6] hover:text-[#16A34A] dark:hover:text-[#25d979]";
 
   const dropdownBg = isHome
     ? "bg-[#0B120E]/95 backdrop-blur-xl border-white/10 shadow-2xl"
-    : "bg-white/98 backdrop-blur-xl border-[#E5EAE6] shadow-xl";
+    : "bg-white/98 dark:bg-[#101b16]/98 backdrop-blur-xl border-[#E5EAE6] dark:border-[#263831] shadow-xl";
 
   const dropdownItemText = isHome
     ? "text-[#9CA3AF] hover:text-[#22C55E] hover:bg-white/5"
-    : "text-[#111714] hover:text-[#16A34A] hover:bg-[#F1F5F2]";
+    : "text-[#111714] dark:text-[#aab8b1] hover:text-[#16A34A] dark:hover:text-[#25d979] hover:bg-[#F1F5F2] dark:hover:bg-[#16241e]";
 
   return (
     <header className={headerClass}>
@@ -141,8 +142,9 @@ export function MarketingNav() {
           )}
         </nav>
 
-        {/* Auth & CTA */}
-        <div className="hidden sm:flex items-center gap-4">
+        {/* Auth & CTA & Theme Toggle */}
+        <div className="hidden sm:flex items-center gap-3 lg:gap-4">
+          <ThemeToggle isHome={isHome} />
           <Link
             href="/login"
             className={`text-sm font-medium py-2 transition-colors ${linkTextClass}`}
@@ -158,16 +160,19 @@ export function MarketingNav() {
           </Link>
         </div>
 
-        {/* Mobile menu button */}
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className={`md:hidden p-2 rounded-lg transition-colors ${
-            isHome ? "text-white hover:bg-white/10" : "text-[#111714] hover:bg-[#F1F5F2]"
-          }`}
-          aria-label="Toggle navigation menu"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        {/* Mobile menu and mobile theme toggle */}
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle isHome={isHome} />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className={`p-2 rounded-lg transition-colors ${
+              isHome ? "text-white hover:bg-white/10" : "text-[#111714] dark:text-white hover:bg-[#F1F5F2] dark:hover:bg-white/10"
+            }`}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer */}
@@ -176,7 +181,7 @@ export function MarketingNav() {
           className={`md:hidden border-b px-6 pt-3 pb-6 space-y-6 shadow-2xl h-[calc(100vh-4.5rem)] overflow-y-auto ${
             isHome
               ? "bg-[#050B07]/98 border-white/10 text-white"
-              : "bg-white/98 border-[#E5EAE6] text-[#111714]"
+              : "bg-white/98 dark:bg-[#08110d]/98 border-[#E5EAE6] dark:border-[#263831] text-[#111714] dark:text-[#f4f8f6]"
           }`}
         >
           <div className="space-y-6">
@@ -202,7 +207,7 @@ export function MarketingNav() {
                           href={link.href}
                           onClick={() => setMobileOpen(false)}
                           className={`block py-1 text-sm font-medium ${
-                            isHome ? "text-[#9CA3AF] hover:text-[#22C55E]" : "text-[#66706A] hover:text-[#16A34A]"
+                            isHome ? "text-[#9CA3AF] hover:text-[#22C55E]" : "text-[#66706A] dark:text-[#aab8b1] hover:text-[#16A34A] dark:hover:text-[#25d979]"
                           }`}
                         >
                           {link.label}
@@ -215,11 +220,11 @@ export function MarketingNav() {
             ))}
           </div>
 
-          <div className="pt-6 border-t border-white/10 flex flex-col gap-3">
+          <div className="pt-6 border-t border-white/10 dark:border-[#263831] flex flex-col gap-3">
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
-              className="w-full text-center py-2.5 text-xs font-bold border rounded-lg"
+              className="w-full text-center py-2.5 text-xs font-bold border border-white/20 dark:border-[#263831] rounded-lg"
             >
               Log in
             </Link>
