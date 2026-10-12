@@ -9,6 +9,7 @@ import '../../../shared/animations/repsi_press.dart';
 import '../../../shared/animations/repsi_stagger.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../member/presentation/views/qr_attendance_view.dart';
 import 'owner_search_modal.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
@@ -468,7 +469,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                         _buildQuickActionBtn(
                           label: '▣ Show QR',
                           icon: Icons.qr_code_rounded,
-                          onTap: () => context.go(RouteNames.operations),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const QrAttendanceView()),
+                            );
+                          },
                         ),
                         _buildQuickActionBtn(
                           label: '+ Add lead',

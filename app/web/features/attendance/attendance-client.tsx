@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   UserCheck,
@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QrCodeView } from "@/components/ui/qr-code-view";
 import {
   repsiApi,
   ApiAttendance,
@@ -54,10 +55,12 @@ type TabKey = "overview" | "qr_manager" | "history" | "analytics" | "settings";
 
 export function AttendanceClient() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const workspace = getWorkspaceFromPath(pathname);
   const gymName = slugToGymName(workspace);
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [showQrModal, setShowQrModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -100,7 +103,7 @@ export function AttendanceClient() {
         repsiApi.getAttendance(),
         repsiApi.getCurrentlyInside(),
         repsiApi.getAttendanceSummary(),
-        repsiApi.getActiveQr().catch(() => null),
+        repsiApi.getActiveQr(undefined, workspace).catch(() => null),
         repsiApi.getAttendanceSettings().catch(() => null),
         repsiApi.getAttendanceAnalytics().catch(() => null),
         repsiApi.getMembers().catch(() => []),
@@ -122,6 +125,16 @@ export function AttendanceClient() {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (tabParam === "qr" || tabParam === "qr_manager") {
+      setActiveTab("qr_manager");
+    }
+    if (searchParams?.get("show_qr") === "true") {
+      setShowQrModal(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadData();
@@ -213,6 +226,15 @@ export function AttendanceClient() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setShowQrModal(true)}
+            className="text-xs gap-1.5 h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm cursor-pointer"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            <span>Show QR Code</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -331,6 +353,55 @@ export function AttendanceClient() {
               </span>
               <p className="text-2xl font-extrabold text-amber-600">{summary.auto_checkouts_count}</p>
               <span className="text-[10px] text-[var(--text-muted)] font-medium">Smart closing rule</span>
+            </div>
+          </div>
+
+          {/* Quick Reception Check-in QR Access Banner */}
+          <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent dark:from-emerald-950/30 dark:via-emerald-900/10 dark:to-transparent p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                <QrCode className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--text)]">Gym Reception Check-In QR Pass</h3>
+                  <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] font-bold">
+                    ● Live Pass Ready
+                  </Badge>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Display this pass at front desk or kiosk for members to check in instantly using the Repsi app.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+              <Button
+                size="sm"
+                onClick={() => setShowQrModal(true)}
+                className="text-xs gap-1.5 h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer shadow-sm"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>Show QR Pass</span>
+              </Button>
+              <Link href={`/${workspace}/attendance/display`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5 h-9 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Kiosk Screen</span>
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab("qr_manager")}
+                className="text-xs gap-1.5 h-9 cursor-pointer"
+              >
+                <span>QR Settings →</span>
+              </Button>
             </div>
           </div>
 
@@ -584,6 +655,69 @@ export function AttendanceClient() {
                     );
                   })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Owner Show QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)] rounded-3xl shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text)] tracking-tight">Reception Check-In QR Pass</h3>
+                  <p className="text-[11px] text-[var(--text-muted)]">{gymName} • Main Gate Entrance</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="text-[var(--text-muted)] hover:text-[var(--text)] p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-2 space-y-3">
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-md">
+                <QrCodeView
+                  value={activeQr?.payload || `repsi://gym/checkin?gym_id=${workspace}&token=rep_live_pass`}
+                  size={240}
+                  title={gymName}
+                  subtitle="Scan with Repsi App to check in"
+                  showDownload={true}
+                  showCopy={true}
+                />
+              </div>
+              <span className="text-[11px] font-medium text-[var(--text-muted)] text-center max-w-xs">
+                Members scan this code with their Repsi mobile app or camera to record check-in/out.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--border)]">
+              <Link href={`/${workspace}/attendance/display`} className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full text-xs font-semibold h-10 gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Kiosk Fullscreen</span>
+                </Button>
+              </Link>
+              <Button
+                onClick={() => {
+                  setShowQrModal(false);
+                  setActiveTab("qr_manager");
+                }}
+                className="w-full text-xs font-bold h-10 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>Manage / Print</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
             </div>
           </div>
         </div>

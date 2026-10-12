@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Sun, Moon, Monitor, Bell, Search, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSelector } from "@/components/language-selector";
+import { TrialNavbarBadge } from "@/components/layout/trial-navbar-badge";
 import { GettingStartedDialog } from "@/components/layout/getting-started-dialog";
 import {
   DropdownMenu,
@@ -218,25 +219,18 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
         ) : null}
       </div>
 
-      {/* Center: Global Search */}
-      <div className="flex-1 max-w-xs hidden md:flex">
+      {/* Center: Global Search & Trial Badge */}
+      <div className="flex-1 max-w-md hidden md:flex items-center gap-2.5">
         <GlobalSearch />
+        <TrialNavbarBadge workspace={workspace} />
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1">
-        {/* Getting Started Guide */}
-        {workspace && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowGettingStarted(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#16A34A] border-[#16A34A]/30 bg-[#16A34A]/5 hover:bg-[#16A34A]/15 rounded-xl px-2.5 h-8 mr-1 shadow-2xs cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Getting Started</span>
-          </Button>
-        )}
+        {/* Mobile/Tablet Trial Badge */}
+        <div className="md:hidden mr-1">
+          <TrialNavbarBadge workspace={workspace} />
+        </div>
 
         {/* Mobile search */}
         <Button

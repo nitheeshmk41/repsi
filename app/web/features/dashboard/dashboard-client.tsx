@@ -177,28 +177,6 @@ export function DashboardClient({ workspace }: { workspace: string }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowGettingStartedModal(true)}
-            className="border-[#D1D5DB] dark:border-[#22332a] bg-white dark:bg-[#101b16] hover:bg-[#F8FAF9] dark:hover:bg-[#16261f] text-[#16A34A] dark:text-[#25d979] rounded-xl font-bold shadow-2xs"
-          >
-            <Sparkles className="h-4 w-4 mr-1.5 text-[#16A34A] dark:text-[#25d979]" />
-            Getting Started
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSeedDemoData}
-            disabled={seeding}
-            title="Load sample demo records specifically for testing your gym"
-            className="border-[#D1D5DB] dark:border-[#22332a] bg-white dark:bg-[#101b16] hover:bg-[#F8FAF9] dark:hover:bg-[#16261f] text-[#64748B] dark:text-[#aab8b1] rounded-xl font-semibold shadow-2xs"
-          >
-            <Database className="h-3.5 w-3.5 mr-1.5" />
-            {seeding ? "Seeding..." : "Load Demo Records"}
-          </Button>
-
           <Link href={`/${workspace}/members/new`}>
             <Button size="sm" className="flex-shrink-0 bg-[#16A34A] hover:bg-[#15803D] text-white rounded-xl font-bold shadow-sm transition-all active:scale-[0.99] cursor-pointer">
               <Plus className="h-4 w-4 mr-1.5 stroke-[2.5]" />
@@ -279,8 +257,6 @@ export function DashboardClient({ workspace }: { workspace: string }) {
         </div>
       ) : null}
 
-      {/* Quick Actions (Instant Render) */}
-      <QuickActions workspace={workspace} />
 
       {/* ─────────────────────────────────────────────────────────────────────────────
           PROGRESSIVE METRIC CARDS (Skeletons during initial load, instant cached render)
@@ -332,6 +308,9 @@ export function DashboardClient({ workspace }: { workspace: string }) {
           />
         </div>
       )}
+
+      {/* Quick Actions (Positioned directly below stats) */}
+      <QuickActions workspace={workspace} />
 
       {/* Progressive Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
