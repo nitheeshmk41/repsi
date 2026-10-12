@@ -428,7 +428,7 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Nitheesh Kumar (M001)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const Text('Member Payment (M001)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(4)),

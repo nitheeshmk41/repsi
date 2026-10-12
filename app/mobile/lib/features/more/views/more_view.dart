@@ -16,7 +16,9 @@ class MoreView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
-    final ownerName = user?.fullName ?? 'Nitheesh';
+    final ownerName = (user?.fullName.isNotEmpty == true)
+        ? user!.fullName
+        : (user?.email.split('@').first ?? 'Owner');
 
     return Scaffold(
       backgroundColor: AppColors.background,

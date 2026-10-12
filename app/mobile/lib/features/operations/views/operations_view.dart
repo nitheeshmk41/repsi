@@ -9,6 +9,8 @@ import '../../../shared/animations/repsi_press.dart';
 import '../../../shared/widgets/repsi_badge.dart';
 import '../../../shared/widgets/repsi_button.dart';
 import '../../../shared/widgets/repsi_card.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../workspaces/providers/workspace_provider.dart';
 
 class OperationsView extends ConsumerStatefulWidget {
   const OperationsView({super.key});
@@ -34,6 +36,10 @@ class _OperationsViewState extends ConsumerState<OperationsView> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final activeSlug = authState.activeWorkspaceSlug ?? 'Live Workspace';
+    final gymName = ref.watch(workspaceProvider).activeWorkspace?.name ?? activeSlug;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -96,7 +102,7 @@ class _OperationsViewState extends ConsumerState<OperationsView> with SingleTick
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Indiranagar Hub',
+                          gymName,
                           style: AppTypography.caption.copyWith(
                             color: AppColors.primaryDark,
                             fontWeight: FontWeight.w600,
@@ -876,12 +882,14 @@ class _OperationsViewState extends ConsumerState<OperationsView> with SingleTick
   // 4. STAFF & RBAC TAB
   // -------------------------------------------------------------
   Widget _buildStaffRbacTab() {
+    final user = ref.watch(authProvider).user;
+    final ownerName = (user?.fullName.isNotEmpty == true) ? user!.fullName : 'Owner';
+    final ownerEmail = user?.email ?? 'owner@repsi.app';
+
     final staff = [
-      {'name': 'Nitheesh M', 'role': 'Owner', 'email': 'nitheesh@repsi.app', 'permissions': 'Full Root Access'},
-      {'name': 'Vikram Rathore', 'role': 'Manager', 'email': 'vikram@repsi.app', 'permissions': 'Members, Payments, Ops'},
-      {'name': 'Arun Kumar', 'role': 'Trainer', 'email': 'arun@repsi.app', 'permissions': 'Client Training, Workouts'},
-      {'name': 'Pooja Hegde', 'role': 'Front Desk', 'email': 'pooja@repsi.app', 'permissions': 'Attendance, Check-in, Leads'},
-      {'name': 'Ramesh Rao', 'role': 'Accountant', 'email': 'ramesh@repsi.app', 'permissions': 'Invoices, GST, Financials'},
+      {'name': ownerName, 'role': 'Owner', 'email': ownerEmail, 'permissions': 'Full Root Access'},
+      {'name': 'Vikram Rathore', 'role': 'Manager', 'email': 'vikram@staff.internal', 'permissions': 'Members, Payments, Ops'},
+      {'name': 'Arun Kumar', 'role': 'Trainer', 'email': 'arun@trainer.internal', 'permissions': 'Client Training, Workouts'},
     ];
 
     return SingleChildScrollView(

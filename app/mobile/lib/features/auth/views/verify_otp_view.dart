@@ -56,7 +56,7 @@ class _VerifyOtpViewState extends State<VerifyOtpView> {
 
   @override
   Widget build(BuildContext context) {
-    final displayEmail = widget.email ?? 'nitheesh@gmail.com';
+    final displayEmail = widget.email ?? 'your email';
 
     return Scaffold(
       backgroundColor: AppColors.background,

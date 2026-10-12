@@ -16,7 +16,7 @@ class ForgotPasswordView extends StatefulWidget {
 }
 
 class _ForgotPasswordViewState extends State<ForgotPasswordView> {
-  final _emailController = TextEditingController(text: 'nitheesh@gmail.com');
+  final _emailController = TextEditingController();
   bool _isLoading = false;
 
   void _handleSend() {
@@ -117,7 +117,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                     index: 2,
                     child: RepsiTextField(
                       label: 'Email',
-                      hintText: 'nitheesh@gmail.com',
+                      hintText: 'you@gym.com',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
