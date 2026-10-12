@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
@@ -133,24 +131,21 @@ class _TrainerHomeViewState extends State<TrainerHomeView> {
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => context.push(RouteNames.selectRole),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.border, width: 1.5),
-                          color: Colors.white,
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'AL',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border, width: 1.5),
+                        color: Colors.white,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'AL',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
                         ),
                       ),

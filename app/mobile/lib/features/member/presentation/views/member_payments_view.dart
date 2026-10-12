@@ -20,7 +20,6 @@ class MemberPaymentsView extends ConsumerStatefulWidget {
 class _MemberPaymentsViewState extends ConsumerState<MemberPaymentsView> {
   int _selectedTab = 0;
   String _submissionStatus = 'none'; // 'none', 'pending_review', 'approved', 'rejected'
-  String? _rejectionReason;
   String _submittedAmount = '1,500';
 
   void _showPaymentInstructionsSheet() {
@@ -227,9 +226,9 @@ class _MemberPaymentsViewState extends ConsumerState<MemberPaymentsView> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.warningSoft.withOpacity(0.5),
+                              color: AppColors.warningSoft.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
@@ -347,7 +346,7 @@ class _PaymentInstructionsSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.warningSoft,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
@@ -545,7 +544,7 @@ class _SubmitReceiptSheetState extends State<_SubmitReceiptSheet> {
             const SizedBox(height: 10),
 
             DropdownButtonFormField<String>(
-              value: _method,
+              initialValue: _method,
               decoration: InputDecoration(
                 labelText: 'Payment Method',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

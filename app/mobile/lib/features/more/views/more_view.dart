@@ -80,16 +80,6 @@ class MoreView extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: () => context.push(RouteNames.selectRole),
-                        child: Text(
-                          'Switch Role',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),

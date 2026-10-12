@@ -196,7 +196,26 @@ function RepsiLogo({ collapsed, workspace }: { collapsed: boolean; workspace: st
 // ─── Gym Selector ─────────────────────────────────────────────────────────────
 
 function GymSelector({ collapsed, workspace }: { collapsed: boolean; workspace: string }) {
-  const gymName = slugToGymName(workspace);
+  const [gymName, setGymName] = useState(() => {
+    const user = typeof window !== "undefined" ? getAuthUser() : null;
+    if (user?.gymName) return user.gymName;
+    if (workspace && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(workspace)) return slugToGymName(workspace);
+    return "Apex Fitness";
+  });
+  const [displaySlug, setDisplaySlug] = useState(() => {
+    const user = typeof window !== "undefined" ? getAuthUser() : null;
+    if (user?.workspaceSlug && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(user.workspaceSlug)) return user.workspaceSlug;
+    if (workspace && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(workspace)) return workspace;
+    return "apex-fitness";
+  });
+
+  useEffect(() => {
+    const user = getAuthUser();
+    if (user?.gymName) setGymName(user.gymName);
+    if (user?.workspaceSlug && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(user.workspaceSlug)) {
+      setDisplaySlug(user.workspaceSlug);
+    }
+  }, [workspace]);
 
   if (collapsed) {
     return (
@@ -219,7 +238,7 @@ function GymSelector({ collapsed, workspace }: { collapsed: boolean; workspace: 
             {gymName}
           </div>
           <div className="text-[11px] font-medium text-[#15803D] dark:text-emerald-400 truncate leading-tight mt-0.5">
-            repsi.app/{workspace}
+            repsi.app/{displaySlug}
           </div>
         </div>
       </div>

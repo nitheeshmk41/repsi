@@ -26,7 +26,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
     auth_service = AuthService(db)
     user, workspace, token = auth_service.register(req)
-    return Token(access_token=token, workspace_id=workspace.id, role="OWNER")
+    return Token(
+        access_token=token,
+        workspace_id=workspace.id,
+        workspace_slug=workspace.slug,
+        gym_name=workspace.name,
+        role="OWNER"
+    )
 
 
 @router.post("/register/request-otp")
@@ -48,7 +54,13 @@ def verify_registration_otp(
     req: VerifyRegisterOtpRequest, db: Session = Depends(get_db)
 ):
     _, workspace, token = AuthService(db).verify_registration_otp(req)
-    return Token(access_token=token, workspace_id=workspace.id, role="OWNER")
+    return Token(
+        access_token=token,
+        workspace_id=workspace.id,
+        workspace_slug=workspace.slug,
+        gym_name=workspace.name,
+        role="OWNER"
+    )
 
 
 @router.post("/login", response_model=Token)
@@ -67,6 +79,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
+        workspace_slug=workspace.slug if workspace else None,
+        gym_name=workspace.name if workspace else None,
         role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
     )
 
@@ -87,6 +101,8 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
+        workspace_slug=workspace.slug if workspace else None,
+        gym_name=workspace.name if workspace else None,
         role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
     )
 
@@ -96,7 +112,13 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
 )
 def register_member(req: MemberRegisterRequest, db: Session = Depends(get_db)):
     _, workspace, token = AuthService(db).register_member(req)
-    return Token(access_token=token, workspace_id=workspace.id, role="USER")
+    return Token(
+        access_token=token,
+        workspace_id=workspace.id,
+        workspace_slug=workspace.slug,
+        gym_name=workspace.name,
+        role="USER"
+    )
 
 
 @router.get("/me", response_model=UserResponse)
@@ -117,6 +139,7 @@ def get_current_user_profile(
         .filter(WorkspaceMember.user_id == user.id, WorkspaceMember.is_active == True)
         .first()
     )
+    workspace = membership.workspace if membership else None
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -126,6 +149,8 @@ def get_current_user_profile(
         is_active=user.is_active,
         role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
         workspace_id=membership.workspace_id if membership else None,
+        workspace_slug=workspace.slug if workspace else None,
+        gym_name=workspace.name if workspace else None,
         preferred_language=getattr(user, "preferred_language", "en") or "en",
     )
 

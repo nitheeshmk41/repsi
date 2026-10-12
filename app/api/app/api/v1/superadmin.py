@@ -31,22 +31,21 @@ router = APIRouter(prefix="/superadmin", tags=["Super Admin"])
 
 def check_superadmin(tenant: TenantContext, db: Session) -> User:
     if not tenant.user_id:
-        admin_user = db.query(User).filter(or_(User.is_superadmin == True, User.email == "admin@repsi.app")).first()
-        if admin_user:
-            return admin_user
-        # Return fallback system admin user
-        system_admin = db.query(User).first()
-        if system_admin:
-            return system_admin
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
+            detail="Authentication token required for Super Admin endpoints.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     user = db.query(User).filter(User.id == tenant.user_id).first()
     if not user:
         raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or session invalid."
+        )
+    if not user.is_superadmin:
+        raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not found."
+            detail="Access denied. Super Admin privileges required."
         )
     return user
 

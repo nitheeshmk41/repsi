@@ -9,6 +9,8 @@ class AuthResponse {
   final String accessToken;
   final String? tokenType;
   final String? workspaceId;
+  final String? workspaceSlug;
+  final String? gymName;
   final UserRole? role;
   final UserModel? user;
   final WorkspaceModel? workspace;
@@ -17,6 +19,8 @@ class AuthResponse {
     required this.accessToken,
     this.tokenType,
     this.workspaceId,
+    this.workspaceSlug,
+    this.gymName,
     this.role,
     this.user,
     this.workspace,
@@ -27,6 +31,8 @@ class AuthResponse {
       accessToken: json['access_token']?.toString() ?? '',
       tokenType: json['token_type'] as String?,
       workspaceId: json['workspace_id']?.toString(),
+      workspaceSlug: json['workspace_slug']?.toString(),
+      gymName: json['gym_name']?.toString(),
       role: json['role'] != null ? UserRole.fromString(json['role'] as String) : null,
       user: json['user'] != null ? UserModel.fromJson(json['user'] as Map<String, dynamic>) : null,
       workspace: json['workspace'] != null ? WorkspaceModel.fromJson(json['workspace'] as Map<String, dynamic>) : null,

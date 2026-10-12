@@ -234,9 +234,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                           child: const Icon(Icons.notifications_outlined, size: 18, color: AppColors.textSecondary),
                         ),
                         const SizedBox(width: 6),
-                        // Role Switcher Avatar
+                        // Profile Avatar
                         GestureDetector(
-                          onTap: () => context.push(RouteNames.selectRole),
+                          onTap: () => context.go(RouteNames.more),
                           child: Container(
                             width: 34,
                             height: 34,
@@ -904,8 +904,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Navigate to role selector or upgrade information
-                  context.push(RouteNames.selectRole);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Manage plan upgrade in Settings → Billing or on repsi.app'),
+                      backgroundColor: Color(0xFF16A34A),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),

@@ -4,7 +4,6 @@ import '../../features/admin/views/admin_shell_view.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/views/forgot_password_view.dart';
 import '../../features/auth/views/login_view.dart';
-import '../../features/auth/views/role_selection_view.dart';
 import '../../features/auth/views/set_new_password_view.dart';
 import '../../features/auth/views/signup_view.dart';
 import '../../features/auth/views/verify_otp_view.dart';
@@ -44,8 +43,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return isAuthRoute || location == RouteNames.splash ? null : RouteNames.login;
       }
 
-      if (auth.isAuthenticated && (location == RouteNames.login || location == RouteNames.splash)) {
+      if (auth.isAuthenticated &&
+          (location == RouteNames.login || location == RouteNames.splash || location == RouteNames.selectRole)) {
         return RouteNames.roleDashboard(auth.user?.role);
+      }
+
+      // Enforce server-side role authorization
+      final role = auth.user?.role.toUpperCase();
+      final isAdmin = auth.user?.isSuperadmin == true || role == 'SUPER_ADMIN' || role == 'ADMIN';
+      final isTrainer = role == 'TRAINER' || role == 'STAFF';
+      final isMember = role == 'USER' || role == 'MEMBER';
+
+      // Protect Super Admin routes
+      if (location.startsWith('/admin') && !isAdmin) {
+        return RouteNames.roleDashboard(auth.user?.role);
+      }
+
+      // If user is member, restrict access to owner-only routes
+      if (isMember &&
+          (location == RouteNames.ownerDashboard ||
+              location == RouteNames.more ||
+              location == RouteNames.operations ||
+              location == RouteNames.finance)) {
+        return RouteNames.userDashboard;
+      }
+
+      // If user is trainer, restrict access to owner business/finance routes
+      if (isTrainer &&
+          (location == RouteNames.ownerDashboard ||
+              location == RouteNames.more ||
+              location == RouteNames.finance)) {
+        return RouteNames.trainerDashboard;
       }
 
       return null;
@@ -105,14 +133,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           context: context,
           state: state,
           child: const SetNewPasswordView(),
-        ),
-      ),
-      GoRoute(
-        path: RouteNames.selectRole,
-        pageBuilder: (context, state) => buildRepsiPageTransition(
-          context: context,
-          state: state,
-          child: const RoleSelectionView(),
         ),
       ),
       GoRoute(

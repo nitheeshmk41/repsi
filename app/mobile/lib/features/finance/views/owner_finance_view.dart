@@ -404,7 +404,7 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
           decoration: BoxDecoration(
             color: AppColors.warningSoft,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
           ),
           child: const Row(
             children: [

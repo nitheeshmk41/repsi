@@ -131,8 +131,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (response.workspaceId != null) {
         await _storage.saveActiveWorkspaceId(response.workspaceId!);
       }
-      if (workspaceSlug != null && workspaceSlug.isNotEmpty) {
-        await _storage.saveActiveWorkspaceSlug(workspaceSlug);
+      final activeSlug = response.workspaceSlug ?? workspaceSlug;
+      if (activeSlug != null && activeSlug.isNotEmpty) {
+        await _storage.saveActiveWorkspaceSlug(activeSlug);
       }
       if (response.user != null) {
         await _storage.saveUser(response.user!);
@@ -190,29 +191,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
       
-      GoogleSignInAccount? googleUser;
-      try {
-        googleUser = await googleSignIn.signIn();
-      } catch (_) {
-        // Fallback for dev/emulator without Play Services SHA-1 configuration
-        final demoUser = UserModel(
-          id: 'usr_admin_001',
-          email: 'admin@repsi.app',
-          fullName: 'Super Admin',
-          isSuperadmin: true,
-          isActive: true,
-          role: 'SUPER_ADMIN',
-        );
-        await _storage.saveUser(demoUser);
-        await _storage.saveToken('google-demo-token');
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          token: 'google-demo-token',
-          user: demoUser,
-        );
-        return true;
-      }
-
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
@@ -222,64 +201,58 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final token = googleAuth.accessToken ?? googleAuth.idToken ?? 'google-token';
+      final token = googleAuth.accessToken ?? googleAuth.idToken;
+      if (token == null || token.isEmpty) {
+        throw Exception('Could not obtain Google authentication token. Check OAuth configuration.');
+      }
 
-      try {
-        final response = await _authService.loginWithGoogle(token: token);
+      final response = await _authService.loginWithGoogle(token: token);
 
-        await _storage.saveToken(response.accessToken);
-        if (response.workspaceId != null) {
-          await _storage.saveActiveWorkspaceId(response.workspaceId!);
-        }
-        
-        UserModel? user = response.user;
-        if (user == null) {
-          try {
-            user = await _authService.getMe();
-            await _storage.saveUser(user);
-          } catch (_) {}
-        }
-
-        if (user == null) {
-          user = UserModel(
-            id: 'usr_${googleUser.email.split('@').first}',
-            email: googleUser.email,
-            fullName: googleUser.displayName ?? 'Google User',
-            isSuperadmin: false,
-            isActive: true,
-            role: response.role?.dbValue ?? 'OWNER',
-            workspaceId: response.workspaceId,
-          );
+      await _storage.saveToken(response.accessToken);
+      if (response.workspaceId != null) {
+        await _storage.saveActiveWorkspaceId(response.workspaceId!);
+      }
+      final activeSlug = response.workspaceSlug ?? response.workspace?.slug;
+      if (activeSlug != null && activeSlug.isNotEmpty) {
+        await _storage.saveActiveWorkspaceSlug(activeSlug);
+      }
+      
+      UserModel? user = response.user;
+      if (user == null) {
+        try {
+          user = await _authService.getMe();
           await _storage.saveUser(user);
-        }
+        } catch (_) {}
+      }
 
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          token: response.accessToken,
-          user: user,
-          activeWorkspaceId: response.workspaceId,
-        );
-        return true;
-      } catch (_) {
-        // Fallback session if backend Google endpoint requires invitation
-        final user = UserModel(
+      if (user == null) {
+        final roleStr = response.role?.dbValue ?? 'OWNER';
+        user = UserModel(
           id: 'usr_${googleUser.email.split('@').first}',
           email: googleUser.email,
           fullName: googleUser.displayName ?? 'Google User',
-          isSuperadmin: googleUser.email.contains('admin'),
+          isSuperadmin: roleStr == 'SUPER_ADMIN' || roleStr == 'ADMIN',
           isActive: true,
-          role: googleUser.email.contains('admin') ? 'SUPER_ADMIN' : 'OWNER',
+          role: roleStr,
+          workspaceId: response.workspaceId,
         );
         await _storage.saveUser(user);
-        await _storage.saveToken('google-session-token');
-
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          token: 'google-session-token',
-          user: user,
-        );
-        return true;
       }
+
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        token: response.accessToken,
+        user: user,
+        activeWorkspaceId: response.workspaceId,
+        activeWorkspaceSlug: activeSlug,
+      );
+      return true;
+    } on ApiError catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.message,
+      );
+      return false;
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
@@ -381,38 +354,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  void setRole(String role) {
-    final normalized = role.toUpperCase();
-    final name = normalized == 'OWNER'
-        ? 'Nitheesh'
-        : (normalized == 'TRAINER'
-            ? 'Arun Kumar'
-            : (normalized == 'ADMIN' ? 'System Admin' : 'Rahul'));
-    final email = normalized == 'OWNER'
-        ? 'nitheesh@repsi.com'
-        : (normalized == 'TRAINER'
-            ? 'arun@repsi.com'
-            : (normalized == 'ADMIN' ? 'admin@repsi.com' : 'rahul@gmail.com'));
 
-    final user = (state.user ?? UserModel(
-      id: 'usr_demo',
-      email: email,
-      fullName: name,
-      isSuperadmin: normalized == 'ADMIN',
-      isActive: true,
-      role: normalized,
-    )).copyWith(
-      role: normalized,
-      fullName: name,
-      email: email,
-    );
-
-    state = state.copyWith(
-      status: AuthStatus.authenticated,
-      token: state.token ?? 'mock-jwt-token-active',
-      user: user,
-    );
-  }
 
   Future<void> logout() async {
     await _authService.logout();

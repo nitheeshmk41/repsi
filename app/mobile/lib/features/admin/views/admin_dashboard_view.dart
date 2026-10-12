@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
@@ -54,21 +52,18 @@ class AdminDashboardView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => context.push(RouteNames.selectRole),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3E8FF),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFD8B4FE)),
-                        ),
-                        child: Text(
-                          'Switch Role',
-                          style: AppTypography.caption.copyWith(
-                            color: const Color(0xFF9333EA),
-                            fontWeight: FontWeight.w700,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E8FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD8B4FE)),
+                      ),
+                      child: Text(
+                        'Super Admin',
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF9333EA),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

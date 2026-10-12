@@ -14,8 +14,8 @@ class RoleSelectionView extends ConsumerWidget {
   const RoleSelectionView({super.key});
 
   void _selectRole(BuildContext context, WidgetRef ref, String role) {
-    ref.read(authProvider.notifier).setRole(role);
-    context.go(RouteNames.roleDashboard(role));
+    final user = ref.read(authProvider).user;
+    context.go(RouteNames.roleDashboard(user?.role));
   }
 
   @override

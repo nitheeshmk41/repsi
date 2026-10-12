@@ -72,7 +72,9 @@ export default function LoginPage() {
         const data = await res.json();
         const token = data.access_token;
         let userRole = data.role || "OWNER";
-        let targetWorkspace = data.workspace_id || "apex-fitness";
+        let targetWorkspace = data.workspace_slug || data.workspace_id || "apex-fitness";
+        let userName = email.split("@")[0] || "User";
+        let gymName = data.gym_name || "Apex Fitness";
 
         try {
           const profileRes = await fetch(`${apiBase}/auth/me`, {
@@ -81,7 +83,10 @@ export default function LoginPage() {
           if (profileRes.ok) {
             const profile = await profileRes.json();
             if (profile.role) userRole = profile.role;
-            if (profile.workspace_id) targetWorkspace = profile.workspace_id;
+            if (profile.workspace_slug) targetWorkspace = profile.workspace_slug;
+            else if (profile.workspace_id) targetWorkspace = profile.workspace_id;
+            if (profile.full_name) userName = profile.full_name;
+            if (profile.gym_name) gymName = profile.gym_name;
           }
         } catch {
           // Continue with login token data
@@ -90,12 +95,12 @@ export default function LoginPage() {
         loginSession(
           token,
           {
-            id: "usr_active",
-            name: email.split("@")[0] || "User",
+            id: data.user_id || "usr_active",
+            name: userName,
             email: email,
             role: userRole as any,
             workspaceSlug: targetWorkspace,
-            gymName: "Apex Fitness",
+            gymName: gymName,
           },
           targetWorkspace
         );
@@ -119,27 +124,7 @@ export default function LoginPage() {
     }
 
     if (!loginSuccess) {
-      // Demo fallback if backend servers are offline and demo credentials used
-      const cleanEmail = email.trim().toLowerCase();
-      if (cleanEmail === "admin@repsi.app" || cleanEmail === "nitheesh@repsi.app") {
-        loginSession(
-          "demo_superadmin_token",
-          { id: "usr_sa", name: "Super Admin", email: cleanEmail, role: "SUPER_ADMIN", workspaceSlug: "apex-fitness", gymName: "REPSI Global" },
-          "apex-fitness"
-        );
-        router.push("/superadmin/dashboard");
-        return;
-      } else if (cleanEmail === "owner@apexfitness.in") {
-        loginSession(
-          "demo_owner_token",
-          { id: "usr_owner", name: "Apex Owner", email: cleanEmail, role: "OWNER", workspaceSlug: "apex-fitness", gymName: "Apex Fitness" },
-          "apex-fitness"
-        );
-        router.push("/apex-fitness/dashboard");
-        return;
-      }
-
-      setError(lastError || "Unable to connect to backend server. Please verify your connection.");
+      setError(lastError || "Invalid email or password.");
       setLoading(false);
     }
   }

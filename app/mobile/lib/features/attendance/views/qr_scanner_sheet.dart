@@ -59,7 +59,7 @@ class _QrScannerSheetState extends ConsumerState<QrScannerSheet> with SingleTick
           _scanSuccessResult = result;
         });
       }
-    } catch (e: any) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;

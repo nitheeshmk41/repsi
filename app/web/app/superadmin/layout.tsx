@@ -55,8 +55,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   useEffect(() => {
     const u = getAuthUser();
+    if (!u || u.role !== "SUPER_ADMIN") {
+      router.replace("/login");
+      return;
+    }
     setCurrentUser(u);
-  }, []);
+  }, [router]);
 
   // Keyboard shortcut Ctrl+K / Cmd+K
   useEffect(() => {

@@ -96,6 +96,8 @@ class AppColors {
   static const Color lightTextMuted = textMuted;
   static const Color lightBorder = border;
   static const Color lightBorderStrong = borderStrong;
+  static const Color textTertiary = textMuted;
+  static const Color darkTextTertiary = darkTextMuted;
   static const Color darkNavigation = darkSurface;
 }
 

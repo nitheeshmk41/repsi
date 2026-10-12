@@ -219,16 +219,14 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
         ) : null}
       </div>
 
-      {/* Center: Global Search & Trial Badge */}
-      <div className="flex-1 max-w-md hidden md:flex items-center gap-2.5">
+      {/* Center: Global Search */}
+      <div className="flex-1 max-w-md hidden md:flex items-center">
         <GlobalSearch />
-        <TrialNavbarBadge workspace={workspace} />
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1">
-        {/* Mobile/Tablet Trial Badge */}
-        <div className="md:hidden mr-1">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="mr-0.5 sm:mr-1 shrink-0">
           <TrialNavbarBadge workspace={workspace} />
         </div>
 

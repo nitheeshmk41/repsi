@@ -33,7 +33,6 @@ class RepsiNetworkImage extends StatelessWidget {
       return _buildError(context);
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final pixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
 
     // Calculate memory cache dimensions to prevent decoding multi-megabyte originals into RAM

@@ -115,7 +115,7 @@ class LanguageSelectorSheet extends ConsumerWidget {
                       : null,
                 ),
               );
-            }).toList(),
+            }),
             const SizedBox(height: 12),
           ],
         ),

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,8 +23,8 @@ class LoginView extends ConsumerStatefulWidget {
 
 class _LoginViewState extends ConsumerState<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController(text: kDebugMode ? 'admin@repsi.app' : '');
-  final _passwordController = TextEditingController(text: kDebugMode ? 'admin567' : '');
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -168,60 +167,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
     );
   }
 
-  void _showNoOwnerAccessDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            const Icon(Icons.gpp_maybe_rounded, color: Color(0xFFD97706), size: 26),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'No Owner Access',
-                style: AppTypography.headingSmall.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          "This account doesn't have Owner access.\n\nPlease use the appropriate Repsi app (Trainer or Member app) for your account.",
-          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Dismiss'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.push(RouteNames.selectRole);
-            },
-            child: const Text('Choose role'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _routePostLogin() {
     final user = ref.read(authProvider).user;
     final role = user?.role.toUpperCase();
 
-    if (role == 'TRAINER' || role == 'USER' || role == 'MEMBER') {
-      _showNoOwnerAccessDialog();
+    if (role == 'TRAINER' || role == 'USER' || role == 'MEMBER' || role == 'ADMIN' || role == 'SUPER_ADMIN') {
+      context.go(RouteNames.roleDashboard(user?.role));
       return;
     }
 
-    // Check workspaces logic (e.g. 1 gym -> Owner Dashboard, 2+ gyms -> Workspace selector)
+    // Owner accounts proceed to workspace selection / dashboard
     context.go(RouteNames.selectWorkspace);
   }
 
@@ -525,22 +480,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Role/Workspace preview helper
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () => context.push(RouteNames.selectRole),
-                          icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: AppColors.textMuted),
-                          label: Text(
-                            'Preview other Repsi role apps',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
                         ),
                       ),
                     ],

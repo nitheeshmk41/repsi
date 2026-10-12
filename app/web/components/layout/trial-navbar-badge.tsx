@@ -90,14 +90,14 @@ export function TrialNavbarBadge({ workspace }: { workspace?: string }) {
   return (
     <Link
       href={`/${workspace}/settings?tab=billing`}
-      className={`group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all shadow-2xs ${
+      className={`group shrink-0 whitespace-nowrap inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-medium border transition-all shadow-xs ${
         isUrgent
           ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
           : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/15"
       }`}
       title="14-Day Free Trial - Click to view plans & upgrade"
     >
-      <span className="relative flex h-2 w-2">
+      <span className="relative flex h-2 w-2 shrink-0">
         <span
           className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
             isUrgent ? "bg-amber-400" : "bg-emerald-400"
@@ -110,14 +110,14 @@ export function TrialNavbarBadge({ workspace }: { workspace?: string }) {
         />
       </span>
 
-      <span className="font-semibold">
+      <span className="font-semibold whitespace-nowrap">
         <span className="sm:hidden">{daysLeft}d trial</span>
-        <span className="hidden sm:inline">
+        <span className="hidden sm:inline whitespace-nowrap">
           {daysLeft} {daysLeft === 1 ? "day" : "days"} left in trial
         </span>
       </span>
 
-      <span className="hidden md:inline-flex items-center gap-0.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-600 dark:bg-emerald-500 text-white group-hover:scale-105 transition-transform">
+      <span className="hidden lg:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-600 dark:bg-emerald-500 text-white group-hover:scale-105 transition-transform shrink-0 whitespace-nowrap">
         Upgrade <ArrowRight className="w-2.5 h-2.5" />
       </span>
     </Link>

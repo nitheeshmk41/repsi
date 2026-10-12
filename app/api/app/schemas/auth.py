@@ -5,6 +5,8 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     workspace_id: str | None = None
+    workspace_slug: str | None = None
+    gym_name: str | None = None
     role: str | None = None
 
 
@@ -73,6 +75,8 @@ class UserResponse(BaseModel):
     is_active: bool
     role: str | None = None
     workspace_id: str | None = None
+    workspace_slug: str | None = None
+    gym_name: str | None = None
     preferred_language: str = "en"
 
     model_config = ConfigDict(from_attributes=True)

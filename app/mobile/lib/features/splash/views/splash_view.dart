@@ -121,18 +121,17 @@ class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProvid
 
   String _getLoadingStatusText(AuthState auth) {
     if (_showSlowFallback) {
-      return 'Finalizing your gym workspace...';
+      return 'Finalizing your Repsi workspace...';
     }
     switch (auth.status) {
       case AuthStatus.loading:
-        return 'Verifying your session...';
+        return 'Verifying your Repsi session...';
       case AuthStatus.authenticated:
-        return 'Loading your gym dashboard...';
+        return 'Loading your Repsi dashboard...';
       case AuthStatus.error:
         return 'Connecting to available offline data...';
       case AuthStatus.initial:
       case AuthStatus.unauthenticated:
-      default:
         return 'Setting up your Repsi workspace...';
     }
   }
@@ -164,7 +163,7 @@ class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProvid
                 children: [
                   const Spacer(),
 
-                  // 1. Repsi Logo Image
+                  // 1. Repsi Logo Image & Wordmark
                   Image.asset(
                     'assets/logos/primary_logo.png',
                     height: 48,
@@ -177,8 +176,18 @@ class _SplashViewState extends ConsumerState<SplashView> with SingleTickerProvid
                       cacheWidth: 256,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Repsi',
+                    style: AppTypography.display.copyWith(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
                   // 2. Animated Circular Progress Indicator
                   const SizedBox(

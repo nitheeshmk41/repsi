@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum AppLanguage {
   en('en', 'English', 'English'),
   ta('ta', 'தமிழ்', 'Tamil'),

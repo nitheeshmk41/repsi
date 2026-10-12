@@ -13,6 +13,8 @@ import { RepsiMascot } from "@/components/ui/repsi-mascot";
 import { GettingStartedDialog } from "@/components/layout/getting-started-dialog";
 import { TrialCountdownCard } from "@/features/dashboard/trial-countdown-card";
 import { repsiApi } from "@/lib/api";
+import { getAuthUser } from "@/lib/auth";
+import { slugToGymName } from "@/lib/workspace";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
 
@@ -150,6 +152,11 @@ export function DashboardClient({ workspace }: { workspace: string }) {
   const completedStepsCount = checklistSteps.filter((s) => s.completed).length;
   const setupPercent = Math.round((completedStepsCount / checklistSteps.length) * 100);
 
+  const authUser = typeof window !== "undefined" ? getAuthUser() : null;
+  const isUuidWorkspace = workspace && /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(workspace);
+  const gymDisplayName = authUser?.gymName || (!isUuidWorkspace ? slugToGymName(workspace) : "Apex Fitness Club");
+  const ownerDisplayName = authUser?.name || "Owner";
+
   return (
     <div className="space-y-8">
       {/* ─────────────────────────────────────────────────────────────────────────────
@@ -158,9 +165,9 @@ export function DashboardClient({ workspace }: { workspace: string }) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E5E7EB] dark:border-[#22332a] pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-md bg-[#ECFDF3] dark:bg-emerald-500/10 text-[#15803D] dark:text-[#25d979] border border-[#B7E4C7] dark:border-emerald-500/25 inline-flex items-center gap-1.5">
+            <span className="text-[11px] font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-md bg-[#ECFDF3] dark:bg-emerald-500/10 text-[#15803D] dark:text-[#25d979] border border-[#B7E4C7] dark:border-emerald-500/25 inline-flex items-center gap-1.5 shadow-xs">
               <span className={`w-1.5 h-1.5 rounded-full bg-[#16A34A] dark:bg-[#25d979] ${revalidating ? "animate-ping" : "animate-pulse"}`} />
-              WORKSPACE: /{workspace}
+              {gymDisplayName} • Live Workspace
             </span>
             {revalidating && (
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
@@ -169,7 +176,7 @@ export function DashboardClient({ workspace }: { workspace: string }) {
             )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#172033] dark:text-[#f4f8f6] tracking-tight">
-            {greeting}, Owner
+            {greeting}, {ownerDisplayName}
           </h1>
           <p className="text-xs sm:text-sm font-medium text-[#64748B] dark:text-[#889b90] mt-1">
             {isSetupMode ? "Let's finish setting up your gym." : "Today's overview — " + today}

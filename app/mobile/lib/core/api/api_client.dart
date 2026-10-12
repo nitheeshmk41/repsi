@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../app/config/app_config.dart';
 import '../storage/secure_storage_service.dart';
@@ -20,11 +21,13 @@ class ApiClient {
     );
 
     dio.interceptors.add(AuthInterceptor(storage));
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      error: true,
-    ));
+    if (kDebugMode) {
+      dio.interceptors.add(LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        error: true,
+      ));
+    }
   }
 
   Future<Response<T>> get<T>(
