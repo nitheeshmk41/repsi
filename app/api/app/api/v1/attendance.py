@@ -1,6 +1,8 @@
+import csv
+import io
 from datetime import datetime, date, timezone
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.middleware.tenant import get_current_tenant, TenantContext
@@ -212,6 +214,67 @@ def get_attendance_history(
         limit=limit,
     )
     return records
+
+
+@router.get("/export-csv")
+def export_attendance_csv(
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    status: Optional[str] = Query(None),
+    gym_location_id: Optional[str] = Query(None),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Exports filtered attendance logs as a CSV file for authorized gym owners.
+    """
+    svc = AttendanceService(db, tenant.workspace_id)
+    records = svc.get_attendance_history(
+        date_from=date_from,
+        date_to=date_to,
+        status_filter=status,
+        gym_location_id=gym_location_id,
+        limit=5000,
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Record ID",
+        "Person Name",
+        "Person Type",
+        "Check-In Time (UTC)",
+        "Check-Out Time (UTC)",
+        "Duration (Minutes)",
+        "Duration Formatted",
+        "Method",
+        "Checkout Type",
+        "Status",
+        "Terminal ID",
+    ])
+
+    for r in records:
+        writer.writerow([
+            r.id,
+            r.person_name,
+            r.person_type,
+            r.check_in_time.isoformat() if r.check_in_time else "",
+            r.check_out_time.isoformat() if r.check_out_time else "",
+            r.duration_minutes or 0,
+            r.duration_formatted or "",
+            r.method.value if hasattr(r.method, "value") else str(r.method),
+            r.checkout_type or "MANUAL",
+            r.status or ("CHECKED_OUT" if r.check_out_time else "CHECKED_IN"),
+            r.terminal_id or "",
+        ])
+
+    csv_data = output.getvalue()
+    filename = f"attendance-{tenant.workspace_id[:8]}-{date.today().isoformat()}.csv"
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 
 @router.get("/analytics", response_model=AttendanceAnalyticsResponse)

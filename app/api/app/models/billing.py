@@ -68,6 +68,11 @@ class GymSubscription(Base, TimestampMixin):
 
     trial_start = Column(DateTime, nullable=True)
     trial_end = Column(DateTime, nullable=True)
+    trial_started_at = Column(DateTime, nullable=True)
+    trial_ends_at = Column(DateTime, nullable=True)
+    trial_converted_at = Column(DateTime, nullable=True)
+    reminder_sent_flags = Column(JSON, nullable=True, default=dict)
+    is_repeat_trial_blocked = Column(Boolean, default=False)
     current_period_start = Column(DateTime, nullable=True)
     current_period_end = Column(DateTime, nullable=True)
 

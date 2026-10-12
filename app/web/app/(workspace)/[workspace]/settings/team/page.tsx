@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Users,
   Plus,
@@ -26,9 +27,9 @@ interface TeamMember {
   joinedDate: string;
 }
 
-export default function TeamSettingsPage(props: { params: Promise<{ workspace: string }> }) {
-  const params = use(props.params);
-  const workspace = params.workspace || "apex-fitness";
+export default function TeamSettingsPage(props?: { params?: Promise<{ workspace: string }> | { workspace: string } }) {
+  const routeParams = useParams();
+  const workspace = (routeParams?.workspace as string) || "apex-fitness";
 
   const [team, setTeam] = useState<TeamMember[]>([
     {

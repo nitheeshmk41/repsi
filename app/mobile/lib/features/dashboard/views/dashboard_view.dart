@@ -351,7 +351,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // 14-Day Free Trial Mobile Banner
+              RepsiStaggerItem(
+                index: 2,
+                child: _buildTrialCountdownBanner(context),
+              ),
+              const SizedBox(height: 16),
 
               // 2. Today's Snapshot (4 KPI Cards)
               RepsiStaggerItem(
@@ -775,6 +782,144 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrialCountdownBanner(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF16A34A),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Text(
+                      '14-DAY FREE TRIAL',
+                      style: TextStyle(
+                        color: Color(0xFF15803D),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                'Growth Tier · 35 Cap',
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            '10 days remaining in your free trial',
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Explore full attendance, trainer coaching, and membership packages before trial concludes.',
+            style: TextStyle(
+              color: Color(0xFF475569),
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Progress Indicator (e.g. Day 4 of 14 ~ 28%)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: const LinearProgressIndicator(
+              value: 0.28,
+              minHeight: 6,
+              backgroundColor: Color(0xFFDCFCE7),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF16A34A)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.shield_outlined, size: 14, color: Color(0xFF16A34A)),
+                  SizedBox(width: 4),
+                  Text(
+                    'No card required',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to role selector or upgrade information
+                  context.push(RouteNames.selectRole);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: const Icon(Icons.rocket_launch_rounded, size: 13),
+                label: const Text(
+                  'Upgrade Plan',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+                ),
+              ),
+            ],
           ),
         ],
       ),

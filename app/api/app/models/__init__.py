@@ -41,6 +41,7 @@ from app.models.billing import (
     BillingCycle,
     PaymentStatus as BillingPaymentStatus,
 )
+from app.models.biometric import BiometricDevice, BiometricDeviceStatus
 
 __all__ = [
     "Activity",
@@ -98,6 +99,8 @@ __all__ = [
     "SubscriptionStatus",
     "BillingCycle",
     "BillingPaymentStatus",
+    "BiometricDevice",
+    "BiometricDeviceStatus",
 ]
 
 

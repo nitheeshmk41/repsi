@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.billing import SubscriptionPlan
 from app.services.billing import BillingService
+from app.services.trial_lifecycle import TrialLifecycleService
 from app.schemas.billing import (
     SubscriptionPlanSchema,
     SubscriptionBillingOverviewSchema,
+    TrialStatusResponse,
     CheckoutSessionRequest,
     CheckoutSessionResponse,
     PaymentVerifyRequest,
@@ -46,6 +48,18 @@ def get_subscription_plans(db: Session = Depends(get_db)):
         for p in plans
     ]
 
+@router.get("/trial-status", response_model=TrialStatusResponse)
+def get_trial_status_route(
+    x_workspace_id: Optional[str] = Header("apex-fitness", alias="X-Workspace-Id"),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns authoritative 14-day trial countdown and subscription lifecycle status.
+    Calculated in real-time from server UTC timestamps.
+    """
+    workspace_id = x_workspace_id or "apex-fitness"
+    return BillingService.get_trial_status(db, workspace_id)
+
 @router.get("/subscription", response_model=SubscriptionBillingOverviewSchema)
 def get_current_subscription(
     x_workspace_id: Optional[str] = Header("apex-fitness", alias="X-Workspace-Id"),
@@ -55,14 +69,8 @@ def get_current_subscription(
     workspace_id = x_workspace_id or "apex-fitness"
     sub = BillingService.get_or_create_workspace_subscription(db, workspace_id)
     usage = BillingService.get_workspace_usage(db, workspace_id)
+    trial_data = BillingService.get_trial_status(db, workspace_id)
     p = sub.plan
-
-    now = datetime.now(timezone.utc)
-    trial_days_left = None
-    if sub.status == "trialing" and sub.trial_end:
-        end_dt = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
-        delta = end_dt - now
-        trial_days_left = max(0, delta.days)
 
     sub_schema = {
         "id": sub.id,
@@ -89,7 +97,13 @@ def get_current_subscription(
         "currency": sub.currency,
         "trial_start": sub.trial_start,
         "trial_end": sub.trial_end,
-        "trial_days_left": trial_days_left,
+        "trial_started_at": sub.trial_started_at or sub.trial_start,
+        "trial_ends_at": sub.trial_ends_at or sub.trial_end,
+        "trial_days_left": trial_data["days_remaining"],
+        "trial_hours_left": trial_data["hours_remaining"],
+        "trial_progress_pct": trial_data["progress_pct"],
+        "trial_state": trial_data["trial_state"],
+        "is_expired": trial_data["is_expired"],
         "current_period_start": sub.current_period_start,
         "current_period_end": sub.current_period_end,
         "cancel_at_period_end": sub.cancel_at_period_end,
@@ -99,6 +113,21 @@ def get_current_subscription(
         "subscription": sub_schema,
         "usage": usage,
         "features": BillingService.get_effective_features(db, workspace_id),
+    }
+
+@router.post("/reconcile-trials")
+def reconcile_trials_endpoint(
+    db: Session = Depends(get_db),
+):
+    """
+    Triggers manual or scheduled trial expiration reconciliation & reminder delivery.
+    """
+    reconciled = TrialLifecycleService.reconcile_all_trials(db)
+    reminders = TrialLifecycleService.send_trial_reminders(db)
+    return {
+        "status": "success",
+        "reconciliation": reconciled,
+        "reminders": reminders,
     }
 
 @router.post("/create-checkout-session", response_model=CheckoutSessionResponse)

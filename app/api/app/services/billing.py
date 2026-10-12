@@ -1,4 +1,5 @@
 import uuid
+import math
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Tuple
@@ -397,14 +398,34 @@ class BillingService:
     def get_or_create_workspace_subscription(db: Session, workspace_id: str) -> GymSubscription:
         """
         Retrieves or initializes a 14-day Free Trial on the Growth tier (35 members limit).
-        Evaluates subscription status dynamically against current timestamp.
+        Evaluates subscription status dynamically and transactionally against server UTC timestamp.
+        Enforces repeat-trial anti-abuse checks.
         """
         BillingService.ensure_default_plans(db)
         sub = db.query(GymSubscription).filter(GymSubscription.workspace_id == workspace_id).first()
         now = datetime.now(timezone.utc)
 
         if not sub:
-            # New gyms start with a 14-day Free Trial on Growth plan
+            # Check repeat trial eligibility for the business
+            ws = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+            is_repeat = False
+            if ws:
+                norm_phone = "".join(c for c in (ws.phone or "") if c.isdigit())
+                if norm_phone and len(norm_phone) >= 10:
+                    prior_workspaces = (
+                        db.query(Workspace.id)
+                        .filter(
+                            Workspace.id != workspace_id,
+                            Workspace.phone.ilike(f"%{norm_phone[-10:]}%")
+                        )
+                        .all()
+                    )
+                    if prior_workspaces:
+                        prior_ids = [p[0] for p in prior_workspaces]
+                        prior_sub = db.query(GymSubscription).filter(GymSubscription.workspace_id.in_(prior_ids)).first()
+                        if prior_sub:
+                            is_repeat = True
+
             growth_plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.code == "growth").first()
             if not growth_plan:
                 growth_plan = db.query(SubscriptionPlan).first()
@@ -415,11 +436,16 @@ class BillingService:
                 id=str(uuid.uuid4()),
                 workspace_id=workspace_id,
                 plan_id=growth_plan.id,
-                status=SubscriptionStatus.TRIALING,
+                status=SubscriptionStatus.EXPIRED if is_repeat else SubscriptionStatus.TRIALING,
                 billing_cycle=BillingCycle.MONTHLY,
                 currency="INR",
                 trial_start=now,
                 trial_end=trial_end,
+                trial_started_at=now,
+                trial_ends_at=trial_end,
+                is_repeat_trial_blocked=is_repeat,
+                notes="Repeat trial blocked: business previously registered." if is_repeat else None,
+                reminder_sent_flags={},
                 current_period_start=now,
                 current_period_end=trial_end,
             )
@@ -428,12 +454,23 @@ class BillingService:
             db.refresh(sub)
             return sub
 
-        # Check and update automatic expiration for trial or paid periods
-        if sub.status == SubscriptionStatus.TRIALING and sub.trial_end:
-            t_end = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
-            if now > t_end and not sub.is_complimentary:
-                sub.status = SubscriptionStatus.EXPIRED
-                db.commit()
+        # Dynamic server-side evaluation of trial expiration
+        if sub.status == SubscriptionStatus.TRIALING:
+            t_end = sub.trial_ends_at or sub.trial_end
+            if t_end:
+                t_end_utc = t_end if t_end.tzinfo else t_end.replace(tzinfo=timezone.utc)
+                if now > t_end_utc and not sub.is_complimentary:
+                    sub.status = SubscriptionStatus.EXPIRED
+                    audit = SubscriptionAuditLog(
+                        id=str(uuid.uuid4()),
+                        workspace_id=workspace_id,
+                        action="trial_expired",
+                        old_value="trialing",
+                        new_value="expired",
+                        reason="14-day free trial elapsed according to server UTC timestamp."
+                    )
+                    db.add(audit)
+                    db.commit()
         elif sub.status == SubscriptionStatus.ACTIVE and sub.current_period_end:
             p_end = sub.current_period_end if sub.current_period_end.tzinfo else sub.current_period_end.replace(tzinfo=timezone.utc)
             if now > p_end and not sub.is_complimentary:
@@ -511,7 +548,7 @@ class BillingService:
                 "basic_dashboard": True,
                 "diet_plans": False,
                 "advanced_analytics": False,
-                "data_export": False,
+                "data_export": True,
                 "trainer_management": False,
             }
 
@@ -919,10 +956,22 @@ class BillingService:
         sub.plan_id = plan.id
         sub.status = SubscriptionStatus.ACTIVE
         sub.billing_cycle = BillingCycle.ANNUAL if billing_cycle == "annual" else BillingCycle.MONTHLY
-        sub.currency = currency
         sub.current_period_start = now
         sub.current_period_end = period_end
         sub.cashfree_subscription_id = cashfree_order_id
+        sub.trial_converted_at = now
+        db.commit()
+
+        # Audit trial conversion
+        audit = SubscriptionAuditLog(
+            id=str(uuid.uuid4()),
+            workspace_id=workspace_id,
+            action="trial_converted_to_paid",
+            old_value="trialing",
+            new_value=plan.code,
+            reason=f"Payment verified via Cashfree ({cashfree_order_id})."
+        )
+        db.add(audit)
         db.commit()
 
         # Create Payment Record
@@ -1005,3 +1054,83 @@ class BillingService:
 
         db.commit()
         return True
+
+    @staticmethod
+    def get_trial_status(db: Session, workspace_id: str) -> Dict[str, Any]:
+        """
+        Calculates authoritative, real-time 14-day trial countdown and subscription health.
+        Uses server-generated UTC timestamps as the sole source of truth.
+        """
+        sub = BillingService.get_or_create_workspace_subscription(db, workspace_id)
+        now = datetime.now(timezone.utc)
+        plan = sub.plan
+        limits = BillingService.get_effective_limits(db, workspace_id)
+
+        t_start = sub.trial_started_at or sub.trial_start or sub.created_at or now
+        t_start_utc = t_start if t_start.tzinfo else t_start.replace(tzinfo=timezone.utc)
+
+        t_end = sub.trial_ends_at or sub.trial_end
+        if t_end:
+            t_end_utc = t_end if t_end.tzinfo else t_end.replace(tzinfo=timezone.utc)
+        else:
+            t_end_utc = t_start_utc + timedelta(days=14)
+
+        status_val = sub.status.value if hasattr(sub.status, "value") else str(sub.status)
+        is_trial = status_val == "trialing"
+        is_paid = status_val in ["active", "grace_period"]
+        is_expired = status_val in ["expired", "cancelled", "canceled"] and not sub.is_complimentary
+
+        # Calculate exact time delta
+        delta_seconds = (t_end_utc - now).total_seconds()
+        total_duration_seconds = max(1.0, (t_end_utc - t_start_utc).total_seconds())
+
+        days_remaining = max(0, int(delta_seconds // 86400))
+        hours_remaining = max(0, int(math.ceil(delta_seconds / 3600)))
+
+        # Progress of trial consumption (0% at start, 100% when expired)
+        elapsed_seconds = max(0.0, (now - t_start_utc).total_seconds())
+        progress_pct = min(100.0, max(0.0, round((elapsed_seconds / total_duration_seconds) * 100.0, 1)))
+
+        # Contextual trial badge state
+        if is_paid:
+            trial_state = "paid"
+        elif is_expired:
+            trial_state = "expired"
+        elif status_val == "suspended":
+            trial_state = "suspended"
+        elif status_val == "pending_payment":
+            trial_state = "payment_pending"
+        elif delta_seconds <= 0:
+            trial_state = "expired"
+        elif hours_remaining <= 24:
+            trial_state = "hours_remaining"
+        elif days_remaining <= 1:
+            trial_state = "warning_1d"
+        elif days_remaining <= 3:
+            trial_state = "reminder_3d"
+        elif days_remaining <= 7:
+            trial_state = "reminder_7d"
+        else:
+            trial_state = "active"
+
+        return {
+            "workspace_id": workspace_id,
+            "status": status_val,
+            "is_trial": is_trial,
+            "is_expired": is_expired,
+            "is_paid": is_paid,
+            "trial_started_at": t_start_utc.isoformat(),
+            "trial_ends_at": t_end_utc.isoformat(),
+            "trial_converted_at": sub.trial_converted_at.isoformat() if sub.trial_converted_at else None,
+            "total_trial_days": 14,
+            "days_remaining": days_remaining,
+            "hours_remaining": hours_remaining,
+            "progress_pct": progress_pct,
+            "trial_state": trial_state,
+            "plan_code": plan.code,
+            "plan_name": plan.name,
+            "member_limit": limits.get("max_members", 35),
+            "is_complimentary": bool(sub.is_complimentary),
+            "can_upgrade": True,
+            "server_time_utc": now.isoformat(),
+        }

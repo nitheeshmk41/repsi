@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import date, datetime, timedelta, timezone
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import Workspace, WorkspaceMember, UserRole
@@ -11,7 +11,8 @@ from app.models.finance import Payment, Expense, PaymentMethod, PaymentStatus
 from app.models.trainer import Trainer, GymClass
 from app.models.billing import GymSubscription, SubscriptionStatus
 from app.services.billing import BillingService
-from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse
+from app.services.workspace_moderation import WorkspaceModerationService
+from app.schemas.workspace import WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse, RenameWorkspaceRequest
 from app.middleware.tenant import get_current_tenant, TenantContext
 
 router = APIRouter(prefix="/workspaces", tags=["Workspaces"])
@@ -211,8 +212,31 @@ def get_workspace_billing(
             "founding_offer_label": "Founding Gym — 3 Months Free",
         },
         "usage": {
-            "members": {"current": member_count or 184, "limit": 300},
-            "staff": {"current": trainer_count or 5, "limit": 10},
+            "members": {
+                "current": member_count,
+                "limit": 300,
+                "percentage": round((member_count / 300) * 100, 1) if 300 else 0,
+                "limit_reached": member_count >= 300,
+                "warning_triggered": member_count >= 240,
+                "unlimited": False,
+            },
+            "trainers": {
+                "current": trainer_count,
+                "limit": 10,
+                "percentage": round((trainer_count / 10) * 100, 1) if 10 else 0,
+                "limit_reached": trainer_count >= 10,
+                "warning_triggered": trainer_count >= 8,
+                "unlimited": False,
+            },
+            "staff": {"current": trainer_count, "limit": 10},
+            "branches": {
+                "current": 1,
+                "limit": 1,
+                "percentage": 100.0,
+                "limit_reached": True,
+                "warning_triggered": False,
+                "unlimited": False,
+            },
             "websites": {"current": 1, "limit": 1},
             "custom_domains": {"current": 0, "limit": 1},
         },
@@ -225,6 +249,135 @@ def get_workspace_billing(
             "gateway": "Cashfree Subscriptions",
         },
         "invoices": inv_list
+    }
+
+
+@router.get("/check-name", tags=["Workspaces"])
+def check_workspace_name_availability(
+    name: str = Query(..., description="Gym brand name to check"),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Checks if a requested gym name is valid, available, and complies with content moderation policies.
+    Excludes caller's own current name.
+    """
+    return WorkspaceModerationService.check_availability(db, name, current_workspace_id=tenant.workspace_id)
+
+
+@router.get("/rename-eligibility", tags=["Workspaces"])
+def get_rename_eligibility(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns 30-day cooldown eligibility for gym workspace renaming.
+    """
+    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return WorkspaceModerationService.get_rename_eligibility(ws)
+
+
+@router.patch("/rename", tags=["Workspaces"])
+@router.post("/rename", tags=["Workspaces"])
+def rename_workspace(
+    req: RenameWorkspaceRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Renames the gym workspace display name with a strict 30-day cooldown,
+    content moderation, and duplicate-name validation.
+    Only authorized business OWNER or SUPER_ADMIN can rename.
+    Preserves workspace UUID, slug, relationships, and existing data.
+    """
+    if tenant.role != "OWNER" and tenant.role != "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the verified gym owner can rename this workspace."
+        )
+
+    ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found.")
+
+    clean_name = WorkspaceModerationService.normalize_name(req.new_name)
+
+    # If new name is identical to current name, return early without consuming cooldown
+    if clean_name.lower() == ws.name.strip().lower():
+        eligibility = WorkspaceModerationService.get_rename_eligibility(ws)
+        return {
+            "status": "success",
+            "message": "Gym name is already set to this value.",
+            "workspace_id": ws.id,
+            "name": ws.name,
+            "eligibility": eligibility,
+        }
+
+    # 1. Enforce 30-day cooldown
+    eligibility = WorkspaceModerationService.get_rename_eligibility(ws)
+    if not eligibility["can_rename"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=eligibility["message"],
+        )
+
+    # 2. Enforce content moderation and name availability
+    check_result = WorkspaceModerationService.check_availability(db, clean_name, current_workspace_id=ws.id)
+    if not check_result["available"]:
+        if check_result["status"] == "TAKEN":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=check_result["message"],
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=check_result["message"],
+            )
+
+    # 3. Update name, cooldown timestamp, and change count atomically
+    old_name = ws.name
+    now_utc = datetime.now(timezone.utc)
+
+    ws.name = clean_name
+    ws.last_name_changed_at = now_utc
+    ws.name_change_count = (ws.name_change_count or 0) + 1
+
+    # 4. Audit logging
+    from app.models.system import AuditLog
+    audit_entry = AuditLog(
+        workspace_id=ws.id,
+        user_id=tenant.user_id,
+        action="workspace_renamed",
+        details=f"Gym renamed from '{old_name}' to '{clean_name}'. Previous change count: {ws.name_change_count - 1}",
+    )
+    db.add(audit_entry)
+
+    BillingService.log_subscription_audit(
+        db,
+        workspace_id=ws.id,
+        actor_user_id=tenant.user_id,
+        action="workspace_renamed",
+        old_value=old_name,
+        new_value=clean_name,
+        reason="Owner updated gym brand display name",
+    )
+
+    db.commit()
+    db.refresh(ws)
+
+    new_eligibility = WorkspaceModerationService.get_rename_eligibility(ws)
+
+    return {
+        "status": "success",
+        "message": f"Gym name updated to '{ws.name}'. Next change available in 30 days.",
+        "workspace_id": ws.id,
+        "name": ws.name,
+        "previous_name": old_name,
+        "last_name_changed_at": ws.last_name_changed_at.isoformat() if ws.last_name_changed_at else None,
+        "eligibility": new_eligibility,
     }
 
 
@@ -252,7 +405,25 @@ def update_workspace(
     ws = db.query(Workspace).filter(Workspace.id == tenant.workspace_id).first()
     if not ws:
         raise HTTPException(status_code=404, detail="Workspace not found.")
-    for key, value in data.model_dump(exclude_unset=True).items():
+
+    update_dict = data.model_dump(exclude_unset=True)
+    if "name" in update_dict and update_dict["name"]:
+        clean_name = WorkspaceModerationService.normalize_name(update_dict["name"])
+        if clean_name.lower() != ws.name.strip().lower():
+            if tenant.role != "OWNER" and tenant.role != "SUPER_ADMIN":
+                raise HTTPException(status_code=403, detail="Only owner can rename gym workspace.")
+            eligibility = WorkspaceModerationService.get_rename_eligibility(ws)
+            if not eligibility["can_rename"]:
+                raise HTTPException(status_code=409, detail=eligibility["message"])
+            avail = WorkspaceModerationService.check_availability(db, clean_name, ws.id)
+            if not avail["available"]:
+                raise HTTPException(status_code=409 if avail["status"] == "TAKEN" else 422, detail=avail["message"])
+            ws.name = clean_name
+            ws.last_name_changed_at = datetime.now(timezone.utc)
+            ws.name_change_count = (ws.name_change_count or 0) + 1
+        del update_dict["name"]
+
+    for key, value in update_dict.items():
         setattr(ws, key, value)
     db.commit()
     db.refresh(ws)

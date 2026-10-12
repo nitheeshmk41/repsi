@@ -147,6 +147,17 @@ export function AttendanceClient() {
     }
   };
 
+  const handleManualCheckOut = async (attendanceId: string) => {
+    try {
+      await repsiApi.checkOut(attendanceId, "STAFF");
+      await loadData();
+      setManualModalOpen(false);
+      setManualSearch("");
+    } catch (e: any) {
+      alert(e.message || "Failed to check out");
+    }
+  };
+
   const handleManualCheckInTrainer = async (t: ApiTrainer) => {
     try {
       await repsiApi.checkInTrainer(t.id, t.name);
@@ -467,50 +478,111 @@ export function AttendanceClient() {
                 members
                   .filter((m) =>
                     m.name.toLowerCase().includes(manualSearch.toLowerCase()) ||
-                    m.phone.includes(manualSearch)
+                    (m.phone && m.phone.includes(manualSearch)) ||
+                    (m.email && m.email.toLowerCase().includes(manualSearch.toLowerCase()))
                   )
-                  .map((m) => (
-                    <div
-                      key={m.id}
-                      className="p-3 flex items-center justify-between hover:bg-[var(--surface-hover)] text-xs"
-                    >
-                      <div>
-                        <p className="font-semibold text-[var(--text)]">{m.name}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">{m.phone || m.email}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleManualCheckInMember(m)}
-                        className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  .map((m) => {
+                    const activeInside = currentlyInside.find((ci) => ci.member_id === m.id);
+                    const isInside = Boolean(activeInside);
+                    const isExpired = m.status === "expired" || m.status === "cancelled";
+
+                    return (
+                      <div
+                        key={m.id}
+                        className="p-3 flex items-center justify-between hover:bg-[var(--surface-hover)] text-xs"
                       >
-                        Check In
-                      </Button>
-                    </div>
-                  ))
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-[var(--text)]">{m.name}</p>
+                            {isInside ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                Inside ({activeInside?.duration_formatted})
+                              </span>
+                            ) : isExpired ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                                {m.status.toUpperCase()}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-500/10 text-[var(--text-muted)]">
+                                {m.plan || "Standard"}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)]">{m.phone || m.email}</p>
+                        </div>
+
+                        {isInside ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleManualCheckOut(activeInside!.attendance_id)}
+                            className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                          >
+                            Check Out
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled={isExpired}
+                            onClick={() => handleManualCheckInMember(m)}
+                            className={`h-7 text-xs font-semibold ${
+                              isExpired
+                                ? "opacity-50 cursor-not-allowed bg-slate-400 text-white"
+                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            }`}
+                          >
+                            {isExpired ? "Membership Expired" : "Check In"}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })
               ) : (
                 trainers
                   .filter((t) =>
                     t.name.toLowerCase().includes(manualSearch.toLowerCase()) ||
-                    t.phone.includes(manualSearch)
+                    (t.phone && t.phone.includes(manualSearch))
                   )
-                  .map((t) => (
-                    <div
-                      key={t.id}
-                      className="p-3 flex items-center justify-between hover:bg-[var(--surface-hover)] text-xs"
-                    >
-                      <div>
-                        <p className="font-semibold text-[var(--text)]">{t.name}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">{t.phone}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleManualCheckInTrainer(t)}
-                        className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  .map((t) => {
+                    const activeInside = currentlyInside.find((ci) => ci.trainer_id === t.id);
+                    const isInside = Boolean(activeInside);
+
+                    return (
+                      <div
+                        key={t.id}
+                        className="p-3 flex items-center justify-between hover:bg-[var(--surface-hover)] text-xs"
                       >
-                        Check In
-                      </Button>
-                    </div>
-                  ))
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-[var(--text)]">{t.name}</p>
+                            {isInside && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                Inside ({activeInside?.duration_formatted})
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)]">{t.phone}</p>
+                        </div>
+
+                        {isInside ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleManualCheckOut(activeInside!.attendance_id)}
+                            className="h-7 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                          >
+                            Check Out
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleManualCheckInTrainer(t)}
+                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                          >
+                            Check In
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })
               )}
             </div>
           </div>

@@ -1310,15 +1310,30 @@ def update_subscription_plan(
     return {"status": "success", "message": f"Plan '{plan.name}' updated successfully."}
 
 
+@router.get("/subscriptions/trial-analytics")
+def get_superadmin_trial_analytics_route(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns high-level trial analytics for Super Admin:
+    Total gyms, active trials, expiring today/3d/7d, expired, active paid, and conversion rates.
+    """
+    check_superadmin(tenant, db)
+    from app.services.trial_lifecycle import TrialLifecycleService
+    return TrialLifecycleService.get_superadmin_trial_analytics(db)
+
+
 @router.get("/subscriptions/gyms")
 def list_gym_subscriptions(
     query: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None),
     plan_filter: Optional[str] = Query(None),
+    filter_type: Optional[str] = Query(None),  # all, active_trial, expiring_soon, expired, paid
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    """Search and list gym workspaces with live subscription status and usage meters."""
+    """Search and list gym workspaces with live subscription status, remaining hours/days, and usage meters."""
     check_superadmin(tenant, db)
     BillingService.ensure_default_plans(db)
 
@@ -1333,7 +1348,9 @@ def list_gym_subscriptions(
 
     for ws in workspaces:
         sub = BillingService.get_or_create_workspace_subscription(db, ws.id)
-        if status_filter and sub.status.value != status_filter and str(sub.status) != status_filter:
+        status_str = sub.status.value if hasattr(sub.status, "value") else str(sub.status)
+
+        if status_filter and status_str != status_filter:
             continue
         if plan_filter and sub.plan.code != plan_filter:
             continue
@@ -1346,9 +1363,25 @@ def list_gym_subscriptions(
         owner_user = db.query(User).filter(User.id == owner_member.user_id).first() if owner_member else None
 
         trial_days_remaining = None
-        if sub.status == SubscriptionStatus.TRIALING and sub.trial_end:
-            t_end = sub.trial_end if sub.trial_end.tzinfo else sub.trial_end.replace(tzinfo=timezone.utc)
-            trial_days_remaining = max(0, (t_end - now).days)
+        trial_hours_remaining = None
+        t_end = sub.trial_ends_at or sub.trial_end
+        if t_end:
+            t_end_utc = t_end if t_end.tzinfo else t_end.replace(tzinfo=timezone.utc)
+            delta = t_end_utc - now
+            delta_sec = delta.total_seconds()
+            trial_days_remaining = max(0, int(delta_sec // 86400))
+            trial_hours_remaining = max(0, int(delta_sec // 3600))
+
+        # Filter by high-level category if requested
+        if filter_type:
+            if filter_type == "active_trial" and status_str != "trialing":
+                continue
+            elif filter_type == "expiring_soon" and (status_str != "trialing" or (trial_days_remaining is not None and trial_days_remaining > 3)):
+                continue
+            elif filter_type == "expired" and status_str != "expired":
+                continue
+            elif filter_type == "paid" and status_str != "active":
+                continue
 
         results.append({
             "workspace_id": ws.id,
@@ -1363,10 +1396,13 @@ def list_gym_subscriptions(
                 "id": sub.id,
                 "plan_code": sub.plan.code,
                 "plan_name": sub.plan.name,
-                "status": sub.status.value if hasattr(sub.status, "value") else str(sub.status),
+                "status": status_str,
                 "billing_cycle": sub.billing_cycle.value if hasattr(sub.billing_cycle, "value") else str(sub.billing_cycle),
-                "trial_end": sub.trial_end.isoformat() if sub.trial_end else None,
+                "trial_start": sub.trial_started_at.isoformat() if sub.trial_started_at else (sub.trial_start.isoformat() if sub.trial_start else None),
+                "trial_end": t_end.isoformat() if t_end else None,
                 "trial_days_remaining": trial_days_remaining,
+                "trial_hours_remaining": trial_hours_remaining,
+                "trial_converted_at": sub.trial_converted_at.isoformat() if sub.trial_converted_at else None,
                 "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end else None,
                 "is_complimentary": sub.is_complimentary,
                 "complimentary_until": sub.complimentary_until.isoformat() if sub.complimentary_until else None,

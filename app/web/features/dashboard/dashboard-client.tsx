@@ -11,6 +11,7 @@ import { RecentActivity } from "@/features/dashboard/recent-activity";
 import { QuickActions } from "@/features/dashboard/quick-actions";
 import { RepsiMascot } from "@/components/ui/repsi-mascot";
 import { GettingStartedDialog } from "@/components/layout/getting-started-dialog";
+import { TrialCountdownCard } from "@/features/dashboard/trial-countdown-card";
 import { repsiApi } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://repsi.fastapicloud.dev/api/v1";
@@ -206,6 +207,9 @@ export function DashboardClient({ workspace }: { workspace: string }) {
           </Link>
         </div>
       </div>
+
+      {/* 14-Day Free Trial Countdown Card */}
+      <TrialCountdownCard workspace={workspace} />
 
       {/* Adaptive Setup Checklist Banner (when in setup phase) */}
       {isSetupMode ? (

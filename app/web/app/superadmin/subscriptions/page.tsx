@@ -43,6 +43,9 @@ export default function SuperAdminSubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [trialAnalytics, setTrialAnalytics] = useState<any | null>(null);
+  const [reconciling, setReconciling] = useState(false);
 
   // Plans catalog state
   const [plans, setPlans] = useState<any[]>([]);
@@ -83,16 +86,19 @@ export default function SuperAdminSubscriptionsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [gymsData, plansData] = await Promise.all([
+      const [gymsData, plansData, analyticsData] = await Promise.all([
         repsiApi.getSuperAdminGymSubscriptions({
           q: searchQuery,
           status: statusFilter,
           plan: planFilter,
+          filter_type: filterType,
         }),
         repsiApi.getSuperAdminSubscriptionPlans(),
+        repsiApi.getSuperAdminTrialAnalytics().catch(() => null),
       ]);
       setGyms(gymsData || []);
       setPlans(plansData || []);
+      setTrialAnalytics(analyticsData);
     } catch (err) {
       console.error("Failed to load subscription data", err);
     } finally {
@@ -102,11 +108,26 @@ export default function SuperAdminSubscriptionsPage() {
 
   useEffect(() => {
     loadData();
-  }, [statusFilter, planFilter]);
+  }, [statusFilter, planFilter, filterType]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loadData();
+  };
+
+  const handleReconcileTrials = async () => {
+    setReconciling(true);
+    try {
+      const res = await repsiApi.reconcileTrials();
+      const expCount = res?.reconciliation?.expired_count ?? 0;
+      const remCount = res?.reminders?.reminders_sent ?? 0;
+      alert(`Lifecycle sync complete:\n• ${expCount} expired trials updated\n• ${remCount} milestone reminders delivered`);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || "Failed to reconcile trials");
+    } finally {
+      setReconciling(false);
+    }
   };
 
   const openExtendTrial = (gym: any) => {
@@ -351,8 +372,107 @@ export default function SuperAdminSubscriptionsPage() {
 
       {/* TAB 1: GYMS SUBSCRIPTIONS */}
       {activeTab === "gyms" && (
-        <div className="space-y-4">
-          {/* Filter Bar */}
+        <div className="space-y-6">
+          {/* Super Admin 14-Day Trial & Subscription Overview Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-900/60 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-zinc-400">Total Gyms</span>
+              <div className="text-xl font-black text-white mt-1">
+                {trialAnalytics?.total_businesses ?? gyms.length}
+              </div>
+              <span className="text-[10px] text-zinc-500 mt-1">Registered businesses</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Active Trials
+              </span>
+              <div className="text-xl font-black text-emerald-400 mt-1">
+                {trialAnalytics?.active_trials ?? 0}
+              </div>
+              <span className="text-[10px] text-emerald-500/70 mt-1">Growth plan (35 cap)</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Expiring &le; 3d
+              </span>
+              <div className="text-xl font-black text-amber-400 mt-1">
+                {trialAnalytics?.trials_expiring_3_days ?? 0}
+              </div>
+              <span className="text-[10px] text-amber-500/70 mt-1">
+                {trialAnalytics?.trials_expiring_today ?? 0} expiring today
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/5 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-rose-400 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Expired Trials
+              </span>
+              <div className="text-xl font-black text-rose-400 mt-1">
+                {trialAnalytics?.expired_trials ?? 0}
+              </div>
+              <span className="text-[10px] text-rose-500/70 mt-1">Requires upgrade</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-sky-500/30 bg-sky-500/5 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-sky-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Active Paid
+              </span>
+              <div className="text-xl font-black text-sky-400 mt-1">
+                {trialAnalytics?.active_paid ?? 0}
+              </div>
+              <span className="text-[10px] text-sky-500/70 mt-1">Active subscriptions</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-500/5 flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-purple-400 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> Conversion Rate
+              </span>
+              <div className="text-xl font-black text-purple-400 mt-1">
+                {trialAnalytics?.conversion_rate_pct ?? 0}%
+              </div>
+              <span className="text-[10px] text-purple-500/70 mt-1">Trial to paid conversions</span>
+            </div>
+          </div>
+
+          {/* Quick Filter Tabs & Action Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
+              {[
+                { id: "all", label: "All Businesses" },
+                { id: "active_trial", label: "Active Trials" },
+                { id: "expiring_soon", label: "Expiring Soon (&le; 3d)" },
+                { id: "expired", label: "Expired Trials" },
+                { id: "paid", label: "Active Paid" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilterType(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                    filterType === tab.id
+                      ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleReconcileTrials}
+              disabled={reconciling}
+              className="border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:text-white text-xs gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${reconciling ? "animate-spin" : ""}`} />
+              {reconciling ? "Syncing..." : "Sync Trial Lifecycle"}
+            </Button>
+          </div>
+
+          {/* Search & Select Filter Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-900/60">
             <form onSubmit={handleSearchSubmit} className="relative flex-1">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />

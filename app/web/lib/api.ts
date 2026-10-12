@@ -664,6 +664,76 @@ export const repsiApi = {
     return await res.json();
   },
 
+  async getBiometricDevices(workspaceId?: string): Promise<any[]> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    try {
+      const res = await fetch(`${API_BASE}/attendance/biometric/devices`, {
+        headers,
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn("Failed to load biometric devices", err);
+    }
+    return [];
+  },
+
+  async registerBiometricDevice(data: {
+    device_name: string;
+    device_model: string;
+    device_serial: string;
+    ip_address?: string;
+    port?: number;
+    location_name?: string;
+  }, workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/attendance/biometric/devices`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to register biometric device");
+    }
+    return await res.json();
+  },
+
+  async testBiometricDevice(deviceId: string, workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/attendance/biometric/devices/${encodeURIComponent(deviceId)}/test`, {
+      method: "POST",
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to test device connectivity");
+    }
+    return await res.json();
+  },
+
+  async deleteBiometricDevice(deviceId: string, workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/attendance/biometric/devices/${encodeURIComponent(deviceId)}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete biometric device");
+    }
+    return await res.json();
+  },
+
   async getGymLocations(): Promise<ApiGymLocation[]> {
     try {
       const res = await fetch(`${API_BASE}/attendance/locations`, {
@@ -1245,9 +1315,13 @@ export const repsiApi = {
     return await res.json();
   },
 
-  async getBillingSubscription(): Promise<any> {
+  async getBillingSubscription(workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) {
+      headers["X-Workspace-Id"] = workspaceId;
+    }
     const res = await fetch(`${API_BASE}/workspaces/billing`, {
-      headers: { ...getAuthHeader() },
+      headers,
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Failed to load subscription details");
@@ -2241,6 +2315,82 @@ export const repsiApi = {
     return await res.json();
   },
 
+  async getWorkspace(workspaceId: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/workspaces/${encodeURIComponent(workspaceId)}`, {
+      headers: { ...getAuthHeader(), "X-Workspace-Id": workspaceId },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load workspace");
+    }
+    return await res.json();
+  },
+
+  async checkWorkspaceName(name: string, workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/workspaces/check-name?name=${encodeURIComponent(name)}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Name check failed");
+    }
+    return await res.json();
+  },
+
+  async getRenameEligibility(workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = { ...getAuthHeader() };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/workspaces/rename-eligibility`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load rename eligibility");
+    }
+    return await res.json();
+  },
+
+  async renameWorkspace(newName: string, workspaceId?: string): Promise<any> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    };
+    if (workspaceId) headers["X-Workspace-Id"] = workspaceId;
+    const res = await fetch(`${API_BASE}/workspaces/rename`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ new_name: newName }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to rename workspace");
+    }
+    return await res.json();
+  },
+
+  async updateWorkspace(workspaceId: string, data: any): Promise<any> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+      "X-Workspace-Id": workspaceId,
+    };
+    const res = await fetch(`${API_BASE}/workspaces/${encodeURIComponent(workspaceId)}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update workspace settings");
+    }
+    return await res.json();
+  },
+
   async deregisterWorkspace(gymNameConfirmation: string, reason?: string): Promise<any> {
     const res = await fetch(`${API_BASE}/workspaces/deregister`, {
       method: "POST",
@@ -2286,11 +2436,51 @@ export const repsiApi = {
     return await res.json();
   },
 
-  async getSuperAdminGymSubscriptions(params?: { q?: string; status?: string; plan?: string }): Promise<any[]> {
+  async getTrialStatus(workspace?: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/trial-status`, {
+      headers: {
+        ...getAuthHeader(),
+        ...(workspace ? { "X-Workspace-Id": workspace } : {}),
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load trial status");
+    }
+    return await res.json();
+  },
+
+  async getSuperAdminTrialAnalytics(): Promise<any> {
+    const res = await fetch(`${API_BASE}/superadmin/subscriptions/trial-analytics`, {
+      headers: { ...getAuthHeader() },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load trial analytics");
+    }
+    return await res.json();
+  },
+
+  async reconcileTrials(): Promise<any> {
+    const res = await fetch(`${API_BASE}/billing/reconcile-trials`, {
+      method: "POST",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to reconcile trials");
+    }
+    return await res.json();
+  },
+
+  async getSuperAdminGymSubscriptions(params?: { q?: string; status?: string; plan?: string; filter_type?: string }): Promise<any[]> {
     const sp = new URLSearchParams();
     if (params?.q) sp.set("q", params.q);
     if (params?.status && params.status !== "all") sp.set("status", params.status);
     if (params?.plan && params.plan !== "all") sp.set("plan", params.plan);
+    if (params?.filter_type && params.filter_type !== "all") sp.set("filter_type", params.filter_type);
     const query = sp.toString() ? `?${sp.toString()}` : "";
 
     const res = await fetch(`${API_BASE}/superadmin/subscriptions/gyms${query}`, {

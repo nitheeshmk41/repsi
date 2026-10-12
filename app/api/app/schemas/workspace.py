@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
@@ -31,6 +32,10 @@ class WorkspaceUpdate(BaseModel):
     onboarding_step: Optional[int] = None
 
 
+class RenameWorkspaceRequest(BaseModel):
+    new_name: str
+
+
 class WorkspaceResponse(BaseModel):
     id: str
     name: str
@@ -38,9 +43,10 @@ class WorkspaceResponse(BaseModel):
     logo_url: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    address: Optional[str] = None
     city: Optional[str] = None
-    country: str
-    gym_type: str
+    country: str = "India"
+    gym_type: str = "Commercial Fitness"
     business_types: Optional[str] = None
     business_size: Optional[str] = None
     managed_features: Optional[str] = None
@@ -50,5 +56,7 @@ class WorkspaceResponse(BaseModel):
     onboarding_completed: bool = False
     onboarding_step: int = 1
     is_active: bool
+    last_name_changed_at: Optional[datetime] = None
+    name_change_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)

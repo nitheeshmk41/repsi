@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   Building2, 
@@ -13,9 +13,14 @@ import {
   CheckCircle2, 
   Save,
   AlertTriangle,
+  AlertCircle,
   Trash2,
   X,
-  Loader2
+  Loader2,
+  Calendar,
+  Clock,
+  Info,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +39,8 @@ export default function WorkspaceSettingsPage() {
 
   const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Deregistration states
   const [showDeregisterModal, setShowDeregisterModal] = useState(false);
@@ -42,6 +49,8 @@ export default function WorkspaceSettingsPage() {
   const [deregisterLoading, setDeregisterLoading] = useState(false);
   const [deregisterError, setDeregisterError] = useState("");
 
+  // Gym profile & rename states
+  const [initialName, setInitialName] = useState(defaultName);
   const [gymProfile, setGymProfile] = useState({
     name: defaultName,
     phone: "+91 98450 11223",
@@ -52,10 +61,150 @@ export default function WorkspaceSettingsPage() {
     timezone: "Asia/Kolkata (IST)",
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  const [renameEligibility, setRenameEligibility] = useState<{
+    can_rename: boolean;
+    cooldown_days: number;
+    last_name_changed_at: string | null;
+    next_available_change_at: string | null;
+    days_remaining: number;
+    hours_remaining: number;
+    message: string;
+  }>({
+    can_rename: true,
+    cooldown_days: 30,
+    last_name_changed_at: null,
+    next_available_change_at: null,
+    days_remaining: 0,
+    hours_remaining: 0,
+    message: "You can change your gym name once every 30 days.",
+  });
+
+  const [nameCheck, setNameCheck] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string | null;
+    status: string | null;
+  }>({
+    checking: false,
+    available: null,
+    message: null,
+    status: null,
+  });
+
+  const checkDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load real workspace and rename eligibility
+  useEffect(() => {
+    async function loadWorkspaceSettings() {
+      try {
+        const [wsData, elig] = await Promise.all([
+          repsiApi.getWorkspace(workspace).catch(() => null),
+          repsiApi.getRenameEligibility(workspace).catch(() => null),
+        ]);
+
+        if (wsData) {
+          const wsName = wsData.name || defaultName;
+          setInitialName(wsName);
+          setGymProfile((prev) => ({
+            ...prev,
+            name: wsName,
+            phone: wsData.phone || prev.phone,
+            email: wsData.email || prev.email,
+            address: wsData.address || prev.address,
+            city: wsData.city || prev.city,
+          }));
+        }
+
+        if (elig) {
+          setRenameEligibility(elig);
+        }
+      } catch (err) {
+        console.warn("Using default workspace settings", err);
+      }
+    }
+    loadWorkspaceSettings();
+  }, [workspace]);
+
+  // Handle typing with debounced name check
+  const handleNameChange = (val: string) => {
+    setGymProfile((prev) => ({ ...prev, name: val }));
+    setSaveError("");
+
+    if (checkDebounceRef.current) {
+      clearTimeout(checkDebounceRef.current);
+    }
+
+    const trimmed = val.trim();
+    if (!trimmed || trimmed.toLowerCase() === initialName.trim().toLowerCase()) {
+      setNameCheck({
+        checking: false,
+        available: true,
+        message: trimmed ? "This is your current gym name." : null,
+        status: "CURRENT",
+      });
+      return;
+    }
+
+    setNameCheck({ checking: true, available: null, message: "Checking availability...", status: "CHECKING" });
+
+    checkDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await repsiApi.checkWorkspaceName(trimmed, workspace);
+        setNameCheck({
+          checking: false,
+          available: res.available,
+          message: res.message,
+          status: res.status,
+        });
+      } catch (err: any) {
+        setNameCheck({
+          checking: false,
+          available: false,
+          message: err.message || "Failed to check name",
+          status: "ERROR",
+        });
+      }
+    }, 450);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      const nameChanged = gymProfile.name.trim().toLowerCase() !== initialName.trim().toLowerCase();
+
+      // If name changed, rename workspace with 30-day cooldown & moderation
+      if (nameChanged) {
+        if (!renameEligibility.can_rename) {
+          throw new Error(renameEligibility.message || "Gym name changes are on a 30-day cooldown.");
+        }
+        if (nameCheck.available === false) {
+          throw new Error(nameCheck.message || "Gym name is not available or violates moderation policy.");
+        }
+        const renameRes = await repsiApi.renameWorkspace(gymProfile.name.trim(), workspace);
+        setInitialName(renameRes.name);
+        if (renameRes.eligibility) {
+          setRenameEligibility(renameRes.eligibility);
+        }
+      }
+
+      // Update remaining general fields (phone, email, address, city)
+      await repsiApi.updateWorkspace(workspace, {
+        phone: gymProfile.phone,
+        email: gymProfile.email,
+        address: gymProfile.address,
+        city: gymProfile.city,
+      });
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3500);
+    } catch (err: any) {
+      setSaveError(err.message || "Failed to save settings. Please verify inputs.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeregisterSubmit = async (e: React.FormEvent) => {
@@ -165,17 +314,128 @@ export default function WorkspaceSettingsPage() {
                 <CardContent>
                   <form onSubmit={handleSave} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5 sm:col-span-2">
-                        <Label htmlFor="gymName">Gym Brand Name</Label>
-                        <Input
-                          id="gymName"
-                          value={gymProfile.name}
-                          onChange={(e) => setGymProfile({ ...gymProfile, name: e.target.value })}
-                        />
+                      {/* Gym Brand Name with 30-Day Cooldown & Availability */}
+                      <div className="space-y-2 sm:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="gymName" className="font-semibold text-sm flex items-center gap-1.5">
+                            Gym Brand Name
+                            {!renameEligibility.can_rename && (
+                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                                <Lock className="w-2.5 h-2.5" />
+                                30-Day Cooldown Active
+                              </span>
+                            )}
+                          </Label>
+                          {renameEligibility.can_rename && (
+                            <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-primary" />
+                              Editable (Once every 30 days)
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="relative">
+                          <Input
+                            id="gymName"
+                            value={gymProfile.name}
+                            disabled={!renameEligibility.can_rename || saving}
+                            onChange={(e) => handleNameChange(e.target.value)}
+                            className={`pr-10 ${
+                              !renameEligibility.can_rename
+                                ? "opacity-75 bg-[var(--surface-elevated)] cursor-not-allowed"
+                                : nameCheck.available === false
+                                ? "border-rose-500/80 focus-visible:ring-rose-500"
+                                : nameCheck.available === true && nameCheck.status !== "CURRENT"
+                                ? "border-emerald-500/80 focus-visible:ring-emerald-500"
+                                : ""
+                            }`}
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            {nameCheck.checking && (
+                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            )}
+                            {!nameCheck.checking && nameCheck.available === true && nameCheck.status !== "CURRENT" && (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            )}
+                            {!nameCheck.checking && nameCheck.available === false && (
+                              <AlertCircle className="w-4 h-4 text-rose-500" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Cooldown Active Callout */}
+                        {!renameEligibility.can_rename && (
+                          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs space-y-2">
+                            <div className="flex items-start gap-2.5 text-amber-600 dark:text-amber-400 font-medium">
+                              <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="font-semibold">{renameEligibility.message}</p>
+                                <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-[var(--text-secondary)]">
+                                  {renameEligibility.last_name_changed_at && (
+                                    <div>
+                                      Last changed:{" "}
+                                      <strong className="text-[var(--text)]">
+                                        {new Date(renameEligibility.last_name_changed_at).toLocaleDateString(undefined, {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })}
+                                      </strong>
+                                    </div>
+                                  )}
+                                  {renameEligibility.next_available_change_at && (
+                                    <div>
+                                      Next available change:{" "}
+                                      <strong className="text-[var(--text)]">
+                                        {new Date(renameEligibility.next_available_change_at).toLocaleDateString(undefined, {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })}
+                                      </strong>{" "}
+                                      ({renameEligibility.days_remaining}d remaining)
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-[var(--text-muted)] border-t border-amber-500/20 pt-1.5">
+                              Phone number, email, and facility address below can still be modified at any time.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Availability and validation messages */}
+                        {renameEligibility.can_rename && (
+                          <div className="space-y-1">
+                            {nameCheck.checking && (
+                              <p className="text-xs text-primary flex items-center gap-1.5">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Checking brand name availability...
+                              </p>
+                            )}
+                            {!nameCheck.checking && nameCheck.available === true && nameCheck.status !== "CURRENT" && (
+                              <p className="text-xs text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {nameCheck.message || "Name available for your gym"}
+                              </p>
+                            )}
+                            {!nameCheck.checking && nameCheck.available === false && (
+                              <p className="text-xs text-rose-500 dark:text-rose-400 flex items-center gap-1.5 font-medium">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                {nameCheck.message || "This name is already taken or unavailable"}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-[var(--text-muted)]">
+                              Business names can be updated once every 30 days. Changing the name preserves all membership and payment records.
+                            </p>
+                          </div>
+                        )}
                       </div>
+
                       <div className="space-y-1.5">
                         <Label htmlFor="slug">Workspace URL Slug</Label>
-                        <Input id="slug" value={workspace} disabled className="opacity-75 font-mono text-xs" />
+                        <Input id="slug" value={workspace} disabled className="opacity-75 font-mono text-xs bg-[var(--surface-elevated)]" />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="phone">Official Phone</Label>
@@ -203,16 +463,37 @@ export default function WorkspaceSettingsPage() {
                       </div>
                     </div>
 
+                    {saveError && (
+                      <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-500 dark:text-rose-400 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span>{saveError}</span>
+                      </div>
+                    )}
+
                     <div className="pt-4 border-t border-[var(--border)] flex items-center justify-between">
                       {saved ? (
-                        <span className="text-xs text-emerald-400 flex items-center gap-1.5 font-medium">
+                        <span className="text-xs text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 font-semibold">
                           <CheckCircle2 className="h-4 w-4" />
                           Settings saved successfully!
                         </span>
                       ) : <span />}
-                      <Button type="submit" size="sm" className="gap-2">
-                        <Save className="h-3.5 w-3.5" />
-                        Save Changes
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={saving || (gymProfile.name.trim().toLowerCase() !== initialName.trim().toLowerCase() && nameCheck.available === false)}
+                        className="gap-2"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Saving Changes...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-3.5 w-3.5" />
+                            Save Changes
+                          </>
+                        )}
                       </Button>
                     </div>
                   </form>

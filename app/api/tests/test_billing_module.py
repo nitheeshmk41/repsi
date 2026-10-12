@@ -11,28 +11,16 @@ from app.main import app
 from app.services.billing import BillingService
 from app.models.billing import SubscriptionPlan, GymSubscription, SubscriptionStatus
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from tests.conftest import TestingSessionLocal
 
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     BillingService.ensure_default_plans(db)
     db.close()
     yield
-    Base.metadata.drop_all(bind=engine)
 
 def test_get_subscription_plans():
     response = client.get("/api/v1/billing/plans")

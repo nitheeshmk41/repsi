@@ -43,9 +43,14 @@ def get_current_tenant(
 
         if workspace_id:
             # Strictly verify tenant isolation and active membership in the workspace
-            from app.models.user import WorkspaceMember
+            from app.models.user import Workspace, WorkspaceMember
+            ws = db.query(Workspace).filter(
+                (Workspace.id == workspace_id) | (Workspace.slug == workspace_id)
+            ).first()
+            actual_ws_id = ws.id if ws else workspace_id
+
             member = db.query(WorkspaceMember).filter(
-                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.workspace_id == actual_ws_id,
                 WorkspaceMember.user_id == user_id,
             ).first()
             if not member or not member.is_active:
@@ -54,7 +59,7 @@ def get_current_tenant(
                     detail="Access denied. You do not have an active account in this gym workspace.",
                 )
             role = member.role.value if hasattr(member.role, "value") else str(member.role)
-            return TenantContext(workspace_id=workspace_id, user_id=user_id, role=role)
+            return TenantContext(workspace_id=actual_ws_id, user_id=user_id, role=role)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

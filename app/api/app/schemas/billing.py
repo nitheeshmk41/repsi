@@ -46,7 +46,13 @@ class SubscriptionDetailsSchema(BaseModel):
     currency: str
     trial_start: Optional[datetime] = None
     trial_end: Optional[datetime] = None
+    trial_started_at: Optional[datetime] = None
+    trial_ends_at: Optional[datetime] = None
     trial_days_left: Optional[int] = None
+    trial_hours_left: Optional[int] = None
+    trial_progress_pct: Optional[float] = None
+    trial_state: Optional[str] = None
+    is_expired: Optional[bool] = False
     current_period_start: Optional[datetime] = None
     current_period_end: Optional[datetime] = None
     cancel_at_period_end: bool = False
@@ -55,6 +61,27 @@ class SubscriptionBillingOverviewSchema(BaseModel):
     subscription: SubscriptionDetailsSchema
     usage: WorkspaceUsageSchema
     features: Dict[str, bool]
+
+class TrialStatusResponse(BaseModel):
+    workspace_id: str
+    status: str
+    is_trial: bool
+    is_expired: bool
+    is_paid: bool
+    trial_started_at: str
+    trial_ends_at: str
+    trial_converted_at: Optional[str] = None
+    total_trial_days: int = 14
+    days_remaining: int
+    hours_remaining: int
+    progress_pct: float
+    trial_state: str
+    plan_code: str
+    plan_name: str
+    member_limit: int
+    is_complimentary: bool = False
+    can_upgrade: bool = True
+    server_time_utc: str
 
 class CheckoutSessionRequest(BaseModel):
     plan_code: str

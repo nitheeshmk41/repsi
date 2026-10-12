@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import {
@@ -228,9 +229,9 @@ const loadCashfreeSDK = (): Promise<boolean> => {
   });
 };
 
-export default function SubscriptionBillingPage(props: { params: Promise<{ workspace: string }> }) {
-  const params = use(props.params);
-  const workspace = params.workspace || "apex-fitness";
+export default function SubscriptionBillingPage(props?: { params?: Promise<{ workspace: string }> | { workspace: string } }) {
+  const routeParams = useParams();
+  const workspace = (routeParams?.workspace as string) || "apex-fitness";
 
   const [loading, setLoading] = useState(true);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -256,9 +257,9 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
   });
 
   const [usage, setUsage] = useState<any>({
-    members: { current: 42, limit: 100, percentage: 42.0, warning_triggered: false, limit_reached: false },
-    trainers: { current: 3, limit: 5, percentage: 60.0, warning_triggered: false, limit_reached: false },
-    branches: { current: 1, limit: 1, percentage: 100.0, warning_triggered: true, limit_reached: true },
+    members: { current: 42, limit: 100, percentage: 42.0, warning_triggered: false, limit_reached: false, unlimited: false },
+    trainers: { current: 3, limit: 5, percentage: 60.0, warning_triggered: false, limit_reached: false, unlimited: false },
+    branches: { current: 1, limit: 1, percentage: 100.0, warning_triggered: true, limit_reached: true, unlimited: false },
   });
 
   const [invoices, setInvoices] = useState<any[]>([
@@ -286,19 +287,68 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
     async function loadBilling() {
       setLoading(true);
       try {
-        const data = await repsiApi.getBillingSubscription();
-        if (data?.subscription) {
-          setActiveSubscription({
-            status: data.subscription.status,
-            trial_days_left: data.subscription.trial_days_left,
-            plan: data.subscription.plan,
-            billing_cycle: data.subscription.billing_cycle,
-            currency: data.subscription.currency,
-            next_billing_date: "14 November 2026",
-          });
+        const data = await repsiApi.getBillingSubscription(workspace);
+        if (data?.subscription || data?.plan) {
+          const planData = data.subscription?.plan || data.plan;
+          const planObj = typeof planData === "object" && planData?.name
+            ? planData
+            : (ALL_PLANS.find((p) => p.code === (planData?.id || planData?.code || "growth")) || ALL_PLANS[2]);
+
+          setActiveSubscription((prev: any) => ({
+            ...prev,
+            status: data.subscription?.status || planData?.status || "active",
+            trial_days_left: data.subscription?.trial_days_left ?? 14,
+            plan: planObj,
+            billing_cycle: data.subscription?.billing_cycle || planData?.interval || "monthly",
+            currency: data.subscription?.currency || planData?.currency || "INR",
+            next_billing_date: data.subscription?.next_billing_date || planData?.next_billing_date || "14 November 2026",
+          }));
         }
         if (data?.usage) {
-          setUsage(data.usage);
+          const memCurrent = data.usage.members?.current ?? 0;
+          const memLimit = data.usage.members?.limit ?? 100;
+          const memPct = typeof data.usage.members?.percentage === "number"
+            ? data.usage.members.percentage
+            : (memLimit > 0 ? (memCurrent / memLimit) * 100 : 0);
+
+          const trainerCurrent = data.usage.trainers?.current ?? data.usage.staff?.current ?? 0;
+          const trainerLimit = data.usage.trainers?.limit ?? data.usage.staff?.limit ?? 5;
+          const trainerPct = typeof data.usage.trainers?.percentage === "number"
+            ? data.usage.trainers.percentage
+            : (trainerLimit > 0 ? (trainerCurrent / trainerLimit) * 100 : 0);
+
+          const branchCurrent = data.usage.branches?.current ?? 1;
+          const branchLimit = data.usage.branches?.limit ?? 1;
+          const branchPct = typeof data.usage.branches?.percentage === "number"
+            ? data.usage.branches.percentage
+            : (branchLimit > 0 ? (branchCurrent / branchLimit) * 100 : 100);
+
+          setUsage({
+            members: {
+              current: memCurrent,
+              limit: memLimit,
+              percentage: memPct,
+              warning_triggered: data.usage.members?.warning_triggered ?? (memPct >= 80),
+              limit_reached: data.usage.members?.limit_reached ?? (memCurrent >= memLimit),
+              unlimited: data.usage.members?.unlimited ?? (memLimit >= 999999),
+            },
+            trainers: {
+              current: trainerCurrent,
+              limit: trainerLimit,
+              percentage: trainerPct,
+              warning_triggered: data.usage.trainers?.warning_triggered ?? (trainerPct >= 80),
+              limit_reached: data.usage.trainers?.limit_reached ?? (trainerCurrent >= trainerLimit),
+              unlimited: data.usage.trainers?.unlimited ?? (trainerLimit >= 999999),
+            },
+            branches: {
+              current: branchCurrent,
+              limit: branchLimit,
+              percentage: branchPct,
+              warning_triggered: data.usage.branches?.warning_triggered ?? false,
+              limit_reached: data.usage.branches?.limit_reached ?? (branchCurrent >= branchLimit),
+              unlimited: data.usage.branches?.unlimited ?? (branchLimit >= 999999),
+            },
+          });
         }
       } catch (err) {
         console.warn("Using local billing defaults", err);
@@ -611,9 +661,9 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
             {/* Active Members */}
             <div
               className={`p-5 rounded-2xl border transition shadow-sm ${
-                usage.members.limit_reached
+                usage?.members?.limit_reached
                   ? "bg-error-soft/20 border-error/40"
-                  : usage.members.warning_triggered
+                  : usage?.members?.warning_triggered
                   ? "bg-warning-soft/20 border-warning/40"
                   : "bg-surface border-border"
               }`}
@@ -623,32 +673,32 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                 <Users className="w-4 h-4 text-primary" />
               </div>
               <div className="text-2xl font-bold text-text mb-2">
-                {usage.members.current}{" "}
+                {usage?.members?.current ?? 0}{" "}
                 <span className="text-sm font-normal text-text-muted">
-                  / {usage.members.unlimited ? "Unlimited" : usage.members.limit}
+                  / {usage?.members?.unlimited ? "Unlimited" : (usage?.members?.limit ?? 100)}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-elevated overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${usage.members.unlimited ? 100 : Math.min(100, usage.members.percentage)}%` }}
+                  animate={{ width: `${usage?.members?.unlimited ? 100 : Math.min(100, usage?.members?.percentage ?? 0)}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                   className={`h-full rounded-full ${
-                    usage.members.limit_reached ? "bg-error" : usage.members.warning_triggered ? "bg-warning" : "bg-primary"
+                    usage?.members?.limit_reached ? "bg-error" : usage?.members?.warning_triggered ? "bg-warning" : "bg-primary"
                   }`}
                 />
               </div>
 
-              {usage.members.warning_triggered && !usage.members.limit_reached && (
+              {usage?.members?.warning_triggered && !usage?.members?.limit_reached && (
                 <div className="mt-2.5 text-[11px] text-warning font-bold flex items-center gap-1">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Approaching member limit (80% used). Consider upgrading.
                 </div>
               )}
 
-              {usage.members.limit_reached && (
+              {usage?.members?.limit_reached && (
                 <div className="mt-2.5 text-[11px] text-error font-bold flex items-center justify-between">
-                  <span>Member limit reached ({usage.members.current}/{usage.members.limit})</span>
+                  <span>Member limit reached ({usage?.members?.current}/{usage?.members?.limit})</span>
                   <button onClick={() => setShowPlanModal(true)} className="underline cursor-pointer">
                     Upgrade
                   </button>
@@ -663,19 +713,19 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                 <Building2 className="w-4 h-4 text-warning" />
               </div>
               <div className="text-2xl font-bold text-text mb-2">
-                {usage.trainers.current}{" "}
+                {usage?.trainers?.current ?? 0}{" "}
                 <span className="text-sm font-normal text-text-muted">
-                  / {usage.trainers.unlimited ? "Unlimited" : usage.trainers.limit}
+                  / {usage?.trainers?.unlimited ? "Unlimited" : (usage?.trainers?.limit ?? 5)}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-elevated overflow-hidden">
                 <div
                   className="h-full bg-warning rounded-full transition-all duration-500"
-                  style={{ width: `${usage.trainers.unlimited ? 100 : usage.trainers.percentage}%` }}
+                  style={{ width: `${usage?.trainers?.unlimited ? 100 : Math.min(100, usage?.trainers?.percentage ?? 0)}%` }}
                 />
               </div>
               <div className="text-[11px] text-text-muted mt-2.5">
-                {usage.trainers.unlimited ? "Unlimited trainer slots" : `${usage.trainers.limit - usage.trainers.current} trainer slots remaining`}
+                {usage?.trainers?.unlimited ? "Unlimited trainer slots" : `${Math.max(0, (usage?.trainers?.limit ?? 5) - (usage?.trainers?.current ?? 0))} trainer slots remaining`}
               </div>
             </div>
 
@@ -686,19 +736,19 @@ export default function SubscriptionBillingPage(props: { params: Promise<{ works
                 <Globe className="w-4 h-4 text-info" />
               </div>
               <div className="text-2xl font-bold text-text mb-2">
-                {usage.branches.current}{" "}
+                {usage?.branches?.current ?? 1}{" "}
                 <span className="text-sm font-normal text-text-muted">
-                  / {usage.branches.unlimited ? "Unlimited" : usage.branches.limit}
+                  / {usage?.branches?.unlimited ? "Unlimited" : (usage?.branches?.limit ?? 1)}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-surface-elevated overflow-hidden">
                 <div
                   className="h-full bg-info rounded-full transition-all duration-500"
-                  style={{ width: `${usage.branches.unlimited ? 100 : usage.branches.percentage}%` }}
+                  style={{ width: `${usage?.branches?.unlimited ? 100 : Math.min(100, usage?.branches?.percentage ?? 100)}%` }}
                 />
               </div>
               <div className="text-[11px] text-text-muted mt-2.5">
-                {activeSubscription.plan?.code === "business"
+                {activeSubscription?.plan?.code === "business"
                   ? "Multi-branch enabled"
                   : "Upgrade to Business for Multi-Branch"}
               </div>
