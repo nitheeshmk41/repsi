@@ -1,162 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/routes/route_names.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
+import '../../../shared/models/member_model.dart';
 import '../../../shared/widgets/repsi_badge.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../../shared/widgets/repsi_search_field.dart';
+import '../providers/member_provider.dart';
 import 'member_detail_view.dart';
 
-class MembersListView extends StatefulWidget {
+class MembersListView extends ConsumerStatefulWidget {
   const MembersListView({super.key});
 
   @override
-  State<MembersListView> createState() => _MembersListViewState();
+  ConsumerState<MembersListView> createState() => _MembersListViewState();
 }
 
-class _MembersListViewState extends State<MembersListView> {
+class _MembersListViewState extends ConsumerState<MembersListView> {
   int _selectedFilter = 0;
-  final List<String> _filters = ['All', 'Active', 'Expiring', 'Expired', 'Leads', 'At-risk'];
-  String _searchQuery = '';
+  final List<String> _filters = ['All', 'Active', 'Expiring', 'Expired', 'Frozen'];
 
-  final List<Map<String, dynamic>> _members = [
-    {
-      'id': 'mem_001',
-      'name': 'Rahul Sharma',
-      'plan': 'Gold Membership',
-      'status': 'Active',
-      'variant': RepsiBadgeVariant.active,
-      'visits': '24 visits',
-      'attendance': '82%',
-      'expiresIn': 'Expires in 43 days',
-      'trainer': 'Alex',
-      'branch': 'Indiranagar',
-      'phone': '+91 98765 43210',
-    },
-    {
-      'id': 'mem_002',
-      'name': 'Priya Nair',
-      'plan': 'Platinum Pass',
-      'status': 'Active',
-      'variant': RepsiBadgeVariant.active,
-      'visits': '48 visits',
-      'attendance': '94%',
-      'expiresIn': 'Expires in 18 days',
-      'trainer': 'Arun',
-      'branch': 'Indiranagar',
-      'phone': '+91 98765 43211',
-    },
-    {
-      'id': 'mem_003',
-      'name': 'Arjun Mehta',
-      'plan': 'Silver Plan',
-      'status': 'Expiring',
-      'variant': RepsiBadgeVariant.expiring,
-      'visits': '12 visits',
-      'attendance': '65%',
-      'expiresIn': 'Expires in 3 days',
-      'trainer': 'Alex',
-      'branch': 'Koramangala',
-      'phone': '+91 98765 43212',
-    },
-    {
-      'id': 'mem_004',
-      'name': 'Sneha Rao',
-      'plan': 'Gold Membership',
-      'status': 'At-risk',
-      'variant': RepsiBadgeVariant.expired,
-      'visits': '2 visits',
-      'attendance': '15%',
-      'expiresIn': 'Inactive 16 days',
-      'trainer': 'Vikram',
-      'branch': 'Indiranagar',
-      'phone': '+91 98765 43213',
-    },
-    {
-      'id': 'mem_005',
-      'name': 'Karan Verma',
-      'plan': 'Trial Pass',
-      'status': 'Leads',
-      'variant': RepsiBadgeVariant.frozen,
-      'visits': '1 visit',
-      'attendance': 'Trial',
-      'expiresIn': 'Trial ends tomorrow',
-      'trainer': 'Alex',
-      'branch': 'Whitefield',
-      'phone': '+91 98765 43214',
-    },
-    {
-      'id': 'mem_006',
-      'name': 'Vikram Singh',
-      'plan': 'Monthly Standard',
-      'status': 'Expired',
-      'variant': RepsiBadgeVariant.expired,
-      'visits': '31 visits',
-      'attendance': 'Overdue',
-      'expiresIn': 'Expired 4 days ago',
-      'trainer': 'Arun',
-      'branch': 'Indiranagar',
-      'phone': '+91 98765 43215',
-    },
-  ];
-
-  void _showFilterModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Filter Members CRM', style: AppTypography.headingSmall.copyWith(fontWeight: FontWeight.w700)),
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Reset')),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text('Branch: Indiranagar, Koramangala, Whitefield'),
-              const SizedBox(height: 8),
-              const Text('Membership Tier: Gold, Platinum, Silver, Trial'),
-              const SizedBox(height: 8),
-              const Text('Payment Status: Paid, Outstanding, Overdue'),
-              const SizedBox(height: 8),
-              const Text('Assigned Trainer: Alex, Arun, Vikram'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 44),
-                ),
-                child: const Text('Apply Filters', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  RepsiBadgeVariant _getBadgeVariant(MemberStatus status) {
+    switch (status) {
+      case MemberStatus.active:
+        return RepsiBadgeVariant.active;
+      case MemberStatus.expiring:
+        return RepsiBadgeVariant.expiring;
+      case MemberStatus.expired:
+        return RepsiBadgeVariant.expired;
+      case MemberStatus.frozen:
+        return RepsiBadgeVariant.frozen;
+      case MemberStatus.cancelled:
+        return RepsiBadgeVariant.neutral;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredMembers = _members.where((m) {
-      if (_searchQuery.isNotEmpty && !m['name'].toString().toLowerCase().contains(_searchQuery.toLowerCase())) {
-        return false;
-      }
-      if (_selectedFilter == 0) return true; // All
-      final filterName = _filters[_selectedFilter];
-      return m['status'] == filterName;
-    }).toList();
+    final memberState = ref.watch(memberListProvider);
+    final members = memberState.members;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -169,32 +54,39 @@ class _MembersListViewState extends State<MembersListView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.tune_rounded, color: AppColors.text),
-            onPressed: () => _showFilterModal(context),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.text),
+            onPressed: () => ref.read(memberListProvider.notifier).fetchMembers(),
           ),
           IconButton(
             icon: const Icon(Icons.person_add_outlined, color: AppColors.primary),
-            onPressed: () => context.push(RouteNames.addMember),
+            onPressed: () async {
+              await context.push(RouteNames.addMember);
+              if (mounted) {
+                ref.read(memberListProvider.notifier).fetchMembers();
+              }
+            },
           ),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Search Input with filter icon
+            // Search Input
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.pageHorizontalPadding,
                 vertical: 6,
               ),
               child: RepsiSearchField(
-                hintText: 'Search by name, phone or plan...',
-                onChanged: (val) => setState(() => _searchQuery = val),
+                hintText: 'Search by name, email or phone...',
+                onChanged: (val) {
+                  ref.read(memberListProvider.notifier).setSearchQuery(val);
+                },
               ),
             ),
             const SizedBox(height: 8),
 
-            // Horizontal Filter Chips (All, Active, Expiring, Expired, Leads, At-risk)
+            // Horizontal Filter Chips
             SizedBox(
               height: 38,
               child: ListView.separated(
@@ -217,7 +109,11 @@ class _MembersListViewState extends State<MembersListView> {
                       color: isSelected ? AppColors.primary : AppColors.border,
                       width: isSelected ? 1.5 : 1,
                     ),
-                    onSelected: (_) => setState(() => _selectedFilter = index),
+                    onSelected: (_) {
+                      setState(() => _selectedFilter = index);
+                      final filterKey = index == 0 ? 'ALL' : _filters[index].toUpperCase();
+                      ref.read(memberListProvider.notifier).setStatusFilter(filterKey);
+                    },
                   );
                 },
               ),
@@ -226,145 +122,188 @@ class _MembersListViewState extends State<MembersListView> {
 
             // Member Cards List
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.pageHorizontalPadding,
-                  vertical: 4,
-                ),
-                itemCount: filteredMembers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final m = filteredMembers[index];
-                  return RepsiCard(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MemberDetailView(memberId: m['id'] as String),
-                        ),
-                      );
-                    },
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primarySoft,
-                              child: Text(
-                                m['name']![0],
-                                style: const TextStyle(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () async {
+                  await ref.read(memberListProvider.notifier).fetchMembers();
+                },
+                child: memberState.isLoading && members.isEmpty
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : members.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageHorizontalPadding, vertical: 40),
+                            children: [
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      const Icon(Icons.people_outline_rounded, size: 48, color: AppColors.textMuted),
+                                      const SizedBox(height: 12),
                                       Text(
-                                        m['name'] as String,
-                                        style: AppTypography.bodySmall.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 15,
-                                          color: AppColors.text,
-                                        ),
+                                        'No members registered yet',
+                                        style: AppTypography.headingSmall.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
                                       ),
-                                      const SizedBox(width: 8),
-                                      RepsiBadge(
-                                        label: m['status'] as String,
-                                        variant: m['variant'] as RepsiBadgeVariant,
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Members registered through the website or added by you will appear here automatically.',
+                                        textAlign: TextAlign.center,
+                                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        onPressed: () async {
+                                          await context.push(RouteNames.addMember);
+                                          if (context.mounted) {
+                                            ref.read(memberListProvider.notifier).fetchMembers();
+                                          }
+                                        },
+                                        icon: const Icon(Icons.person_add_outlined, size: 18),
+                                        label: const Text('Add Member'),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${m['plan']} • ${m['visits']} • ${m['branch']}',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.schedule_rounded, size: 13, color: AppColors.textMuted),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    m['expiresIn'] as String,
-                                    style: AppTypography.caption.copyWith(
-                                      color: m['status'] == 'Expiring' || m['status'] == 'Expired'
-                                          ? AppColors.error
-                                          : AppColors.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                'Trainer: ${m['trainer']}',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
                                 ),
                               ),
                             ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.pageHorizontalPadding,
+                              vertical: 4,
+                            ),
+                            itemCount: members.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final m = members[index];
+                              final displayName = '${m.firstName} ${m.lastName}'.trim();
+                              final displayInitial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'M';
+                              final statusLabel = m.status.displayName;
+                              final badgeVariant = _getBadgeVariant(m.status);
+
+                              return RepsiCard(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MemberDetailView(memberId: m.id),
+                                    ),
+                                  );
+                                },
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 20,
+                                          backgroundColor: AppColors.primarySoft,
+                                          child: Text(
+                                            displayInitial,
+                                            style: const TextStyle(
+                                              color: AppColors.primaryDark,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      displayName,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: AppTypography.bodySmall.copyWith(
+                                                        fontWeight: FontWeight.w700,
+                                                        fontSize: 15,
+                                                        color: AppColors.text,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  RepsiBadge(
+                                                    label: statusLabel,
+                                                    variant: badgeVariant,
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${m.planName ?? "General Membership"} • ${m.email}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: AppTypography.caption.copyWith(
+                                                  color: AppColors.textSecondary,
+                                                  fontSize: 11.5,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.background,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.schedule_rounded, size: 13, color: AppColors.textMuted),
+                                              const SizedBox(width: 5),
+                                              Text(
+                                                m.expiryDate != null ? 'Expires: ${m.expiryDate}' : 'Active membership',
+                                                style: AppTypography.caption.copyWith(
+                                                  color: m.status == MemberStatus.expiring || m.status == MemberStatus.expired
+                                                      ? AppColors.error
+                                                      : AppColors.textSecondary,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (m.phone != null && m.phone!.isNotEmpty)
+                                            Text(
+                                              m.phone!,
+                                              style: AppTypography.caption.copyWith(
+                                                color: AppColors.textMuted,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.phone_outlined, size: 14, color: AppColors.primaryDark),
-                                label: const Text('Call', style: TextStyle(fontSize: 12)),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 6),
-                                  side: const BorderSide(color: AppColors.border),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: Color(0xFF2563EB)),
-                                label: const Text('Message', style: TextStyle(fontSize: 12)),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 6),
-                                  side: const BorderSide(color: AppColors.border),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
             ),
           ],

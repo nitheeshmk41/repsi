@@ -19,54 +19,20 @@ class WorkspaceSelectionView extends ConsumerStatefulWidget {
 }
 
 class _WorkspaceSelectionViewState extends ConsumerState<WorkspaceSelectionView> {
-  final List<Map<String, dynamic>> _demoGyms = const [
-    {
-      'id': 'ws_cbe_01',
-      'name': 'Repsi Fitness — Coimbatore',
-      'slug': 'repsi-coimbatore',
-      'city': 'Coimbatore',
-      'members': '842',
-      'revenue': '₹42,800',
-      'status': 'Open',
-    },
-    {
-      'id': 'ws_chn_02',
-      'name': 'Repsi Fitness — Chennai',
-      'slug': 'repsi-chennai',
-      'city': 'Chennai',
-      'members': '421',
-      'revenue': '₹28,400',
-      'status': 'Open',
-    },
-    {
-      'id': 'ws_blr_03',
-      'name': 'Repsi Fitness — Bangalore',
-      'slug': 'repsi-bangalore',
-      'city': 'Bangalore',
-      'members': '1,204',
-      'revenue': '₹64,100',
-      'status': 'Open',
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(workspaceProvider.notifier).fetchWorkspaces();
+      ref.read(workspaceProvider.notifier).fetchWorkspaces().then((_) {
+        final currentWorkspaces = ref.read(workspaceProvider).workspaces;
+        if (mounted && currentWorkspaces.length == 1) {
+          _onSelectWorkspaceModel(currentWorkspaces.first);
+        }
+      });
     });
   }
 
-  void _onSelectWorkspace(Map<String, dynamic> gym) {
-    final workspace = WorkspaceModel(
-      id: gym['id'] as String,
-      name: gym['name'] as String,
-      slug: gym['slug'] as String,
-      city: gym['city'] as String,
-      country: 'India',
-      isActive: true,
-    );
-
+  void _onSelectWorkspaceModel(WorkspaceModel workspace) {
     ref.read(workspaceProvider.notifier).selectWorkspace(workspace);
     ref.read(authProvider.notifier).updateActiveWorkspace(workspace.id, workspace.slug);
 
@@ -78,20 +44,11 @@ class _WorkspaceSelectionViewState extends ConsumerState<WorkspaceSelectionView>
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final ownerName = user?.fullName ?? 'Nitheesh';
+    final ownerName = (user?.fullName.isNotEmpty == true)
+        ? user!.fullName
+        : (user?.email.split('@').first ?? 'Owner');
     final workspaceState = ref.watch(workspaceProvider);
-
-    final gymsList = workspaceState.workspaces.isNotEmpty
-        ? workspaceState.workspaces.map((w) => {
-            'id': w.id,
-            'name': w.name,
-            'slug': w.slug,
-            'city': w.city ?? 'Coimbatore',
-            'members': '842',
-            'revenue': '₹42,800',
-            'status': w.isActive ? 'Open' : 'Suspended',
-          }).toList()
-        : _demoGyms;
+    final workspaces = workspaceState.workspaces;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -172,150 +129,157 @@ class _WorkspaceSelectionViewState extends ConsumerState<WorkspaceSelectionView>
               const SizedBox(height: 24),
 
               // Workspace cards list
-              ...gymsList.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final gym = entry.value;
-
-                return RepsiStaggerItem(
-                  index: 2 + idx,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border, width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+              if (workspaceState.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                )
+              else if (workspaces.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.fitness_center_outlined, size: 40, color: AppColors.textMuted),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No gym workspaces found',
+                        style: AppTypography.headingSmall.copyWith(fontSize: 17, fontWeight: FontWeight.w700),
                       ),
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primarySoft,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      gym['status'] as String,
-                                      style: AppTypography.caption.copyWith(
-                                        color: AppColors.primaryDark,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                gym['city'] as String,
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.textMuted,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            gym['name'] as String,
-                            style: AppTypography.headingSmall.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.text,
+                      const SizedBox(height: 6),
+                      Text(
+                        'Register your gym on repsi.app to activate your workspace.',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...workspaces.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final gym = entry.value;
+
+                  return RepsiStaggerItem(
+                    index: 2 + idx,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border, width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 4,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.people_alt_outlined, size: 15, color: AppColors.textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${gym['members']} members',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 13,
-                                    ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primarySoft,
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.payments_outlined, size: 15, color: AppColors.textSecondary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${gym['revenue']} today',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: RepsiPress(
-                              onTap: () => _onSelectWorkspace(gym),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Open',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: gym.isActive ? AppColors.primary : AppColors.error,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
-                                  ],
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        gym.isActive ? 'Active' : 'Suspended',
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.primaryDark,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                Text(
+                                  gym.city ?? 'Gym Workspace',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              gym.name,
+                              style: AppTypography.headingSmall.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.text,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 6),
+                            Text(
+                              'Slug: ${gym.slug}',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: RepsiPress(
+                                onTap: () => _onSelectWorkspaceModel(gym),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Open Workspace',
+                                        style: AppTypography.bodySmall.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
 
               const SizedBox(height: 20),
               // Footnote about website workspace creation

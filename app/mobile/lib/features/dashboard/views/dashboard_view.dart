@@ -10,6 +10,9 @@ import '../../../shared/animations/repsi_stagger.dart';
 import '../../../shared/widgets/repsi_card.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../member/presentation/views/qr_attendance_view.dart';
+import '../../members/providers/member_provider.dart';
+import '../../workspaces/providers/workspace_provider.dart';
+import '../providers/dashboard_provider.dart';
 import 'owner_search_modal.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
@@ -20,6 +23,15 @@ class DashboardView extends ConsumerStatefulWidget {
 }
 
 class _DashboardViewState extends ConsumerState<DashboardView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(dashboardProvider.notifier).fetchMetrics();
+      ref.read(memberListProvider.notifier).fetchMembers();
+    });
+  }
+
   String _selectedBranch = 'Indiranagar';
 
   void _openSearch(BuildContext context) {
@@ -132,75 +144,92 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
-    final ownerName = user?.fullName ?? 'Nitheesh';
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final ownerName = (user?.fullName.isNotEmpty == true)
+        ? user!.fullName
+        : (user?.email.split('@').first ?? 'Owner');
+    final activeSlug = authState.activeWorkspaceSlug ?? 'Live Workspace';
+    final gymName = ref.watch(workspaceProvider).activeWorkspace?.name ?? activeSlug;
+    final dashboardState = ref.watch(dashboardProvider);
+    final metrics = dashboardState.metrics;
+    final memberState = ref.watch(memberListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.pageHorizontalPadding,
-            vertical: 14,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 0. Top Bar: Repsi Primary Logo + Branch Picker + Notification + Role Switcher
-              RepsiStaggerItem(
-                index: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Image.asset(
-                        'assets/logos/primary_logo.png',
-                        height: 28,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Text(
-                          'Repsi',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primary),
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            await Future.wait([
+              ref.read(dashboardProvider.notifier).fetchMetrics(),
+              ref.read(memberListProvider.notifier).fetchMembers(),
+            ]);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.pageHorizontalPadding,
+              vertical: 14,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 0. Top Bar: Repsi Primary Logo + Branch Picker + Notification + Role Switcher
+                RepsiStaggerItem(
+                  index: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Image.asset(
+                          'assets/logos/primary_logo.png',
+                          height: 28,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Text(
+                            'Repsi',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primary),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Branch Switcher Pill
-                        GestureDetector(
-                          onTap: () => _showBranchPicker(context),
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 115),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.border, width: 1),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Flexible(
-                                  child: Text(
-                                    _selectedBranch,
-                                    style: AppTypography.caption.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.text,
-                                      fontSize: 12,
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Branch Switcher Pill
+                          GestureDetector(
+                            onTap: () => _showBranchPicker(context),
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 135),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppColors.border, width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                  const SizedBox(width: 5),
+                                  Flexible(
+                                    child: Text(
+                                      gymName,
+                                      style: AppTypography.caption.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.text,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                 ),
                                 const SizedBox(width: 2),
                                 const Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: AppColors.textMuted),
@@ -343,7 +372,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Your gym $_selectedBranch • Open',
+                      'Your gym $gymName • Open',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 13.5,
@@ -380,9 +409,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                       children: [
                         Expanded(
                           child: _buildKpiCard(
-                            title: "Today's revenue",
-                            value: '₹42,800',
-                            subtitle: '↑ 12.4% vs yesterday',
+                            title: "Monthly revenue",
+                            value: '₹${(metrics?.monthlyRevenue ?? 0).toStringAsFixed(0)}',
+                            subtitle: metrics != null ? '${metrics.revenueGrowthPct >= 0 ? "↑" : "↓"} ${metrics.revenueGrowthPct.abs().toStringAsFixed(1)}% vs last month' : 'No revenue recorded yet',
                             color: AppColors.primaryDark,
                             bgColor: AppColors.primarySoft,
                             icon: Icons.currency_rupee_rounded,
@@ -392,8 +421,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                         Expanded(
                           child: _buildKpiCard(
                             title: 'Check-ins today',
-                            value: '168',
-                            subtitle: '83.6% turnout',
+                            value: '${metrics?.todayAttendance ?? 0}',
+                            subtitle: metrics != null ? 'Peak: ${metrics.attendancePeakHour}' : '0 check-ins today',
                             color: const Color(0xFF2563EB),
                             bgColor: const Color(0xFFEBF5FF),
                             icon: Icons.qr_code_scanner_rounded,
@@ -407,8 +436,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                         Expanded(
                           child: _buildKpiCard(
                             title: 'Active members',
-                            value: '1,248',
-                            subtitle: '+42 this month',
+                            value: '${metrics?.activeMembers ?? 0}',
+                            subtitle: '${memberState.members.length} total enrolled',
                             color: const Color(0xFF059669),
                             bgColor: const Color(0xFFECFDF5),
                             icon: Icons.groups_rounded,
@@ -418,7 +447,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                         Expanded(
                           child: _buildKpiCard(
                             title: 'Renewals due',
-                            value: '14',
+                            value: '${metrics?.expiringMemberships ?? 0}',
                             subtitle: 'Next 7 days',
                             color: const Color(0xFFD97706),
                             bgColor: const Color(0xFFFEF3C7),
@@ -608,7 +637,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildKpiCard({
