@@ -1,6 +1,22 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    phone: str | None = None
+    is_superadmin: bool
+    is_active: bool
+    role: str | None = None
+    workspace_id: str | None = None
+    workspace_slug: str | None = None
+    gym_name: str | None = None
+    preferred_language: str = "en"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -8,6 +24,7 @@ class Token(BaseModel):
     workspace_slug: str | None = None
     gym_name: str | None = None
     role: str | None = None
+    user: UserResponse | None = None
 
 
 class TokenPayload(BaseModel):
@@ -64,19 +81,3 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
-
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    full_name: str
-    phone: str | None = None
-    is_superadmin: bool
-    is_active: bool
-    role: str | None = None
-    workspace_id: str | None = None
-    workspace_slug: str | None = None
-    gym_name: str | None = None
-    preferred_language: str = "en"
-
-    model_config = ConfigDict(from_attributes=True)

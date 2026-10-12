@@ -41,9 +41,10 @@ def get_current_tenant(
         if role == "SUPER_ADMIN":
             return TenantContext(workspace_id=workspace_id or "platform", user_id=user_id, role="SUPER_ADMIN")
 
+        from app.models.user import Workspace, WorkspaceMember
+
         if workspace_id:
             # Strictly verify tenant isolation and active membership in the workspace
-            from app.models.user import Workspace, WorkspaceMember
             ws = db.query(Workspace).filter(
                 (Workspace.id == workspace_id) | (Workspace.slug == workspace_id)
             ).first()
@@ -60,6 +61,18 @@ def get_current_tenant(
                 )
             role = member.role.value if hasattr(member.role, "value") else str(member.role)
             return TenantContext(workspace_id=actual_ws_id, user_id=user_id, role=role)
+
+        # Fallback to user's first active workspace membership if no workspace_id was passed
+        first_member = db.query(WorkspaceMember).filter(
+            WorkspaceMember.user_id == user_id,
+            WorkspaceMember.is_active == True,
+        ).first()
+        if first_member:
+            resolved_role = first_member.role.value if hasattr(first_member.role, "value") else str(first_member.role)
+            return TenantContext(workspace_id=first_member.workspace_id, user_id=user_id, role=resolved_role)
+
+        # User has no active workspaces (e.g. freshly created user before workspace assignment)
+        return TenantContext(workspace_id="", user_id=user_id, role=role or "USER")
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

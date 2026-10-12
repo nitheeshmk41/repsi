@@ -23,12 +23,31 @@ class DeregisterGymRequest(BaseModel):
     reason: Optional[str] = None
 
 
-@router.get("/", response_model=List[WorkspaceResponse])
+@router.get("", response_model=List[WorkspaceResponse])
+@router.get("/", response_model=List[WorkspaceResponse], include_in_schema=False)
 def get_workspaces(
     tenant: TenantContext = Depends(get_current_tenant),
     db: Session = Depends(get_db)
 ):
-    return db.query(Workspace).filter(Workspace.id == tenant.workspace_id, Workspace.is_active == True).all()
+    if tenant.role == "SUPER_ADMIN":
+        return db.query(Workspace).filter(Workspace.is_active == True).all()
+
+    # Query all active workspaces this user has membership in
+    user_workspaces = (
+        db.query(Workspace)
+        .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
+        .filter(
+            WorkspaceMember.user_id == tenant.user_id,
+            WorkspaceMember.is_active == True,
+            Workspace.is_active == True,
+        )
+        .all()
+    )
+
+    if not user_workspaces and tenant.workspace_id:
+        user_workspaces = db.query(Workspace).filter(Workspace.id == tenant.workspace_id, Workspace.is_active == True).all()
+
+    return user_workspaces
 
 
 @router.get("/entitlements", tags=["Workspaces"])

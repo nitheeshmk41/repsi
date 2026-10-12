@@ -168,7 +168,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   void _routePostLogin() {
-    final user = ref.read(authProvider).user;
+    final authState = ref.read(authProvider);
+    final user = authState.user;
     final role = user?.role.toUpperCase();
 
     if (role == 'TRAINER' || role == 'USER' || role == 'MEMBER' || role == 'ADMIN' || role == 'SUPER_ADMIN') {
@@ -176,7 +177,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
       return;
     }
 
-    // Owner accounts proceed to workspace selection / dashboard
+    // Owner accounts proceed directly to their workspace dashboard
+    if (authState.activeWorkspaceId != null && authState.activeWorkspaceId!.isNotEmpty) {
+      context.go(RouteNames.dashboard);
+      return;
+    }
+
     context.go(RouteNames.selectWorkspace);
   }
 

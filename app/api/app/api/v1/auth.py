@@ -22,16 +22,34 @@ from sqlalchemy import func
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def _make_user_response(user: User, workspace: Workspace | None, role: str) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        phone=user.phone,
+        is_superadmin=user.is_superadmin,
+        is_active=user.is_active,
+        role=role,
+        workspace_id=workspace.id if workspace else None,
+        workspace_slug=workspace.slug if workspace else None,
+        gym_name=workspace.name if workspace else None,
+        preferred_language=getattr(user, "preferred_language", "en") or "en",
+    )
+
+
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
     auth_service = AuthService(db)
     user, workspace, token = auth_service.register(req)
+    role = "OWNER"
     return Token(
         access_token=token,
         workspace_id=workspace.id,
         workspace_slug=workspace.slug,
         gym_name=workspace.name,
-        role="OWNER"
+        role=role,
+        user=_make_user_response(user, workspace, role),
     )
 
 
@@ -53,13 +71,15 @@ def resend_registration_otp(
 def verify_registration_otp(
     req: VerifyRegisterOtpRequest, db: Session = Depends(get_db)
 ):
-    _, workspace, token = AuthService(db).verify_registration_otp(req)
+    user, workspace, token = AuthService(db).verify_registration_otp(req)
+    role = "OWNER"
     return Token(
         access_token=token,
         workspace_id=workspace.id,
         workspace_slug=workspace.slug,
         gym_name=workspace.name,
-        role="OWNER"
+        role=role,
+        user=_make_user_response(user, workspace, role),
     )
 
 
@@ -76,12 +96,14 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             WorkspaceMember.workspace_id == workspace.id
         )
     membership = membership_query.first()
+    role = "SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF")
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
         workspace_slug=workspace.slug if workspace else None,
         gym_name=workspace.name if workspace else None,
-        role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
+        role=role,
+        user=_make_user_response(user, workspace, role),
     )
 
 
@@ -98,12 +120,14 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
             WorkspaceMember.workspace_id == workspace.id
         )
     membership = membership_query.first()
+    role = "SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF")
     return Token(
         access_token=token,
         workspace_id=workspace.id if workspace else None,
         workspace_slug=workspace.slug if workspace else None,
         gym_name=workspace.name if workspace else None,
-        role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
+        role=role,
+        user=_make_user_response(user, workspace, role),
     )
 
 
@@ -111,13 +135,15 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
     "/register/member", response_model=Token, status_code=status.HTTP_201_CREATED
 )
 def register_member(req: MemberRegisterRequest, db: Session = Depends(get_db)):
-    _, workspace, token = AuthService(db).register_member(req)
+    user, workspace, token = AuthService(db).register_member(req)
+    role = "USER"
     return Token(
         access_token=token,
         workspace_id=workspace.id,
         workspace_slug=workspace.slug,
         gym_name=workspace.name,
-        role="USER"
+        role=role,
+        user=_make_user_response(user, workspace, role),
     )
 
 
