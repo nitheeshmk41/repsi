@@ -5,6 +5,7 @@ import { CreditCard, Plus, ArrowUpRight, Search, CheckCircle2, Download, Banknot
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { repsiApi, ApiPayment, ApiMember } from "@/lib/api";
+import { PaymentVerificationQueue } from "./payment-verification-queue";
 
 const loadCashfreeSDK = (): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -34,6 +35,9 @@ export function PaymentsClient() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
 
+  const [viewTab, setViewTab] = useState<"ledger" | "verification">("ledger");
+  const [pendingCount, setPendingCount] = useState(0);
+
   useEffect(() => {
     repsiApi.getPayments().then(setPayments);
     repsiApi.getMembers().then((mems) => {
@@ -41,8 +45,16 @@ export function PaymentsClient() {
       if (mems.length > 0) setSelectedMemberId(mems[0].id);
     });
 
+    const updatePending = () => {
+      repsiApi.getPaymentSubmissions("pending_review")
+        .then((subs) => setPendingCount(subs.length))
+        .catch(() => {});
+    };
+    updatePending();
+
     const handleUpdate = () => {
       repsiApi.getPayments().then(setPayments);
+      updatePending();
     };
     window.addEventListener("repsi_storage_update", handleUpdate);
     return () => window.removeEventListener("repsi_storage_update", handleUpdate);
@@ -176,8 +188,44 @@ export function PaymentsClient() {
         </Button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
+        <button
+          onClick={() => setViewTab("ledger")}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            viewTab === "ledger"
+              ? "bg-[var(--surface-hover)] text-[var(--text)] border border-[var(--border)] shadow-xs"
+              : "text-[var(--text-muted)] hover:text-[var(--text)]"
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Payment Ledger & Gateway</span>
+        </button>
+
+        <button
+          onClick={() => setViewTab("verification")}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            viewTab === "verification"
+              ? "bg-[var(--surface-hover)] text-[var(--text)] border border-[var(--border)] shadow-xs"
+              : "text-[var(--text-muted)] hover:text-[var(--text)]"
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+          <span>Manual Receipt Verification Queue</span>
+          {pendingCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-black">
+              {pendingCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {viewTab === "verification" ? (
+        <PaymentVerificationQueue />
+      ) : (
+        <>
+          {/* Metrics Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
           <span className="text-xs text-[var(--text-muted)]">Monthly Collections</span>
           <p className="text-2xl font-bold text-[var(--text)] tabular-nums mt-2">
@@ -364,6 +412,8 @@ export function PaymentsClient() {
           </table>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

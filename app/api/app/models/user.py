@@ -59,6 +59,7 @@ class User(Base, TimestampMixin):
     avatar_url = Column(String(512), nullable=True)
     is_superadmin = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    preferred_language = Column(String(10), default="en", nullable=False)
 
     # Relationships
     workspaces = relationship(

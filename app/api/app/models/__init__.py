@@ -12,6 +12,7 @@ from app.models.attendance import (
 from app.models.auth import PendingRegistration
 from app.models.base import TenantMixin, TimestampMixin
 from app.models.finance import Expense, Invoice, Payment, PaymentMethod, PaymentStatus
+from app.models.payment_settings import BusinessPaymentSettings, ManualPaymentSubmission, SubmissionStatus
 from app.models.invitation import GymInvitation, InvitationRole, InvitationStatus
 from app.models.machine import GymMachine
 from app.models.member import Member, Membership, MembershipPlan, MemberStatus
@@ -101,6 +102,9 @@ __all__ = [
     "BillingPaymentStatus",
     "BiometricDevice",
     "BiometricDeviceStatus",
+    "BusinessPaymentSettings",
+    "ManualPaymentSubmission",
+    "SubmissionStatus",
 ]
 
 

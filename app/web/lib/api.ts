@@ -146,6 +146,115 @@ export interface ApiTrainer {
 }
 
 
+export interface ApiPaymentSettings {
+  id: string;
+  workspace_id: string;
+  upi_enabled: boolean;
+  upi_id?: string;
+  upi_name?: string;
+  upi_instructions?: string;
+  qr_enabled: boolean;
+  qr_image_url?: string;
+  qr_filename?: string;
+  phone_enabled: boolean;
+  phone_number?: string;
+  phone_name?: string;
+  bank_enabled: boolean;
+  bank_account_name?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_ifsc?: string;
+  bank_branch?: string;
+  bank_instructions?: string;
+  general_notes?: string;
+}
+
+export interface ApiPaymentInstructions {
+  invoice_id: string;
+  invoice_number: string;
+  amount_due: number;
+  outstanding_balance: number;
+  due_date?: string;
+  plan_name?: string;
+  reference_code: string;
+  narration_reference?: string;
+  gym_name: string;
+  has_active_methods: boolean;
+  upi_id?: string;
+  account_name?: string;
+  has_qr_code?: boolean;
+  payment_phone?: string;
+  bank_details?: {
+    account_holder_name: string;
+    bank_name: string;
+    account_number: string;
+    ifsc_code: string;
+    branch?: string;
+    instructions?: string;
+  };
+  upi?: {
+    enabled: boolean;
+    upi_id: string;
+    upi_name: string;
+    instructions?: string;
+    payment_uri: string;
+  };
+  qr?: {
+    enabled: boolean;
+    qr_url: string;
+    filename?: string;
+  };
+  phone?: {
+    enabled: boolean;
+    phone_number: string;
+    phone_name: string;
+  };
+  bank?: {
+    enabled: boolean;
+    account_name: string;
+    bank_name: string;
+    account_number: string;
+    ifsc: string;
+    branch?: string;
+    instructions?: string;
+  };
+  instructions_text: string;
+}
+
+export interface ApiPaymentSubmission {
+  id: string;
+  workspace_id: string;
+  member_id: string;
+  member_name?: string;
+  member_phone?: string;
+  member_email?: string;
+  invoice_id: string;
+  invoice_number?: string;
+  invoice_total?: number;
+  membership_plan_name?: string;
+  amount: number;
+  amount_paid?: number;
+  currency: string;
+  payment_method: string;
+  transaction_ref?: string;
+  transaction_reference?: string;
+  reference_code?: string;
+  payment_date: string;
+  receipt_url?: string;
+  receipt_filename?: string;
+  receipt_content_type?: string;
+  receipt_file_size?: number;
+  status: "pending_review" | "approved" | "rejected" | "cancelled";
+  notes?: string;
+  reviewer_id?: string;
+  reviewer_name?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
+  payment_id?: string;
+  created_at: string;
+  submitted_at?: string;
+}
+
 export interface ApiPayment {
   id: string;
   memberId: string;
@@ -2579,6 +2688,194 @@ export const repsiApi = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Failed to update subscription status");
+    }
+    return await res.json();
+  },
+
+  // ─── MANUAL PAYMENT SETTINGS & SUBMISSION WORKFLOW ─────────────────────────
+
+  async getPaymentSettings(): Promise<ApiPaymentSettings> {
+    const res = await fetch(`${API_BASE}/payments/settings`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load payment settings");
+    }
+    return await res.json();
+  },
+
+  async updatePaymentSettings(data: Partial<ApiPaymentSettings>): Promise<ApiPaymentSettings> {
+    const res = await fetch(`${API_BASE}/payments/settings`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to update payment settings");
+    }
+    return await res.json();
+  },
+
+  async uploadMerchantQr(file: File): Promise<ApiPaymentSettings> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE}/payments/settings/qr-code`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeader(),
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to upload QR image");
+    }
+    return await res.json();
+  },
+
+  async removeMerchantQr(): Promise<ApiPaymentSettings> {
+    const res = await fetch(`${API_BASE}/payments/settings/qr-code`, {
+      method: "DELETE",
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to delete QR image");
+    }
+    return await res.json();
+  },
+
+  async getInvoicePaymentInstructions(invoiceId: string): Promise<ApiPaymentInstructions> {
+    const res = await fetch(`${API_BASE}/payments/invoices/${invoiceId}/instructions`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load payment instructions");
+    }
+    return await res.json();
+  },
+
+  getReceiptUrl(submissionId: string): string {
+    return `${API_BASE}/payments/submissions/${submissionId}/receipt`;
+  },
+
+  getMerchantQrUrl(): string {
+    return `${API_BASE}/payments/settings/qr-code`;
+  },
+
+  async submitPaymentReceipt(
+    data: FormData | {
+      invoice_id: string;
+      amount_paid: number;
+      payment_method: string;
+      transaction_reference?: string;
+      payment_date?: string;
+      receipt_file: File;
+      notes?: string;
+    }
+  ): Promise<ApiPaymentSubmission> {
+    let body: FormData;
+    if (data instanceof FormData) {
+      body = data;
+    } else {
+      body = new FormData();
+      body.append("invoice_id", data.invoice_id);
+      body.append("amount_paid", data.amount_paid.toString());
+      body.append("payment_method", data.payment_method);
+      if (data.transaction_reference) body.append("transaction_reference", data.transaction_reference);
+      if (data.payment_date) body.append("payment_date", data.payment_date);
+      if (data.notes) body.append("notes", data.notes);
+      body.append("receipt_file", data.receipt_file);
+    }
+    const res = await fetch(`${API_BASE}/payments/submissions`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeader(),
+      },
+      body,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to submit payment receipt");
+    }
+    return await res.json();
+  },
+
+  async getPaymentSubmissions(status?: string, search?: string): Promise<ApiPaymentSubmission[]> {
+    const params = new URLSearchParams();
+    if (status && status !== "all") params.append("status", status);
+    if (search) params.append("search", search);
+
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    const res = await fetch(`${API_BASE}/payments/submissions${qs}`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      return [];
+    }
+    return await res.json();
+  },
+
+  async getPaymentSubmission(id: string): Promise<ApiPaymentSubmission> {
+    const res = await fetch(`${API_BASE}/payments/submissions/${id}`, {
+      headers: { ...getAuthHeader() },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load payment submission");
+    }
+    return await res.json();
+  },
+
+  async approvePaymentSubmission(id: string): Promise<ApiPaymentSubmission> {
+    const res = await fetch(`${API_BASE}/payments/submissions/${id}/approve`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to approve payment submission");
+    }
+    return await res.json();
+  },
+
+  async rejectPaymentSubmission(id: string, rejectionReason: string): Promise<ApiPaymentSubmission> {
+    const res = await fetch(`${API_BASE}/payments/submissions/${id}/reject`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ decision: "reject", rejection_reason: rejectionReason }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to reject payment submission");
+    }
+    return await res.json();
+  },
+
+  async updateUserLanguage(language: string): Promise<{ status: string; language: string }> {
+    const res = await fetch(`${API_BASE}/auth/me/language`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ language }),
+    });
+    if (!res.ok) {
+      return { status: "fallback", language };
     }
     return await res.json();
   },

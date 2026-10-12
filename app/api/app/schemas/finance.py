@@ -22,6 +22,7 @@ class PaymentResponse(BaseModel):
     method: PaymentMethod
     status: PaymentStatus
     transaction_ref: Optional[str] = None
+    invoice_id: Optional[str] = None
     paid_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -60,10 +61,13 @@ class InvoiceResponse(BaseModel):
     id: str
     workspace_id: str
     invoice_number: str
-    member_id: str
+    member_id: Optional[str] = None
+    membership_id: Optional[str] = None
     subtotal: float
     tax_amount: float
     total_amount: float
+    amount_paid: Optional[float] = 0.0
+    outstanding_balance: Optional[float] = 0.0
     status: str
     due_date: date
     notes: Optional[str] = None

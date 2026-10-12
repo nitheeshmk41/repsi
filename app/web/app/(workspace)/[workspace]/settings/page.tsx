@@ -30,6 +30,7 @@ import { slugToGymName } from "@/lib/workspace";
 import { repsiApi } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { PaymentSettingsTab } from "@/features/settings/payment-settings-tab";
 
 export default function WorkspaceSettingsPage() {
   const router = useRouter();
@@ -236,6 +237,7 @@ export default function WorkspaceSettingsPage() {
 
   const navItems = [
     { id: "general", label: "General & Branding", icon: Building2 },
+    { id: "payments", label: "Payments & Collections", icon: CreditCard },
     { id: "team", label: "Staff & Coaches", icon: Users },
     { id: "roles", label: "Role Permissions", icon: Shield },
     { id: "membership", label: "Plan Rules", icon: Sliders },
@@ -520,6 +522,10 @@ export default function WorkspaceSettingsPage() {
             </>
           )}
 
+          {activeTab === "payments" && (
+            <PaymentSettingsTab />
+          )}
+
           {activeTab === "team" && (
             <Card className="border-[var(--border)] bg-[var(--surface)]">
               <CardHeader>
@@ -589,7 +595,7 @@ export default function WorkspaceSettingsPage() {
             </Card>
           )}
 
-          {activeTab !== "general" && activeTab !== "team" && activeTab !== "danger" && (
+          {activeTab !== "general" && activeTab !== "team" && activeTab !== "danger" && activeTab !== "payments" && (
             <Card className="border-[var(--border)] bg-[var(--surface)]">
               <CardHeader>
                 <CardTitle className="text-base font-semibold capitalize">{activeTab} Settings</CardTitle>

@@ -73,5 +73,6 @@ class UserResponse(BaseModel):
     is_active: bool
     role: str | None = None
     workspace_id: str | None = None
+    preferred_language: str = "en"
 
     model_config = ConfigDict(from_attributes=True)

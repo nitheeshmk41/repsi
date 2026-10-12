@@ -4,6 +4,7 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../shared/widgets/repsi_badge.dart';
 import '../../../shared/widgets/repsi_card.dart';
+import '../../../shared/widgets/language_selector_sheet.dart';
 
 class OwnerFinanceView extends StatefulWidget {
   const OwnerFinanceView({super.key});
@@ -18,7 +19,7 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -72,6 +73,11 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
           style: AppTypography.heading.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.language_rounded, color: AppColors.primary),
+            onPressed: () => LanguageSelectorSheet.show(context),
+            tooltip: 'Language',
+          ),
           IconButton(
             icon: const Icon(Icons.add_card_rounded, color: AppColors.primary),
             onPressed: () => _showRecordPaymentSheet(context),
@@ -144,6 +150,7 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
                   unselectedLabelStyle: AppTypography.caption.copyWith(fontWeight: FontWeight.w500, fontSize: 11.5),
                   tabs: const [
                     Tab(text: 'Payments'),
+                    Tab(text: 'Verification (1)'),
                     Tab(text: 'Invoices & GST'),
                     Tab(text: 'Expenses'),
                     Tab(text: 'P&L Reports'),
@@ -159,6 +166,7 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
                 controller: _tabController,
                 children: [
                   _buildPaymentsSection(),
+                  _buildVerificationSection(),
                   _buildInvoicesSection(),
                   _buildExpensesSection(),
                   _buildReportsSection(),
@@ -385,5 +393,91 @@ class _OwnerFinanceViewState extends State<OwnerFinanceView> with SingleTickerPr
 
   Widget _buildDivider() {
     return Container(width: 1, height: 24, color: AppColors.border, margin: const EdgeInsets.symmetric(horizontal: 6));
+  }
+
+  Widget _buildVerificationSection() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageHorizontalPadding, vertical: 8),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.warningSoft,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.shield_rounded, color: AppColors.warning, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Approving manual receipts verifies funds against your bank/UPI statement and immediately restores member check-in access.',
+                  style: TextStyle(fontSize: 11, color: Colors.brown, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        RepsiCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Nitheesh Kumar (M001)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: AppColors.warningSoft, borderRadius: BorderRadius.circular(4)),
+                    child: const Text('Pending Review', style: TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text('Invoice #INV-2026-0042 • Monthly Plan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text('₹1,500 via UPI Transfer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark)),
+                  Text('Ref: 428910284920', style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: AppColors.textMuted)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Payment approved! Member access activated.'), backgroundColor: AppColors.primary),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(0, 36)),
+                      child: const Text('Approve & Activate', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Submission rejected. Member notified.'), backgroundColor: AppColors.error),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error), minimumSize: const Size(0, 36)),
+                      child: const Text('Reject', style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -92,3 +92,5 @@ playwright-report/
 .cache/
 tmp/
 temp/
+app/api/private_storage/*
+!app/api/private_storage/**/.gitkeep

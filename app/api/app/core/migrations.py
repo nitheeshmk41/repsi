@@ -98,6 +98,46 @@ def run_database_migrations():
                     except Exception as e:
                         logger.warning(f"Could not add column {col_name} to workspaces: {e}")
 
+        # Check users columns (preferred_language)
+        if inspector.has_table("users"):
+            existing_user_cols = {col["name"] for col in inspector.get_columns("users")}
+            if "preferred_language" not in existing_user_cols:
+                try:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN preferred_language VARCHAR(10) DEFAULT 'en'"))
+                    logger.info("Added preferred_language to users.")
+                except Exception as e:
+                    logger.warning(f"Could not add preferred_language to users: {e}")
+
+        # Check members columns (user_id, trainer_id)
+        if inspector.has_table("members"):
+            existing_mem_cols = {col["name"] for col in inspector.get_columns("members")}
+            new_mem_cols = [
+                ("user_id", "VARCHAR(64)"),
+                ("trainer_id", "VARCHAR(64)"),
+            ]
+            for col_name, col_def in new_mem_cols:
+                if col_name not in existing_mem_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE members ADD COLUMN {col_name} {col_def}"))
+                        logger.info(f"Added column {col_name} to members.")
+                    except Exception as e:
+                        logger.warning(f"Could not add column {col_name} to members: {e}")
+
+        # Check invoices columns (amount_paid, membership_id)
+        if inspector.has_table("invoices"):
+            existing_inv_cols = {col["name"] for col in inspector.get_columns("invoices")}
+            new_inv_cols = [
+                ("amount_paid", "FLOAT DEFAULT 0.0"),
+                ("membership_id", "VARCHAR(64)"),
+            ]
+            for col_name, col_def in new_inv_cols:
+                if col_name not in existing_inv_cols:
+                    try:
+                        conn.execute(text(f"ALTER TABLE invoices ADD COLUMN {col_name} {col_def}"))
+                        logger.info(f"Added column {col_name} to invoices.")
+                    except Exception as e:
+                        logger.warning(f"Could not add column {col_name} to invoices: {e}")
+
 if __name__ == "__main__":
     run_database_migrations()
     print("[SUCCESS] Database migrations completed successfully.")

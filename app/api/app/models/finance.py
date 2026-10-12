@@ -50,6 +50,8 @@ class Invoice(Base, TimestampMixin, TenantMixin):
     total_amount = Column(Float, nullable=False)
     status = Column(String(20), default="paid", nullable=False)  # paid, pending, void
     due_date = Column(Date, default=date.today, nullable=False)
+    membership_id = Column(String(64), ForeignKey("memberships.id", ondelete="SET NULL"), nullable=True)
+    amount_paid = Column(Float, default=0.0, nullable=False)
     notes = Column(Text, nullable=True)
 
 

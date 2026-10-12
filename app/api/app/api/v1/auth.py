@@ -14,6 +14,7 @@ from app.schemas.auth import (
     VerifyRegisterOtpRequest,
 )
 from app.services.auth import AuthService
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -125,7 +126,32 @@ def get_current_user_profile(
         is_active=user.is_active,
         role="SUPER_ADMIN" if user.is_superadmin else (membership.role.value if membership else "STAFF"),
         workspace_id=membership.workspace_id if membership else None,
+        preferred_language=getattr(user, "preferred_language", "en") or "en",
     )
+
+
+class LanguageUpdateRequest(BaseModel):
+    language: str
+
+
+@router.put("/me/language")
+def update_user_language(
+    req: LanguageUpdateRequest,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    valid_languages = ["en", "ta", "ml", "kn", "te"]
+    lang = req.language.lower().strip()
+    if lang not in valid_languages:
+        lang = "en"
+
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.preferred_language = lang
+    db.commit()
+    return {"status": "success", "language": lang}
 
 
 @router.post("/forgot-password")

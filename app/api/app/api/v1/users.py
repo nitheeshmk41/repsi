@@ -34,6 +34,7 @@ def get_workspace_users(
             is_active=u.is_active,
             role="SUPER_ADMIN" if u.is_superadmin else member_role_map.get(u.id, "STAFF"),
             workspace_id=tenant.workspace_id,
+            preferred_language=getattr(u, "preferred_language", "en") or "en",
         )
         for u in users
     ]

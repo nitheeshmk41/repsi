@@ -387,6 +387,40 @@ class AttendanceService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Check-in blocked: Member account is {status_desc.upper()}. Please settle dues or renew membership.",
                 )
+
+            # Centralized fee check: overdue unpaid invoices block check-in
+            from app.models.finance import Invoice
+            from app.models.payment_settings import ManualPaymentSubmission, SubmissionStatus
+            unpaid_invoice = (
+                self.db.query(Invoice)
+                .filter(
+                    Invoice.workspace_id == self.workspace_id,
+                    Invoice.member_id == m.id,
+                    Invoice.status.in_(["pending", "unpaid"]),
+                    Invoice.due_date < date.today(),
+                )
+                .first()
+            )
+            if unpaid_invoice:
+                has_pending = (
+                    self.db.query(ManualPaymentSubmission)
+                    .filter(
+                        ManualPaymentSubmission.workspace_id == self.workspace_id,
+                        ManualPaymentSubmission.member_id == m.id,
+                        ManualPaymentSubmission.invoice_id == unpaid_invoice.id,
+                        ManualPaymentSubmission.status == SubmissionStatus.PENDING_REVIEW.value,
+                    )
+                    .first()
+                )
+                if has_pending:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Check-in blocked: Payment proof for invoice #{unpaid_invoice.invoice_number} is pending owner verification. Access unlocks after approval.",
+                    )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Check-in blocked: Overdue payment required for invoice #{unpaid_invoice.invoice_number} (₹{unpaid_invoice.total_amount:,.2f}). Please settle fee to enter.",
+                )
         elif person["type"] == "trainer":
             t: Trainer = person["obj"]
             if t.status in [TrainerStatus.SUSPENDED, TrainerStatus.INACTIVE]:

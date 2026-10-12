@@ -4,6 +4,8 @@ import { ThemeProvider } from "@/components/layout/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
+import { LanguageProvider } from "@/lib/i18n";
+
 export const metadata: Metadata = {
   title: {
     default: "REPSI — Fitness Management Platform",
@@ -63,7 +65,9 @@ export default function RootLayout({
         >
           <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "placeholder"}>
             <AuthProvider>
-              {children}
+              <LanguageProvider>
+                {children}
+              </LanguageProvider>
             </AuthProvider>
           </GoogleOAuthProvider>
         </ThemeProvider>

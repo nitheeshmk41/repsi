@@ -1,11 +1,21 @@
 from typing import List, Optional
 from datetime import datetime, date, timezone
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.finance import Payment, PaymentStatus, Invoice
+from app.models.user import User
 from app.schemas.finance import PaymentCreate, PaymentResponse, FinancialMetrics, InvoiceResponse
+from app.schemas.payment_settings import (
+    PaymentSettingsSchema,
+    PaymentSettingsUpdate,
+    PaymentInstructionsResponse,
+    PaymentSubmissionResponse,
+    PaymentSubmissionReview,
+)
+from app.services.manual_payment import ManualPaymentService
 from app.repositories.base import BaseTenantRepository
 from app.repositories.finance import FinanceRepository
 from app.middleware.tenant import get_current_tenant, TenantContext
@@ -99,6 +109,26 @@ def get_financial_summary(
     )
 
 
+def _format_invoice(inv: Invoice) -> InvoiceResponse:
+    amount_paid = getattr(inv, "amount_paid", 0.0) or (inv.total_amount if inv.status == "paid" else 0.0)
+    outstanding = max(0.0, round(inv.total_amount - amount_paid, 2))
+    return InvoiceResponse(
+        id=inv.id,
+        workspace_id=inv.workspace_id,
+        invoice_number=inv.invoice_number,
+        member_id=inv.member_id,
+        membership_id=getattr(inv, "membership_id", None),
+        subtotal=inv.subtotal,
+        tax_amount=inv.tax_amount,
+        total_amount=inv.total_amount,
+        amount_paid=amount_paid,
+        outstanding_balance=outstanding,
+        status=inv.status,
+        due_date=inv.due_date,
+        notes=inv.notes,
+    )
+
+
 @router.get("/invoices", response_model=List[InvoiceResponse])
 def get_invoices(
     tenant: TenantContext = Depends(get_current_tenant),
@@ -106,21 +136,22 @@ def get_invoices(
 ):
     repo = BaseTenantRepository[Invoice](Invoice, db, tenant.workspace_id)
     if tenant.role == "USER":
-        from app.models.user import User
-        from app.models.member import Member
         user = db.query(User).filter(User.id == tenant.user_id).first()
         if user:
+            from app.models.member import Member
             m = db.query(Member).filter(
                 Member.workspace_id == tenant.workspace_id,
                 (Member.email == user.email) | (Member.phone == user.phone)
             ).first()
             if m:
-                return db.query(Invoice).filter(
+                invoices = db.query(Invoice).filter(
                     Invoice.workspace_id == tenant.workspace_id,
                     Invoice.member_id == m.id
                 ).order_by(Invoice.created_at.desc()).all()
+                return [_format_invoice(inv) for inv in invoices]
             return []
-    return repo.get_multi(limit=50) or []
+    invoices = repo.get_multi(limit=50) or []
+    return [_format_invoice(inv) for inv in invoices]
 
 
 @router.get("/invoices/{invoice_id}", response_model=InvoiceResponse)
@@ -133,7 +164,7 @@ def get_invoice_by_id(
     inv = repo.get(invoice_id)
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    return inv
+    return _format_invoice(inv)
 
 
 from pydantic import BaseModel
@@ -363,4 +394,265 @@ def cashfree_webhook(
 
 # Alias function name
 razorpay_webhook = cashfree_webhook
+
+
+# ─── OWNER MANUAL PAYMENT SETTINGS ──────────────────────────────────────────
+
+@router.get("/settings", response_model=PaymentSettingsSchema)
+def get_payment_settings(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns owner's configured manual payment methods (UPI, QR, Phone, Bank).
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.get_or_create_settings()
+
+
+@router.put("/settings", response_model=PaymentSettingsSchema)
+def update_payment_settings(
+    data: PaymentSettingsUpdate,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Update owner payment configuration. Restricted to OWNER, ADMIN, SUPER_ADMIN.
+    """
+    if tenant.role not in ["OWNER", "ADMIN", "SUPER_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only business owners or administrators can configure payment details.",
+        )
+
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.update_settings(user, data)
+
+
+@router.post("/settings/qr-code", response_model=PaymentSettingsSchema)
+async def upload_merchant_qr(
+    file: UploadFile = File(...),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Upload merchant UPI / Bank QR image. Validates image type, size, and magic bytes.
+    """
+    if tenant.role not in ["OWNER", "ADMIN", "SUPER_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only business owners or administrators can upload merchant QR codes.",
+        )
+
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    file_bytes = await file.read()
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.upload_merchant_qr(user, file_bytes, file.filename or "qr.png")
+
+
+@router.delete("/settings/qr-code", response_model=PaymentSettingsSchema)
+def delete_merchant_qr(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Removes merchant QR code.
+    """
+    if tenant.role not in ["OWNER", "ADMIN", "SUPER_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only business owners or administrators can modify merchant QR codes.",
+        )
+
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.remove_merchant_qr(user)
+
+
+@router.get("/settings/qr-code")
+def get_merchant_qr_image(
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Authenticated retrieval of the gym's merchant QR image.
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    file_path, filename, media_type = svc.get_qr_file()
+    return FileResponse(file_path, media_type=media_type, filename=filename)
+
+
+# ─── MEMBER PAYMENT INSTRUCTIONS & SUBMISSIONS ────────────────────────────
+
+@router.get("/invoices/{invoice_id}/instructions", response_model=PaymentInstructionsResponse)
+def get_invoice_payment_instructions(
+    invoice_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Fetches exact payment instructions, copyable UPI/bank details, QR code,
+    and unique transfer narration reference for an authorized invoice.
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.get_payment_instructions(invoice_id, tenant.user_id)
+
+
+@router.post("/submissions", response_model=PaymentSubmissionResponse, status_code=status.HTTP_201_CREATED)
+async def submit_payment_receipt(
+    invoice_id: str = Form(...),
+    amount: float = Form(...),
+    payment_method: str = Form("upi"),
+    transaction_ref: Optional[str] = Form(None),
+    payment_date: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    receipt_file: UploadFile = File(...),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Member submits payment proof (receipt/screenshot) against their membership invoice.
+    Validates invoice ownership, amount, file authenticity, and sets status to pending_review.
+    """
+    parsed_date = None
+    if payment_date:
+        try:
+            parsed_date = datetime.fromisoformat(payment_date.replace("Z", "+00:00"))
+        except Exception:
+            parsed_date = datetime.now(timezone.utc)
+
+    file_bytes = await receipt_file.read()
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    sub = svc.submit_receipt(
+        user_id=tenant.user_id,
+        user_role=tenant.role or "USER",
+        invoice_id=invoice_id,
+        amount=amount,
+        payment_method=payment_method,
+        transaction_ref=transaction_ref,
+        payment_date=parsed_date,
+        notes=notes,
+        file_bytes=file_bytes,
+        original_filename=receipt_file.filename or "receipt.jpg",
+    )
+    return svc.get_submission(sub.id, tenant.user_id, tenant.role or "USER")
+
+
+@router.get("/submissions", response_model=List[PaymentSubmissionResponse])
+def list_payment_submissions(
+    status: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Lists payment submissions. Members view their own history; owners/trainers view the review queue.
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.list_submissions(
+        user_id=tenant.user_id,
+        user_role=tenant.role or "USER",
+        status_filter=status,
+        search=search,
+        skip=skip,
+        limit=limit,
+    )
+
+
+@router.get("/submissions/{submission_id}", response_model=PaymentSubmissionResponse)
+def get_payment_submission(
+    submission_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    View individual payment submission details and status.
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    return svc.get_submission(submission_id, tenant.user_id, tenant.role or "USER")
+
+
+@router.get("/submissions/{submission_id}/receipt")
+def get_submission_receipt_file(
+    submission_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Secure authenticated delivery of private receipt images or PDFs.
+    Access restricted to the submitting member or authorized gym staff.
+    """
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    file_path, filename, media_type = svc.get_receipt_file(
+        submission_id,
+        tenant.user_id,
+        tenant.role or "USER",
+    )
+    return FileResponse(file_path, media_type=media_type, filename=filename)
+
+
+@router.post("/submissions/{submission_id}/approve", response_model=PaymentSubmissionResponse)
+def approve_payment_submission(
+    submission_id: str,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Atomically approve a submitted manual payment:
+    1. Verifies reviewer permissions and tenant isolation.
+    2. Updates submission status to 'approved'.
+    3. Records payment entry in financial ledger.
+    4. Marks invoice as 'paid'.
+    5. Activates / restores member access.
+    6. Logs audit trail and notifies member.
+    """
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Reviewer user not found")
+
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    svc.approve_submission(
+        submission_id=submission_id,
+        reviewer_user=user,
+        reviewer_role=tenant.role or "STAFF",
+    )
+    return svc.get_submission(submission_id, tenant.user_id, tenant.role or "STAFF")
+
+
+@router.post("/submissions/{submission_id}/reject", response_model=PaymentSubmissionResponse)
+def reject_payment_submission(
+    submission_id: str,
+    payload: PaymentSubmissionReview,
+    tenant: TenantContext = Depends(get_current_tenant),
+    db: Session = Depends(get_db),
+):
+    """
+    Rejects a submitted manual payment:
+    1. Requires explicit rejection reason.
+    2. Keeps invoice unpaid.
+    3. Preserves member restrictions.
+    4. Notifies member with rejection reason.
+    """
+    user = db.query(User).filter(User.id == tenant.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Reviewer user not found")
+
+    svc = ManualPaymentService(db, tenant.workspace_id)
+    svc.reject_submission(
+        submission_id=submission_id,
+        reviewer_user=user,
+        reviewer_role=tenant.role or "STAFF",
+        rejection_reason=payload.rejection_reason or "",
+    )
+    return svc.get_submission(submission_id, tenant.user_id, tenant.role or "STAFF")
+
 

@@ -37,10 +37,13 @@ Managing a fitness facility shouldn't mean juggling five different outdated soft
 ## ✨ Key Features in v1.0.1
 
 - 🏢 **Multi-Tenancy & Workspace Isolation**: Manage single or multi-branch gym networks under one organization with complete data isolation.
-- 💳 **UPI & Cashfree Payment Integration**: Instant fee collection via Google Pay, PhonePe, BHIM UPI, cards, and automatic WhatsApp invoice delivery.
-- 📲 **Contactless QR Attendance**: Sub-second smartphone QR scan check-in and biometric hardware integration.
+- 💸 **Direct Manual Payments & Receipt Verification (Zero PG Fees)**: Support owners' direct UPI IDs, merchant QR codes, payment phone numbers, and bank account transfers without gateway transaction fees.
+- 📑 **Member Payment Proof & Access Activation Lifecycle**: Members upload transfer screenshots with unique transfer reference tags (`PAY-...`). Access remains restricted until an authorized owner or trainer verifies and approves the receipt via an atomic ledger transaction.
+- 🌐 **Multilingual Localization (5 Indian Languages)**: Complete localization across Next.js web and Flutter mobile applications in **English (`en`)**, **தமிழ் — Tamil (`ta`)**, **മലയാളം — Malayalam (`ml`)**, **ಕನ್ನಡ — Kannada (`kn`)**, and **తెలుగు — Telugu (`te`)** with persistent preferences and profile sync.
+- 💳 **Cashfree & Online Payment Gateways**: Automated UPI, card, and netbanking settlements with instant webhook reconciliation.
+- 📲 **Contactless QR Attendance**: Sub-second smartphone QR scan check-in, biometric hardware integration, and automatic overdue payment restriction enforcement.
 - 🌐 **Product-Led SEO Architecture**: Built-in SEO engine covering dedicated feature routes (`/features/*`), comparisons (`/compare/*`), regional city hubs (`/cities/*`), and automated Google `LocalBusiness` schema for gym websites.
-- 📱 **Native Mobile Apps (iOS & Android)**: Compiled Flutter applications with Riverpod state management and offline-resilient storage.
+- 📱 **Native Mobile Apps (iOS & Android)**: Compiled Flutter applications with Riverpod state management, dynamic language selector, and offline-resilient storage.
 - 💻 **Desktop Apps (Tauri & Rust)**: Lightweight, native desktop wrappers for Windows, macOS, and Linux.
 - 📊 **Real-time Analytics & CRM**: Sales pipeline tracking, trial lead follow-up drip sequences, churn analysis, and financial reporting.
 

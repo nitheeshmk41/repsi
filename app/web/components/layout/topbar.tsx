@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect, useCallback } from "react";
 import { Sun, Moon, Monitor, Bell, Search, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LanguageSelector } from "@/components/language-selector";
 import { GettingStartedDialog } from "@/components/layout/getting-started-dialog";
 import {
   DropdownMenu,
@@ -259,6 +260,9 @@ export function Topbar({ title, breadcrumbs, mobileMenuButton }: TopbarProps) {
             )}
           </div>
         </Link>
+
+        {/* Language */}
+        <LanguageSelector />
 
         {/* Theme */}
         <ThemeToggle />
